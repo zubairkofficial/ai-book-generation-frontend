@@ -1,4 +1,5 @@
-import { baseApi } from './baseApi';
+import { baseApi } from './baseApi'; // Correct import
+import { RootState } from '@/store/store';
 
 interface SignUpRequest {
   email: string;
@@ -15,8 +16,8 @@ interface SignInRequest {
 export interface AuthResponse {
   user: { id: string; email: string };
   token: string;
-  message:string
-  accessToken:string
+  message: string;
+  accessToken: string;
 }
 
 interface ResetPasswordRequest {
@@ -44,18 +45,38 @@ interface RefreshTokenRequest {
 interface ResendVerificationRequest {
   email: string;
 }
-interface PasswordResetRequest{
+
+interface PasswordResetRequest {
   token: string;
   newPassword: string;
 }
-interface GenerateOTPRequest{
+
+interface GenerateOTPRequest {
   email: string;
 }
 
-interface VerifyOTPRequest{
-  email: string; 
-  code: string; 
+interface VerifyOTPRequest {
+  email: string;
+  code: string;
+}
 
+interface GenerateBookRequest {
+  bookTitle: string;
+  genre: string;
+  theme: string;
+  characters: string;
+  setting: string;
+  tone: string;
+  plotTwists: string;
+  numberOfPages: number;
+  numberOfChapters: number;
+  targetAudience: string;
+  language: string;
+  additionalContent?: string;
+}
+
+interface GenerateBookResponse {
+  bookContent: string;
 }
 
 export const authApi = baseApi.injectEndpoints({
@@ -85,10 +106,10 @@ export const authApi = baseApi.injectEndpoints({
     }),
 
     passwordReset: builder.mutation<void, PasswordResetRequest>({
-      query: ({token,newPassword}) => ({
+      query: ({ token, newPassword }) => ({
         url: '/auth/password-reset',
         method: 'POST',
-        body: { token,newPassword },
+        body: { token, newPassword },
       }),
     }),
 
@@ -99,7 +120,6 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
     }),
-    
 
     verifyEmail: builder.mutation({
       query: ({ token }) => ({
@@ -108,14 +128,11 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
-    /**
-     * ADD THE resendVerification MUTATION HERE
-     */
     resendVerification: builder.mutation<void, ResendVerificationRequest>({
       query: ({ email }) => ({
         url: '/auth/resend-verification',
         method: 'POST',
-        body: {email },
+        body: { email },
       }),
     }),
 
@@ -143,8 +160,8 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
-     generateOTP: builder.mutation<void, GenerateOTPRequest>({
-      query: ({email}) => ({
+    generateOTP: builder.mutation<void, GenerateOTPRequest>({
+      query: ({ email }) => ({
         url: '/auth/generate-otp',
         method: 'POST',
         body: { email },
@@ -152,10 +169,10 @@ export const authApi = baseApi.injectEndpoints({
     }),
 
     verifyOTP: builder.mutation<void, VerifyOTPRequest>({
-      query: ({email,code}) => ({
+      query: ({ email, code }) => ({
         url: '/auth/verify-otp',
         method: 'POST',
-        body: { email,code },
+        body: { email, code },
       }),
     }),
 
@@ -164,6 +181,14 @@ export const authApi = baseApi.injectEndpoints({
         url: '/auth/refresh-token',
         method: 'POST',
         body: { refreshToken },
+      }),
+    }),
+
+    generateBook: builder.mutation<GenerateBookResponse, GenerateBookRequest>({
+      query: (payload) => ({
+        url: '/book-generation/generate',
+        method: 'POST',
+        body: payload,
       }),
     }),
   }),
@@ -179,9 +204,9 @@ export const {
   useRefreshTokenMutation,
   useForgotPasswordMutation,
   useVerifyEmailMutation,
-usePasswordResetMutation,
-useGenerateOTPMutation,
-useVerifyOTPMutation,
-  // EXPORT THE NEW HOOK
+  usePasswordResetMutation,
+  useGenerateOTPMutation,
+  useVerifyOTPMutation,
+  useGenerateBookMutation,
   useResendVerificationMutation,
 } = authApi;

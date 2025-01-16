@@ -21,27 +21,24 @@ export default function VerifyOTP() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     try {
-      // Call the verifyOTP mutation
       const response = await verifyOTP({ email, code: otp }).unwrap();
-
-      // Handle successful OTP verification
       const { user, accessToken, refreshToken } = response;
+  
+      // Store tokens in localStorage
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
-
-      // Update Redux state with the authenticated user
+  
+      // Update Redux state
       dispatch(setCredentials({ user, accessToken, refreshToken }));
-
+  
       toast.success('OTP verified successfully!');
-      navigate('/dashboard'); // Redirect to dashboard
+      navigate('/home');
     } catch (err: any) {
-      // Handle errors during OTP verification
       toast.error(err?.data?.message || 'Invalid or expired OTP');
     }
   };
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <Card className="w-full max-w-md p-8 bg-white">

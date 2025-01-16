@@ -38,7 +38,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BookOpenCheck className="h-6 w-6 text-amber-500" />
-            <span className="text-xl font-bold">StoryForge AI</span>
+            <span className="text-xl font-bold">Ai Book Generation AI</span>
           </div>
           <div className="flex items-center gap-4">
             <Link to="/auth">
@@ -286,7 +286,7 @@ export default function LandingPage() {
               {
                 name: "Sarah Johnson",
                 role: "Fantasy Author",
-                content: "StoryForge AI transformed my writing process. The AI suggestions and image generation are incredible!",
+                content: "Ai Book Generation AI transformed my writing process. The AI suggestions and image generation are incredible!",
                 rating: 5
               },
               {
@@ -340,7 +340,7 @@ export default function LandingPage() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-4xl font-bold mb-6">Start Your AI Writing Journey Today</h2>
-            <p className="text-xl mb-8 text-gray-300">Join the future of book creation with StoryForge AI</p>
+            <p className="text-xl mb-8 text-gray-300">Join the future of book creation with Ai Book Generation AI</p>
             <Link to="/auth">
               <Button size="lg" className="bg-amber-500 hover:bg-amber-600">
                 Get Started For Free

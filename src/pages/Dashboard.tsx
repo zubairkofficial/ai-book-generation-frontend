@@ -1,92 +1,245 @@
-import { Button } from '@/components/ui/button';
-import {
-  BookOpen,
-  PlusCircle,
-  Settings,
-  LogOut,
-  BookOpenCheck,
-  BarChart,
-  BookMarked,
-  Sparkles,
-} from 'lucide-react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { useDispatch } from 'react-redux';
-import { logout } from '@/features/auth/authSlice';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import Header from '@/components/layout/Header';
+import Layout from '@/components/layout/Layout';
+import { toast } from 'react-toastify';
+import { jsPDF } from 'jspdf';
+import { saveAs } from 'file-saver';
+import { useGenerateBookMutation } from '@/api/authApi';
 
-export default function Dashboard() {
-  const dispatch = useDispatch();
-  const handleLogout=() => {
-    dispatch(logout())
-  }
+const Dashboard = () => {
+  const [generateBook, { isLoading }] = useGenerateBookMutation();
+  const [isbookDownloadName, setIsBookDownloadName] = useState('');
+  const [formData, setFormData] = useState({
+    bookTitle: '',
+    genre: '',
+    theme: '',
+    characters: '',
+    setting: '',
+    tone: '',
+    plotTwists: '',
+    numberOfPages: '',
+    numberOfChapters: '',
+    targetAudience: '',
+    language: '',
+    additionalContent: '',
+  });
+  const [bookContent, setBookContent] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [progress, setProgress] = useState<number>(0);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]:
+        name === 'numberOfPages' || name === 'numberOfChapters'
+          ? value === '' ? '' : parseInt(value, 10)
+          : value,
+    }));
+  };
+
+  const formatLabel = (key: string) => {
+    return key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (str) => str.toUpperCase());
+  };
+
+  const handleBookGeneration = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProgress(10);
+
+    try {
+      const response = await generateBook(formData).unwrap();
+      setIsBookDownloadName(formData.bookTitle);
+      setProgress(70);
+
+      // Check if the response contains the expected data
+      if (response && response.data && response.data.additionalData?.fullContent) {
+        toast.success('Book generated successfully!');
+        setBookContent(formatContent(response.data.additionalData.fullContent));
+        setProgress(100);
+        setTimeout(() => setProgress(0), 500);
+
+        // Reset the form data
+        setFormData({
+          bookTitle: '',
+          genre: '',
+          theme: '',
+          characters: '',
+          setting: '',
+          tone: '',
+          plotTwists: '',
+          numberOfPages: '',
+          numberOfChapters: '',
+          targetAudience: '',
+          language: '',
+          additionalContent: '',
+        });
+      } else {
+        throw new Error('Unexpected response from the server.');
+      }
+    } catch (error: any) {
+      setProgress(0);
+      console.error('Error generating book:', error);
+
+      if (error?.data?.message?.errors) {
+        // Handle validation errors
+        error.data.message.errors.forEach((err: any) => {
+          toast.error(`${err.property}: ${Object.values(err.constraints).join(', ')}`);
+        });
+      } else if (error?.status === 401) {
+        // Handle unauthorized errors
+        toast.error('Unauthorized: Please log in again.');
+      } else {
+        // Handle generic errors
+        toast.error('Failed to generate the book. Please try again.');
+      }
+    }
+  };
+
+  const formatContent = (content: string) => {
+    return content.replace(/\n\n/g, '\n').replace(/^Chapter/gm, '\nChapter');
+  };
+
+  const handleExport = (format: 'pdf' | 'epub' | 'word') => {
+    if (!bookContent) {
+      toast.error('No content to export.');
+      return;
+    }
+
+    const bookTitle = isbookDownloadName || 'GeneratedBook';
+
+    if (format === 'pdf') {
+      const doc = new jsPDF({
+        format: 'a4',
+        unit: 'pt',
+      });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 40;
+
+      const text = bookContent || '';
+      const lines = doc.splitTextToSize(text, pageWidth - margin * 2);
+
+      let cursorY = margin;
+
+      lines.forEach((line, index) => {
+        if (cursorY + 20 > pageHeight - margin) {
+          doc.addPage();
+          cursorY = margin;
+        }
+        doc.text(line, margin, cursorY);
+        cursorY += 20;
+      });
+
+      doc.save(`${bookTitle}.pdf`);
+      toast.success('Exported as PDF');
+    } else {
+      const blob = new Blob([bookContent], { type: 'text/plain;charset=utf-8' });
+      const fileName = `${bookTitle}.${format}`;
+      saveAs(blob, fileName);
+      toast.success(`Exported as ${format.toUpperCase()}`);
+    }
+  };
+
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r p-4">
-        <div className="flex items-center gap-2 mb-8">
-          <BookOpenCheck className="h-6 w-6 text-amber-500" />
-          <span className="text-xl font-bold">StoryForge</span>
-        </div>
-        
-        <nav className="space-y-2">
-          <Button variant="ghost" className="w-full justify-start">
-            <BookOpen className="mr-2 h-4 w-4" />
-            My Books
-          </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <Sparkles className="mr-2 h-4 w-4" />
-            AI Assistant
-          </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <BarChart className="mr-2 h-4 w-4" />
-            Analytics
-          </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Button>
-        </nav>
-
-        <div className="absolute bottom-4 w-[calc(100%-2rem)]">
-          <Button onClick={handleLogout} variant="ghost" className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50">
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="ml-64 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">My Books</h1>
-            <Button className="bg-amber-500 hover:bg-amber-600">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Book
-            </Button>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Book Cards */}
-            <Card className="p-4 hover:shadow-lg transition-shadow">
-              <div className="aspect-[3/4] bg-gray-100 rounded-md mb-4 flex items-center justify-center">
-                <BookMarked className="h-12 w-12 text-gray-400" />
+    <Layout>
+      <div className="max-w-6xl mx-auto">
+        <Header />
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+          <Card className="w-full max-w-5xl p-8 bg-white">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold mb-2">Generate Book</h2>
+              <p className="text-gray-600">Fill in the details to generate your book.</p>
+            </div>
+            <form onSubmit={handleBookGeneration} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Object.keys(formData).map((key) => (
+                <div key={key}>
+                  <Label htmlFor={key}>{formatLabel(key)}</Label>
+                  <Input
+                    id={key}
+                    name={key}
+                    type={key === 'numberOfPages' || key === 'numberOfChapters' ? 'number' : 'text'}
+                    placeholder={`Enter ${formatLabel(key)}`}
+                    value={(formData as any)[key]}
+                    onChange={handleChange}
+                  />
+                </div>
+              ))}
+              <div className="col-span-full">
+                <Button
+                  type="submit"
+                  className="w-48 bg-amber-500 hover:bg-amber-600 mb-2"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Generating...' : 'Generate Book'}
+                </Button>
+                {/* {progress > 0 && (
+                  <div className="relative w-full bg-gray-200 rounded-full h-4 mb-4">
+                    <div
+                      className="absolute bg-blue-500 h-4 rounded-full"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                )} */}
               </div>
-              <h3 className="font-semibold mb-1">The Lost Chapter</h3>
-              <p className="text-sm text-gray-500 mb-4">Last edited 2 hours ago</p>
-              <div className="flex justify-between items-center">
-                <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full">
-                  In Progress
-                </span>
-                <Button variant="ghost" size="sm">
-                  Open
+            </form>
+          </Card>
+
+          {bookContent && (
+            <div className="w-full max-w-5xl mt-8">
+              <div className="mt-4 flex justify-end gap-4">
+                <Button className="bg-gray-700 hover:bg-gray-800" onClick={toggleModal}>
+                  View
+                </Button>
+                <Button
+                  className="bg-blue-500 hover:bg-blue-600"
+                  onClick={() => handleExport('pdf')}
+                >
+                  Export as PDF
+                </Button>
+                <Button
+                  className="bg-green-500 hover:bg-green-600"
+                  onClick={() => handleExport('epub')}
+                >
+                  Export as ePub
+                </Button>
+                <Button
+                  className="bg-gray-500 hover:bg-gray-600"
+                  onClick={() => handleExport('word')}
+                >
+                  Export as Word
                 </Button>
               </div>
-            </Card>
+            </div>
+          )}
 
-            {/* Add more book cards here */}
-          </div>
+          {isModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <div className="bg-white w-3/4 max-h-[80vh] p-6 rounded-lg overflow-y-auto">
+                <h2 className="text-2xl font-bold mb-4">Generated Book Content</h2>
+                <pre className="whitespace-pre-wrap p-4 bg-gray-100 rounded-md">{bookContent}</pre>
+                <div className="text-right mt-4">
+                  <Button className="bg-red-500 hover:bg-red-600" onClick={toggleModal}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
-}
+};
+
+export default Dashboard;

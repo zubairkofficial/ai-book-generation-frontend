@@ -13,6 +13,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AuthRedirect from './components/AuthRedirect';
 import { initializeAuth } from './features/auth/authSlice';
 import VerifyOTP from './pages/VerifyOTP';
+import AIAssistantPage from './pages/AIAssistantPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import SettingsPage from './pages/SettingsPage';
+import HomePage from './pages/HomePage';
 
 function App() {
   const dispatch = useDispatch();
@@ -26,6 +30,7 @@ function App() {
     <ThemeProvider defaultTheme="light">
       <Router>
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
 
           {/* Auth: Sign In / Sign Up */}
@@ -41,18 +46,31 @@ function App() {
 
           {/* Forgot Password Page */}
           <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path={`/auth/password-reset`} element={<PasswordResetPage />} />
-            {/* verify otp */}
+
+          {/* Password Reset Page */}
+          <Route path="/auth/password-reset" element={<PasswordResetPage />} />
+
+          {/* Verify OTP Page */}
           <Route path="/verify-otp" element={<VerifyOTP />} />
+
           {/* Verify Email Page */}
           <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/home" element={<HomePage />} />
+
+            <Route path="/ai-assistant" element={<AIAssistantPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
+
+          {/* 404 Not Found Page (Optional) */}
+          <Route path="*" element={<div>404 Not Found</div>} />
         </Routes>
 
+        {/* Toast Notifications */}
         <Toaster />
       </Router>
     </ThemeProvider>

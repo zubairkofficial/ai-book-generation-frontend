@@ -5,11 +5,10 @@ import { Label } from '@/components/ui/label';
 import { BookOpenCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
-import { useSignUpMutation, useSignInMutation ,useResendVerificationMutation, AuthResponse} from '@/api/authApi';
+import { useSignUpMutation, useSignInMutation, useResendVerificationMutation, AuthResponse } from '@/api/authApi';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '@/features/auth/authSlice';
 import { toast } from 'react-toastify';
-
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,30 +20,31 @@ export default function AuthPage() {
   const dispatch = useDispatch();
   const [signUp] = useSignUpMutation();
   const [signIn] = useSignInMutation();
-  const [resendVerification] = useResendVerificationMutation(); // new resend verification hook
+  const [resendVerification] = useResendVerificationMutation(); // New resend verification hook
   const navigate = useNavigate();
 
   // This state handles showing the "Please verify your email" UI
   const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setShowVerificationPrompt(false); // Reset verification prompt
-  
+
     try {
       if (isLogin) {
         // Call signIn mutation
-        const response:AuthResponse = await signIn({ email, password }).unwrap();
-  
+        const response: AuthResponse = await signIn({ email, password }).unwrap();
+
         // Handle response based on backend behavior
         if (response?.message === 'OTP sent to your email. Please verify to log in.') {
           // Navigate to OTP verification screen
-          navigate(`/verify-otp`,{state:{email}});
+          navigate(`/verify-otp`, { state: { email } });
           toast.info('Please verify your OTP to log in.');
         } else if (response?.accessToken) {
           // Save user credentials to Redux
           dispatch(setCredentials(response));
-          // Navigate to dashboard
-          navigate('/dashboard');
+          // Navigate to home page after successful login
+          navigate('/home');
           toast.success('Logged in successfully!');
         } else {
           // Handle unexpected response structure
@@ -54,11 +54,11 @@ export default function AuthPage() {
         // Handle signup flow
         await signUp({ email, password, name, phoneNumber }).unwrap();
         toast.success('Account created successfully!');
-        navigate('/dashboard');
+        navigate('/home'); // Redirect to home page after signup
       }
     } catch (error: any) {
       console.error('Authentication failed:', error);
-  
+
       // Handle validation errors
       if (error?.status === 401) {
         // Unauthorized (invalid credentials)
@@ -76,8 +76,7 @@ export default function AuthPage() {
       }
     }
   };
-  
-  
+
   // Handle re-sending the verification link
   const handleResendVerification = async () => {
     try {
@@ -93,7 +92,7 @@ export default function AuthPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <Link to="/" className="flex items-center gap-2 mb-8">
         <BookOpenCheck className="h-8 w-8 text-amber-500" />
-        <span className="text-2xl font-bold">StoryForge</span>
+        <span className="text-2xl font-bold">Ai Book Generation</span>
       </Link>
 
       <Card className="w-full max-w-md p-8 bg-white">
@@ -157,34 +156,6 @@ export default function AuthPage() {
               </Link>
             </div>
           )}
-
-          {/* <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">Or continue with</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline">
-              <img
-                src="https://www.google.com/favicon.ico"
-                alt="Google"
-                className="w-5 h-5 mr-2"
-              />
-              Google
-            </Button>
-            <Button variant="outline">
-              <img
-                src="https://www.facebook.com/favicon.ico"
-                alt="Facebook"
-                className="w-5 h-5 mr-2"
-              />
-              Facebook
-            </Button>
-          </div> */}
 
           <div className="text-center mt-6">
             <button
