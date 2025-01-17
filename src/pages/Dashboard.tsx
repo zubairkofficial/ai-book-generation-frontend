@@ -30,6 +30,7 @@ const Dashboard = () => {
   const [bookContent, setBookContent] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [progress, setProgress] = useState<number>(0);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -39,6 +40,11 @@ const Dashboard = () => {
         name === 'numberOfPages' || name === 'numberOfChapters'
           ? value === '' ? '' : parseInt(value, 10)
           : value,
+    }));
+    // Clear the error for the field when it changes
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [name]: '',
     }));
   };
 
@@ -79,6 +85,7 @@ const Dashboard = () => {
           language: '',
           additionalContent: '',
         });
+        setErrors({});
       } else {
         throw new Error('Unexpected response from the server.');
       }
@@ -88,9 +95,11 @@ const Dashboard = () => {
 
       if (error?.data?.message?.errors) {
         // Handle validation errors
+        const newErrors: { [key: string]: string } = {};
         error.data.message.errors.forEach((err: any) => {
-          toast.error(`${err.property}: ${Object.values(err.constraints).join(', ')}`);
+          newErrors[err.property] = Object.values(err.constraints).join(', ');
         });
+        setErrors(newErrors);
       } else if (error?.status === 401) {
         // Handle unauthorized errors
         toast.error('Unauthorized: Please log in again.');
@@ -173,6 +182,7 @@ const Dashboard = () => {
                     value={(formData as any)[key]}
                     onChange={handleChange}
                   />
+                  {errors[key] && <p className="text-red-500 text-sm mt-1">{errors[key]}</p>}
                 </div>
               ))}
               <div className="col-span-full">
@@ -183,14 +193,6 @@ const Dashboard = () => {
                 >
                   {isLoading ? 'Generating...' : 'Generate Book'}
                 </Button>
-                {/* {progress > 0 && (
-                  <div className="relative w-full bg-gray-200 rounded-full h-4 mb-4">
-                    <div
-                      className="absolute bg-blue-500 h-4 rounded-full"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                )} */}
               </div>
             </form>
           </Card>
