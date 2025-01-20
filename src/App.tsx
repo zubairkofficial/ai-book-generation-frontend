@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import LandingPage from './pages/LandingPage';
-import Dashboard from './pages/Dashboard';
+import CreateBook from './pages/Book/CreateBook';
 import AuthPage from './pages/AuthPage';
 import PasswordResetPage from './pages/PasswordResetPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -17,6 +17,7 @@ import AIAssistantPage from './pages/AIAssistantPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
 import HomePage from './pages/HomePage';
+import BookTable from './pages/Book/BookTable';
 
 function App() {
   const dispatch = useDispatch();
@@ -58,7 +59,8 @@ function App() {
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/books/add" element={<CreateBook />} />
+            <Route path="/books" element={<BookTable />} />
             <Route path="/home" element={<HomePage />} />
 
             <Route path="/ai-assistant" element={<AIAssistantPage />} />

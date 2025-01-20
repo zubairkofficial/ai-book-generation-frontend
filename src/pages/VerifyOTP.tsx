@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import { useVerifyOTPMutation } from '@/api/authApi';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '@/features/auth/authSlice';
@@ -24,7 +24,7 @@ export default function VerifyOTP() {
   
     try {
       const response = await verifyOTP({ email, code: otp }).unwrap();
-      const { user, accessToken, refreshToken } = response;
+      const { user, accessToken, refreshToken }: any = response;
   
       // Store tokens in localStorage
       localStorage.setItem('accessToken', accessToken);
@@ -41,6 +41,7 @@ export default function VerifyOTP() {
   };
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+     <ToastContainer/>
       <Card className="w-full max-w-md p-8 bg-white">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold mb-2">Verify OTP</h2>

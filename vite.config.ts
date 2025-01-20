@@ -10,6 +10,11 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['lucide-react'],
+    exclude: ['lucide-react', 'html-docx-js'],
+  },
+  build: {
+    rollupOptions: {
+      external: ['html-docx-js'],
+    },
   },
 });

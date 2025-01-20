@@ -23,7 +23,7 @@ const Sidebar = () => {
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r p-4">
       <div className="flex items-center gap-2 mb-8">
         <BookOpenCheck className="h-6 w-6 text-amber-500" />
-        <span className="text-xl font-bold">Ai Book Generation</span>
+        <span className="text-xl font-bold">Ai Book Legacy Generation</span>
       </div>
 
       <nav className="space-y-2">
@@ -39,7 +39,7 @@ const Sidebar = () => {
           Dashboard
         </NavLink>
         <NavLink
-          to="/dashboard"
+          to="/books"
           className={({ isActive }) =>
             `w-full flex items-center gap-2 p-2 rounded-md ${
               isActive ? 'bg-amber-100 text-amber-700' : 'hover:bg-gray-100'

@@ -9,6 +9,16 @@ export default {
   ],
   theme: {
     extend: {
+      typography: {
+        DEFAULT: {
+          css: {
+            h1: { fontSize: '2.5rem', fontWeight: 'bold', lineHeight: '1.2' },
+            h2: { fontSize: '2rem', fontWeight: 'bold', lineHeight: '1.3' },
+            h3: { fontSize: '1.75rem', fontWeight: 'bold', lineHeight: '1.4' },
+            p: { fontSize: '1rem', lineHeight: '1.6' },
+          },
+        },
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
