@@ -9,7 +9,7 @@ export const useAuth = () => {
 
   const handleSignUp = async (credentials: { email: string; password: string; name?: string }) => {
     try {
-      const response = await signUp(credentials).unwrap();
+      const response:any = await signUp(credentials).unwrap();
       dispatch(setCredentials(response));
     } catch (error) {
       console.error('Sign up failed:', error);

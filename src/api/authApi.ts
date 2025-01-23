@@ -38,9 +38,7 @@ interface VerifyTwoFactorRequest {
   token: string;
 }
 
-interface RefreshTokenRequest {
-  refreshToken: string;
-}
+
 
 interface ResendVerificationRequest {
   email: string;

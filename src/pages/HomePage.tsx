@@ -45,12 +45,7 @@ const HomePage = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <NavLink to="/add">
-          <Button className="bg-amber-500 hover:bg-amber-600">
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Book
-          </Button>
-          </NavLink>
+          
         </div>
 
         {/* Analytics Cards */}

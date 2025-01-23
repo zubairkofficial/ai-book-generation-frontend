@@ -11,7 +11,6 @@ interface AuthState {
 // Load initial state from local storage (if available)
 const loadAuthStateFromLocalStorage = (): AuthState => {
   const storedAuthState = localStorage.getItem('authState');
-  console.log('stored auth state : ', storedAuthState);
   if (storedAuthState) {
     return JSON.parse(storedAuthState);
   }
@@ -38,6 +37,7 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (state, action: PayloadAction<{ user: { id: string; email: string }; accessToken: string }>) => {
       state.user = action.payload.user;
+      console.log("action.payload.user",action.payload.accessToken)
       state.token = action.payload.accessToken;
       state.isAuthenticated = true;
       saveAuthStateToLocalStorage(state);
@@ -51,7 +51,7 @@ const authSlice = createSlice({
     initializeAuth: (state) => {
       const storedAuthState = loadAuthStateFromLocalStorage();
       state.user = storedAuthState.user;
-      state.token = storedAuthState.accessToken;
+      state.token = storedAuthState.token;
       state.isAuthenticated = storedAuthState.isAuthenticated;
     },
   },

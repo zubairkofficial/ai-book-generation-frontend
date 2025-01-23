@@ -7,7 +7,6 @@ import AuthPage from './pages/AuthPage';
 import PasswordResetPage from './pages/PasswordResetPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
-import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/components/theme-provider';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthRedirect from './components/AuthRedirect';
@@ -17,7 +16,10 @@ import AIAssistantPage from './pages/AIAssistantPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
 import HomePage from './pages/HomePage';
-import BookTable from './pages/Book/BookTable';
+import BookTable from './pages/Book/AllBookTable';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 function App() {
   const dispatch = useDispatch();
@@ -73,7 +75,7 @@ function App() {
         </Routes>
 
         {/* Toast Notifications */}
-        <Toaster />
+        <ToastContainer />
       </Router>
     </ThemeProvider>
   );
