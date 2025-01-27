@@ -1,5 +1,4 @@
 import { baseApi } from './baseApi'; // Correct import
-import { RootState } from '@/store/store';
 
 interface SignUpRequest {
   email: string;
@@ -174,13 +173,13 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
-    refreshToken: builder.mutation<AuthResponse, RefreshTokenRequest>({
-      query: (refreshToken) => ({
-        url: '/auth/refresh-token',
-        method: 'POST',
-        body: { refreshToken },
-      }),
-    }),
+    // refreshToken: builder.mutation<AuthResponse, RefreshTokenRequest>({
+    //   query: (refreshToken) => ({
+    //     url: '/auth/refresh-token',
+    //     method: 'POST',
+    //     body: { refreshToken },
+    //   }),
+    // }),
 
     generateBook: builder.mutation<GenerateBookResponse, GenerateBookRequest>({
       query: (payload) => ({
@@ -199,7 +198,7 @@ export const {
   useUpdatePasswordMutation,
   useEnableTwoFactorMutation,
   useVerifyTwoFactorMutation,
-  useRefreshTokenMutation,
+  // useRefreshTokenMutation,
   useForgotPasswordMutation,
   useVerifyEmailMutation,
   usePasswordResetMutation,

@@ -1,10 +1,8 @@
-import React from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpenCheck, Plus, Edit, Activity } from 'lucide-react';
+import { BookOpenCheck,  Edit, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { NavLink } from 'react-router-dom';
 
 const HomePage = () => {
   // Sample analytics data

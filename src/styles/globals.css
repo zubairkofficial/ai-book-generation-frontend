@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap');
+.prose {
+    font-family: 'Open Sans', sans-serif;
+}
+
+.prose h2 {
+    color: #1A202C;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 2rem;
+}
+
+.prose p {
+    color: #2D3748;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+    text-align: justify;
+}
+
+@media print {
+    .prose {
+        max-width: none !important;
+    }
+    .prose h2 {
+        page-break-before: always;
+    }
+}

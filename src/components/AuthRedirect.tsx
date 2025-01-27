@@ -1,17 +1,18 @@
-import React from 'react';
+import { RootState } from '@/store/store';
+import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Navigate } from 'react-router-dom';
-import { RootState } from '../store/store';
+import { useNavigate } from 'react-router-dom';
 
-const AuthRedirect: React.FC = () => {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+const AuthRedirect = () => {
+  const navigate = useNavigate();
+  const { token } = useSelector((state: RootState) => state.auth);
 
-  // If the user is authenticated, redirect to the dashboard
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  useEffect(() => {
+    if (token) {
+      navigate('/home'); // Redirect to home if the user is logged in
+    }
+  }, [token, navigate]);
 
-  // If not authenticated, allow access to the auth page
   return null;
 };
 

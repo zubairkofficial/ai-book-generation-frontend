@@ -3,9 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
   BookOpenCheck,
-  Sparkles,
-  Zap,
-  BookOpen,
   ArrowRight,
   Brain,
   ImageIcon,

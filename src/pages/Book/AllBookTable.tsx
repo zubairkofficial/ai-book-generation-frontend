@@ -39,12 +39,12 @@ export default function BookTable() {
   const currentItems = data?.data?.slice(offset, offset + itemsPerPage) || [];
 
   // Handle page change
-  const handlePageClick = ({ selected }) => {
+  const handlePageClick = ({ selected }:SetStateAction<number>) => {
     setCurrentPage(selected);
   };
 
   // Open modal with book details
-  const openModal = (book: SetStateAction<null>) => {
+  const openModal = (book: BookData) => {
     setSelectedBook(book);
   };
 
@@ -67,11 +67,11 @@ export default function BookTable() {
           </div>
           
           {/* Search and Filter Section (Optional) */}
-          <div className="flex gap-3 w-full md:w-auto">
+          <div className="flex gap-3 bg-gray-50 w-full md:w-auto">
             <input
               type="search"
               placeholder="Search books..."
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 md:w-64 text-white"
+              className="px-4 py-2 border bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 md:w-64 text-black"
             />
           </div>
         </div>

@@ -3,11 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/layout/Layout";
 import { toast } from "react-toastify";
-import { jsPDF } from "jspdf";
 import { useGenerateBookMutation } from "@/api/authApi";
 import DOMPurify from "dompurify"; // For sanitizing HTML
 import * as yup from "yup"; // Import Yup
@@ -16,8 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // Define the Yup validation schema
-const bookSchema = yup.object().shape({
+const bookSchema: any = yup.object().shape({
   bookTitle: yup.string().required("Book title is required"),
+  subtitle: yup.string().optional(), // Subtitle is optional
+  authorName: yup.string().required("Author name is required"), // Author name is required
+  authorBio: yup.string().optional(), // Author bio is optional
   genre: yup.string().required("Genre is required"),
   theme: yup.string().required("Theme is required"),
   characters: yup.string().required("Characters are required"),
@@ -46,6 +47,9 @@ const CreateBook = () => {
   const [isBookDownloadName, setIsBookDownloadName] = useState("");
   const [formData, setFormData] = useState({
     bookTitle: "",
+    subtitle: "", // Added subtitle
+    authorName: "", // Added author name
+    authorBio: "", // Added author bio
     genre: "",
     theme: "",
     characters: "",
@@ -64,7 +68,7 @@ const CreateBook = () => {
   const [progress, setProgress] = useState<number>(0);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [advancedOptions, setAdvancedOptions] = useState({
+  const [advancedOptions, setAdvancedOptions] = useState<any>({
     coverImagePrompt: "",
     colorScheme: "#F59E0B", // Default warm color
     fontStyle: "",
@@ -108,8 +112,8 @@ const CreateBook = () => {
         pageSize: "",
         orientation: "",
         columns: 1,
-      }
-    }
+      },
+    },
   });
   const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
@@ -117,33 +121,36 @@ const CreateBook = () => {
   const steps = {
     1: {
       title: "Basic Information",
-      fields: ["bookTitle", "genre", "targetAudience", "language"],
-      description: "Let's start with the basic details of your book"
+      fields: ["bookTitle", "subtitle", "authorName", "authorBio", "genre", "targetAudience", "language"],
+      description: "Let's start with the basic details of your book",
     },
     2: {
       title: "Story Elements",
       fields: ["theme", "characters", "setting", "tone"],
-      description: "Define the core elements of your story"
+      description: "Define the core elements of your story",
     },
     3: {
       title: "Structure",
       fields: ["numberOfPages", "numberOfChapters", "plotTwists"],
-      description: "Set up the structure and flow of your book"
+      description: "Set up the structure and flow of your book",
     },
     4: {
       title: "Additional Details",
       fields: ["additionalContent"],
-      description: "Add any extra details or special requirements"
+      description: "Add any extra details or special requirements",
     },
     5: {
       title: "Styling Options",
       fields: ["advancedOptions"],
-      description: "Customize the look and feel of your book"
-    }
+      description: "Customize the look and feel of your book",
+    },
   };
 
   const fieldDescriptions: Record<string, string> = {
     bookTitle: "The main title of your book that captures its essence",
+    subtitle: "A short description or tagline for your book",
+    authorName: "The name of the author",
+    authorBio: "A short biography of the author",
     genre: "The category or style of your book (e.g., Fantasy, Mystery, Romance)",
     theme: "The central idea or message of your story",
     characters: "Main characters that will appear in your story",
@@ -170,25 +177,27 @@ const CreateBook = () => {
             : parseInt(value, 10)
           : value,
     }));
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      [name]: "",
-    }));
+
+    // Clear the error for the specific field being updated
+    setErrors((prevErrors) => {
+      const { [name]: removedError, ...restErrors } = prevErrors;
+      return restErrors;
+    });
   };
 
   const handleAdvancedOptionsChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setAdvancedOptions(prev => {
+    setAdvancedOptions((prev: any) => {
       const newOptions = { ...prev };
-      const keys = name.split('.');
-      
+      const keys = name.split(".");
+
       if (keys.length === 1) {
         // Handle top-level properties
         return { ...prev, [name]: value };
       }
-      
+
       // Handle nested properties
       let current: any = newOptions;
       for (let i = 0; i < keys.length - 1; i++) {
@@ -198,7 +207,7 @@ const CreateBook = () => {
         current = current[keys[i]];
       }
       current[keys[keys.length - 1]] = value;
-      
+
       return newOptions;
     });
   };
@@ -212,7 +221,7 @@ const CreateBook = () => {
   const validateStep = async (step: number): Promise<boolean> => {
     const currentStepData = steps[step as keyof typeof steps];
     const fieldsToValidate = currentStepData.fields.reduce((acc: any, field) => {
-      if (field !== 'advancedOptions') {
+      if (field !== "advancedOptions") {
         acc[field] = (formData as any)[field];
       }
       return acc;
@@ -222,7 +231,7 @@ const CreateBook = () => {
       // Create a subset of the schema for the current step's fields
       const stepSchema = yup.object().shape(
         currentStepData.fields.reduce((acc: any, field) => {
-          if (field !== 'advancedOptions') {
+          if (field !== "advancedOptions") {
             acc[field] = bookSchema.fields[field];
           }
           return acc;
@@ -279,7 +288,7 @@ const CreateBook = () => {
       }
 
       // Prepare the payload
-      const payload = {
+      const payload: any = {
         ...formData,
         advancedOptions: showAdvancedOptions ? advancedOptions : undefined,
       };
@@ -295,13 +304,16 @@ const CreateBook = () => {
         setBookContent(response.data.additionalData.fullContent);
         setCoverImageUrl(response.data.additionalData.coverImageUrl);
         setProgress(100);
-        
+
         toast.success("Book generated successfully!");
         navigate("/books");
 
         // Reset form after successful submission
         setFormData({
           bookTitle: "",
+          subtitle: "",
+          authorName: "",
+          authorBio: "",
           genre: "",
           theme: "",
           characters: "",
@@ -359,42 +371,14 @@ const CreateBook = () => {
               pageSize: "",
               orientation: "",
               columns: 1,
-            }
-          }
+            },
+          },
         });
       }
     } catch (error: any) {
-      console.error('Book generation error:', error);
+      console.error("Book generation error:", error);
       toast.error(error.message || "Failed to generate book. Please try again.");
       setProgress(0);
-    }
-  };
-
-  const handleExport = (format: "pdf") => {
-    if (!bookContent) {
-      toast.error("No content to export.");
-      return;
-    }
-
-    const bookTitle = isBookDownloadName || "GeneratedBook";
-
-    if (format === "pdf") {
-      const doc = new jsPDF({
-        format: "a4",
-        unit: "pt",
-      });
-
-      // Add HTML content to PDF
-      doc.html(sanitizeHTML(bookContent), {
-        callback: (doc) => {
-          doc.save(`${bookTitle}.pdf`);
-          toast.success("Exported as PDF");
-        },
-        margin: [40, 40, 40, 40],
-        autoPaging: "text",
-        width: 500,
-        windowWidth: 800,
-      });
     }
   };
 
@@ -405,10 +389,10 @@ const CreateBook = () => {
   // Sanitize HTML content to prevent XSS attacks
   const sanitizeHTML = (html: string) => {
     return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'u', 'br', 'div', 'span', 'ul', 'ol', 'li', 'img'],
-      ALLOWED_ATTR: ['style', 'class', 'id', 'src', 'alt', 'href'],
-      ADD_TAGS: ['style'],
-      ADD_ATTR: ['target'],
+      ALLOWED_TAGS: ["p", "h1", "h2", "h3", "h4", "h5", "h6", "strong", "em", "u", "br", "div", "span", "ul", "ol", "li", "img"],
+      ALLOWED_ATTR: ["style", "class", "id", "src", "alt", "href"],
+      ADD_TAGS: ["style"],
+      ADD_ATTR: ["target"],
     });
   };
 
@@ -425,11 +409,18 @@ const CreateBook = () => {
         value={(formData as any)[key]}
         onChange={handleChange}
         className="w-full"
+        min={1} // Allow only positive numbers
+        onKeyDown={(event) => {
+          if (key === "numberOfPages" || key === "numberOfChapters") {
+            // Prevent negative numbers from being typed
+            if (event.key === "-" || event.key === "+") {
+              event.preventDefault();
+            }
+          }
+        }}
       />
       <p className="text-sm text-gray-500">{fieldDescriptions[key]}</p>
-      {errors[key] && (
-        <p className="text-red-500 text-sm">{errors[key]}</p>
-      )}
+      {errors[key] && <p className="text-red-500 text-sm">{errors[key]}</p>}
     </div>
   );
 
@@ -506,7 +497,7 @@ const CreateBook = () => {
           name="fontStyle"
           value={advancedOptions.fontStyle}
           onChange={handleAdvancedOptionsChange}
-          className="w-full rounded-md border border-gray-300 p-2"
+          className="w-full rounded-md border bg-gray-50 border-gray-300 p-2"
         >
           <option value="">Select a font style</option>
           <option value="serif">Serif</option>
@@ -524,19 +515,19 @@ const CreateBook = () => {
       <div className="space-y-6">
         <div className="border-t pt-6">
           <h4 className="text-lg font-medium mb-4">Advanced Styling Options</h4>
-          
+
           {/* Typography Settings */}
           <div className="space-y-6">
             <div className="bg-gray-50 p-4 rounded-lg space-y-4">
               <h5 className="font-medium text-base">Typography Settings</h5>
-              
+
               {/* Font Sizes */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { key: 'title', label: 'Title Size', default: '32px' },
-                  { key: 'chapterTitle', label: 'Chapter Title', default: '24px' },
-                  { key: 'headers', label: 'Headers', default: '20px' },
-                  { key: 'body', label: 'Body Text', default: '16px' }
+                  { key: "title", label: "Title Size", default: "32px" },
+                  { key: "chapterTitle", label: "Chapter Title", default: "24px" },
+                  { key: "headers", label: "Headers", default: "20px" },
+                  { key: "body", label: "Body Text", default: "16px" },
                 ].map(({ key, label, default: defaultSize }) => (
                   <div key={key} className="space-y-2">
                     <Label htmlFor={`fontSize-${key}`} className="text-sm">
@@ -546,20 +537,20 @@ const CreateBook = () => {
                       <Input
                         id={`fontSize-${key}`}
                         name={`styling.fontSize.${key}`}
-                        value={advancedOptions.styling?.fontSize?.[key] || ''}
+                        value={advancedOptions.styling?.fontSize?.[key] || ""}
                         onChange={handleAdvancedOptionsChange}
                         placeholder={defaultSize}
                         className="flex-1"
                       />
                       <Select
-                        value={advancedOptions.styling?.fontSize?.[key]?.includes('rem') ? 'rem' : 'px'}
+                        value={advancedOptions.styling?.fontSize?.[key]?.includes("rem") ? "rem" : "px"}
                         onValueChange={(unit) => {
-                          const value = advancedOptions.styling?.fontSize?.[key]?.replace(/[^0-9.]/g, '') || '';
+                          const value = advancedOptions.styling?.fontSize?.[key]?.replace(/[^0-9.]/g, "") || "";
                           handleAdvancedOptionsChange({
                             target: {
                               name: `styling.fontSize.${key}`,
-                              value: `${value}${unit}`
-                            }
+                              value: `${value}${unit}`,
+                            },
                           } as any);
                         }}
                       >
@@ -579,10 +570,10 @@ const CreateBook = () => {
               {/* Line Heights */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { key: 'title', label: 'Title Line Height', default: '1.2' },
-                  { key: 'chapterTitle', label: 'Chapter Line Height', default: '1.3' },
-                  { key: 'headers', label: 'Headers Line Height', default: '1.4' },
-                  { key: 'body', label: 'Body Line Height', default: '1.6' }
+                  { key: "title", label: "Title Line Height", default: "1.2" },
+                  { key: "chapterTitle", label: "Chapter Line Height", default: "1.3" },
+                  { key: "headers", label: "Headers Line Height", default: "1.4" },
+                  { key: "body", label: "Body Line Height", default: "1.6" },
                 ].map(({ key, label, default: defaultHeight }) => (
                   <div key={key} className="space-y-2">
                     <Label htmlFor={`lineHeight-${key}`} className="text-sm">
@@ -591,7 +582,7 @@ const CreateBook = () => {
                     <Input
                       id={`lineHeight-${key}`}
                       name={`styling.lineHeight.${key}`}
-                      value={advancedOptions.styling?.lineHeight?.[key] || ''}
+                      value={advancedOptions.styling?.lineHeight?.[key] || ""}
                       onChange={handleAdvancedOptionsChange}
                       placeholder={defaultHeight}
                       type="number"
@@ -607,10 +598,10 @@ const CreateBook = () => {
             {/* Spacing Settings */}
             <div className="bg-gray-50 p-4 rounded-lg space-y-4">
               <h5 className="font-medium text-base">Spacing & Margins</h5>
-              
+
               {/* Margins */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {['top', 'right', 'bottom', 'left'].map((side) => (
+                {["top", "right", "bottom", "left"].map((side) => (
                   <div key={side} className="space-y-2">
                     <Label htmlFor={`margin-${side}`} className="text-sm capitalize">
                       {side} Margin
@@ -619,7 +610,7 @@ const CreateBook = () => {
                       <Input
                         id={`margin-${side}`}
                         name={`styling.margins.${side}`}
-                        value={advancedOptions.styling?.margins?.[side] || ''}
+                        value={advancedOptions.styling?.margins?.[side] || ""}
                         onChange={handleAdvancedOptionsChange}
                         placeholder="2cm"
                       />
@@ -631,9 +622,9 @@ const CreateBook = () => {
               {/* Spacing */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
-                  { key: 'paragraphSpacing', label: 'Paragraph Spacing', default: '1.5rem' },
-                  { key: 'chapterSpacing', label: 'Chapter Spacing', default: '3rem' },
-                  { key: 'sectionSpacing', label: 'Section Spacing', default: '2rem' }
+                  { key: "paragraphSpacing", label: "Paragraph Spacing", default: "1.5rem" },
+                  { key: "chapterSpacing", label: "Chapter Spacing", default: "3rem" },
+                  { key: "sectionSpacing", label: "Section Spacing", default: "2rem" },
                 ].map(({ key, label, default: defaultSpacing }) => (
                   <div key={key} className="space-y-2">
                     <Label htmlFor={`spacing-${key}`} className="text-sm">
@@ -642,7 +633,7 @@ const CreateBook = () => {
                     <Input
                       id={`spacing-${key}`}
                       name={`styling.spacing.${key}`}
-                      value={advancedOptions.styling?.spacing?.[key] || ''}
+                      value={advancedOptions.styling?.spacing?.[key] || ""}
                       onChange={handleAdvancedOptionsChange}
                       placeholder={defaultSpacing}
                     />
@@ -656,20 +647,20 @@ const CreateBook = () => {
               <h5 className="font-medium text-base">Text Alignment</h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { key: 'title', label: 'Title Alignment' },
-                  { key: 'chapterTitle', label: 'Chapter Title Alignment' },
-                  { key: 'headers', label: 'Headers Alignment' },
-                  { key: 'body', label: 'Body Text Alignment' }
+                  { key: "title", label: "Title Alignment" },
+                  { key: "chapterTitle", label: "Chapter Title Alignment" },
+                  { key: "headers", label: "Headers Alignment" },
+                  { key: "body", label: "Body Text Alignment" },
                 ].map(({ key, label }) => (
                   <div key={key} className="space-y-2">
                     <Label htmlFor={`alignment-${key}`} className="text-sm">
                       {label}
                     </Label>
                     <Select
-                      value={advancedOptions.styling?.textAlignment?.[key] || ''}
-                      onValueChange={(value) => 
+                      value={advancedOptions.styling?.textAlignment?.[key] || ""}
+                      onValueChange={(value) =>
                         handleAdvancedOptionsChange({
-                          target: { name: `styling.textAlignment.${key}`, value }
+                          target: { name: `styling.textAlignment.${key}`, value },
                         } as any)
                       }
                     >
@@ -695,16 +686,16 @@ const CreateBook = () => {
 
   const renderStepContent = (step: number) => {
     const currentStepData = steps[step as keyof typeof steps];
-    
+
     return (
       <div className="space-y-6">
         <div className="text-center mb-8">
           <h3 className="text-xl font-semibold">{currentStepData.title}</h3>
           <p className="text-gray-600">{currentStepData.description}</p>
         </div>
-        
+
         <div className="grid gap-6">
-          {currentStepData.fields.map(field => {
+          {currentStepData.fields.map((field) => {
             if (field === "advancedOptions") {
               return (
                 <div key={field}>
@@ -716,7 +707,7 @@ const CreateBook = () => {
             return renderField(field);
           })}
         </div>
-        
+
         <div className="flex justify-between mt-8">
           {step > 1 && (
             <Button
@@ -824,7 +815,7 @@ const CreateBook = () => {
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
           <Card className="w-full max-w-5xl p-8 bg-white shadow-lg">
             {renderProgress()}
-            
+
             <form onSubmit={handleSubmit}>
               {renderStepContent(currentStep)}
             </form>

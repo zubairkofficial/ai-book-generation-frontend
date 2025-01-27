@@ -4,9 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import * as yup from 'yup';
 import { useResetPasswordMutation } from '@/api/authApi';
+import { useToast } from '@/context/ToastContext'; // Import custom toast hook
+import ToastContainer from '@/components/Toast/ToastContainer'; // Import custom ToastContainer
+import { ToastType } from '@/constant';
 
 // Validation schema for the email field
 const forgotPasswordSchema = yup.object().shape({
@@ -21,6 +23,7 @@ export default function ForgotPasswordPage() {
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [forgotPassword, { isLoading }] = useResetPasswordMutation();
   const navigate = useNavigate();
+  const { addToast } = useToast(); // Use custom toast hook
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +35,7 @@ export default function ForgotPasswordPage() {
 
       // Make an API call to send password reset instructions
       await forgotPassword({ email }).unwrap();
-      toast.success('Password reset link sent to your email.');
+      addToast('Password reset link sent to your email.',ToastType.SUCCESS);
       navigate('/auth'); // or wherever you want to redirect the user
     } catch (error: any) {
       if (error.name === 'ValidationError') {
@@ -49,13 +52,14 @@ export default function ForgotPasswordPage() {
       } else {
         // Handle API errors
         console.error('Forgot password error:', error);
-        toast.error(error.data?.message || 'Something went wrong.');
+        addToast(error.data?.message || 'Something went wrong.',ToastType.ERROR);
       }
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <ToastContainer/>
       <Card className="w-full max-w-md p-8 bg-white">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold mb-2">Forgot Password</h2>

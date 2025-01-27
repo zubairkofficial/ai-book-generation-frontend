@@ -1,8 +1,8 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { RootState } from '@/store/store';
-import { toast } from 'react-toastify';
 import { BASE_URl } from '@/constant';
 import { logout } from '@/features/auth/authSlice';
+import { toast } from 'react-toastify';
 
 // Define a custom base query with error handling
 const baseQuery = fetchBaseQuery({

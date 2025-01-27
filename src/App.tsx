@@ -1,33 +1,48 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import {jwtDecode} from 'jwt-decode';
 import LandingPage from './pages/LandingPage';
-import CreateBook from './pages/Book/CreateBook';
-import AuthPage from './pages/AuthPage';
-import PasswordResetPage from './pages/PasswordResetPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import VerifyEmailPage from './pages/VerifyEmailPage';
-import { ThemeProvider } from '@/components/theme-provider';
-import ProtectedRoute from './components/ProtectedRoute';
-import AuthRedirect from './components/AuthRedirect';
-import { initializeAuth } from './features/auth/authSlice';
-import VerifyOTP from './pages/VerifyOTP';
-import AIAssistantPage from './pages/AIAssistantPage';
-import AnalyticsPage from './pages/AnalyticsPage';
-import SettingsPage from './pages/SettingsPage';
-import HomePage from './pages/HomePage';
-import BookTable from './pages/Book/AllBookTable';
+import { ThemeProvider } from 'next-themes';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import AuthRedirect from './components/AuthRedirect';
+import ProtectedRoute from './components/ProtectedRoute';
+import { initializeAuth, logout } from './features/auth/authSlice'; // Import logout action
+import AIAssistantPage from './pages/AIAssistant/AIAssistantPage';
+import AnalyticsPage from './pages/Analytics/AnalyticsPage';
+import AuthPage from './pages/Auth/AuthPage';
+import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
+import PasswordResetPage from './pages/Auth/PasswordResetPage';
+import VerifyEmailPage from './pages/Auth/VerifyEmailPage';
+import VerifyOTP from './pages/Auth/VerifyOTP';
+import BookTable from './pages/Book/AllBookTable';
+import CreateBook from './pages/Book/CreateBook';
+import HomePage from './pages/HomePage';
+import SettingsPage from './pages/Settings/SettingsPage';
+import { RootState } from './store/store'; // Import RootState
 
 function App() {
   const dispatch = useDispatch();
-
+  const { token } = useSelector((state: RootState) => state.auth);
+console.log(token)
   // Initialize authentication state from local storage when the app loads
   useEffect(() => {
     dispatch(initializeAuth());
   }, [dispatch]);
+
+  // Check token expiration whenever the token changes
+  useEffect(() => {
+    if (token) {
+      const decodedToken = jwtDecode(token) as { exp: number }; // Decode the token
+      const currentTime = Date.now() / 1000; // Convert to seconds
+
+      if (decodedToken.exp < currentTime) {
+        dispatch(logout()); // Dispatch logout action
+        console.log('Token has expired. Redirecting to login...');
+      }
+    }
+  }, [token, dispatch]);
 
   return (
     <ThemeProvider defaultTheme="light">
@@ -75,7 +90,18 @@ function App() {
         </Routes>
 
         {/* Toast Notifications */}
-        <ToastContainer />
+        <ToastContainer
+          position="top-right" // Position of the toast
+          autoClose={3000} // Auto-close after 3 seconds
+          hideProgressBar={false} // Show progress bar
+          newestOnTop={false} // New toasts appear below older ones
+          closeOnClick // Close toast on click
+          rtl={false} // Left-to-right layout
+          pauseOnFocusLoss // Pause toast when window loses focus
+          draggable // Allow dragging to dismiss
+          pauseOnHover // Pause toast on hover
+          theme="light" // Light or dark theme
+        />
       </Router>
     </ThemeProvider>
   );

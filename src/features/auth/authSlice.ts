@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 // Define the shape of the authentication state
 interface AuthState {
-  user: { id: string; email: string } | null;
+  user: { id: string; email: string,name:string } | null;
   token: string | null;
   accessToken: string | null;
   isAuthenticated: boolean;
@@ -35,7 +35,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials: (state, action: PayloadAction<{ user: { id: string; email: string }; accessToken: string }>) => {
+    setCredentials: (state, action: PayloadAction<{ user: { id: string; email: string,name:string }; accessToken: string }>) => {
       state.user = action.payload.user;
       console.log("action.payload.user",action.payload.accessToken)
       state.token = action.payload.accessToken;
