@@ -1,13 +1,17 @@
 // pages/VerifyEmailPage.tsx (example)
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { useToast } from '@/context/ToastContext'; // Import custom toast hook
+
 // RTK Query hook (example)
 import { useVerifyEmailMutation } from '@/api/authApi';
+import { ToastType } from '@/constant';
 
 function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { addToast } = useToast();
+
   const [verifyEmail, { isLoading }] = useVerifyEmailMutation();
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error'>('pending');
 
@@ -18,17 +22,17 @@ function VerifyEmailPage() {
         .unwrap()
         .then(() => {
           setVerificationStatus('success');
-          toast.success('Email verified successfully!');
+          addToast('Email verified successfully!',ToastType.SUCCESS);
           // Optionally redirect somewhere
           setTimeout(() => navigate('/dashboard'), 2000);
         })
         .catch((error: any) => {
           setVerificationStatus('error');
-          toast.error(error.data?.message || 'Invalid or expired token.');
+          addToast(error.data?.message || 'Invalid or expired token.',ToastType.ERROR);
         });
     } else {
       setVerificationStatus('error');
-      toast.error('Token is missing or invalid.');
+      addToast('Token is missing or invalid.',ToastType.ERROR);
     }
   }, [searchParams, navigate, verifyEmail]);
 

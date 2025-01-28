@@ -13,7 +13,7 @@ interface SignInRequest {
 }
 
 export interface AuthResponse {
-  user: { id: string; email: string };
+  user: { id: string; email: string,name: string};
   token: string;
   message: string;
   accessToken: string;

@@ -11,6 +11,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import * as yup from 'yup';
 import { useToast } from '@/context/ToastContext'; // Import custom toast hook
 import ToastContainer from '@/components/Toast/ToastContainer';
+import { ToastType } from '@/constant';
 
 // Define the validation schema using yup
 const signInSchema = yup.object().shape({
@@ -52,13 +53,13 @@ export default function SignIn() {
 
       if (response?.message === 'OTP sent to your email. Please verify to log in.') {
         navigate(`/verify-otp`, { state: { email } });
-        addToast('Please verify your OTP to log in.', 'info'); // Custom toast
+        addToast('Please verify your OTP to log in.', ToastType.WARNING); // Custom toast
       } else if (response?.accessToken) {
         dispatch(setCredentials(response));
         navigate('/home');
-        addToast('Logged in successfully!', 'success'); // Custom toast
+        addToast('Logged in successfully!', ToastType.SUCCESS); // Custom toast
       } else {
-        addToast('Unexpected response. Please try again.', 'error'); // Custom toast
+        addToast('Unexpected response. Please try again.', ToastType.ERROR); // Custom toast
       }
     } catch (error: any) {
       if (error.name === 'ValidationError') {
@@ -73,7 +74,7 @@ export default function SignIn() {
       } else {
         // Handle API errors
         console.error('Sign-in failed:', error);
-        addToast(error?.data?.message || 'Invalid email or password. Please try again.', 'error'); // Custom toast
+        addToast(error?.data?.message || 'Invalid email or password. Please try again.', ToastType.ERROR); // Custom toast
       }
     } finally {
       setIsLoading(false);

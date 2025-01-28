@@ -10,6 +10,7 @@ import { setCredentials } from '@/features/auth/authSlice';
 import * as yup from 'yup';
 import { useToast } from '@/context/ToastContext'; // Import custom toast hook
 import ToastContainer from '@/components/Toast/ToastContainer'; // Import custom ToastContainer
+import { ToastType } from '@/constant';
 
 // Define the validation schema for OTP
 const otpSchema = yup.object().shape({
@@ -44,7 +45,7 @@ export default function VerifyOTP() {
       dispatch(setCredentials({ user, accessToken }));
 
       // Show success toast
-      addToast('OTP verified successfully!', 'success');
+      addToast('OTP verified successfully!', ToastType.SUCCESS);
 
       // Navigate to home page after a short delay
       setTimeout(() => {
@@ -62,7 +63,7 @@ export default function VerifyOTP() {
         setErrors(validationErrors);
       } else {
         // Handle API errors
-        addToast(err?.data?.message || 'Invalid or expired OTP', 'error');
+        addToast(err?.data?.message || 'Invalid or expired OTP', ToastType.ERROR);
       }
     }
   };

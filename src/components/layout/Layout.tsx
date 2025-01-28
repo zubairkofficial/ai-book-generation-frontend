@@ -70,7 +70,7 @@ const Layout = ({ children }: LayoutProps) => {
 
         {/* Footer */}
         <footer className="mt-8 text-center text-sm text-gray-500 py-4">
-          <p>© 2024 AI Book Legacy. All rights reserved.</p>
+          <p>© 2025 AI Book Legacy. All rights reserved.</p>
         </footer>
       </main>
     </div>

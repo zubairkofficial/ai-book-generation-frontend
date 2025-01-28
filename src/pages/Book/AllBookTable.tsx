@@ -7,7 +7,7 @@ import { Loader2, Eye, BookOpen } from 'lucide-react'; // Import Eye icon
 import Layout from '@/components/layout/Layout';
 import { useFetchBooksQuery } from '@/api/bookApi';
 import ReactPaginate from 'react-paginate';
-import BookModal from '@/components/BookModel';
+import BookModal from '@/components/BookModel/BookModel';
 import Header from '@/components/layout/Header';
 
 interface BookData {
@@ -17,13 +17,14 @@ interface BookData {
     content: string;
     fullContent?: string;
     coverImageUrl?: string;
+    backCoverImageUrl?: string;
     coverImagePath?: string;
   };
   // ... other properties
 }
 
 export default function BookTable() {
-  const { data, isLoading, isError, error } = useFetchBooksQuery(); // Fetch books with the hook
+  const { data, isLoading, isError, error }:any = useFetchBooksQuery(); // Fetch books with the hook
   const [selectedBook, setSelectedBook] = useState<BookData | null>(null); // State to store the selected book for the modal
   const [currentPage, setCurrentPage] = useState(0); // State for pagination
   const itemsPerPage = 10; // Number of items per page
@@ -39,7 +40,7 @@ export default function BookTable() {
   const currentItems = data?.data?.slice(offset, offset + itemsPerPage) || [];
 
   // Handle page change
-  const handlePageClick = ({ selected }:SetStateAction<number>) => {
+  const handlePageClick = ({ selected }:any) => {
     setCurrentPage(selected);
   };
 
@@ -62,7 +63,7 @@ export default function BookTable() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Book Collection</h1>
+            <h1 className="text-2xl md:text-3xl  text-gray-800">Book Collection</h1>
             <p className="text-gray-500 mt-1">Browse and manage your book library</p>
           </div>
           
@@ -182,6 +183,7 @@ export default function BookTable() {
             onClose={closeModal}
             htmlContent={selectedBook.additionalData?.content || selectedBook.additionalData?.fullContent}
             coverImageUrl={selectedBook.additionalData?.coverImageUrl || selectedBook.additionalData?.coverImagePath}
+            backCoverImageUrl={selectedBook.additionalData?.backCoverImageUrl }
           />
         )}
       </div>

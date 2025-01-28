@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/layout/Layout";
-import { toast } from "react-toastify";
+import { useToast } from '@/context/ToastContext'; // Import custom toast hook
+import { ToastType } from '@/constant';
+
 import { useGenerateBookMutation } from "@/api/authApi";
 import DOMPurify from "dompurify"; // For sanitizing HTML
 import * as yup from "yup"; // Import Yup
@@ -44,7 +46,7 @@ const bookSchema: any = yup.object().shape({
 
 const CreateBook = () => {
   const [generateBook, { isLoading }] = useGenerateBookMutation();
-  const [isBookDownloadName, setIsBookDownloadName] = useState("");
+
   const [formData, setFormData] = useState({
     bookTitle: "",
     subtitle: "", // Added subtitle
@@ -116,6 +118,8 @@ const CreateBook = () => {
     },
   });
   const [currentStep, setCurrentStep] = useState(1);
+    const { addToast } = useToast(); // Use custom toast hook
+  
   const navigate = useNavigate();
 
   const steps = {
@@ -260,7 +264,7 @@ const CreateBook = () => {
     if (isValid) {
       setCurrentStep(currentStep + 1);
     } else {
-      toast.error("Please fill in all required fields correctly");
+      addToast("Please fill in all required fields correctly",ToastType.ERROR);
     }
   };
 
@@ -283,7 +287,7 @@ const CreateBook = () => {
       ).then((results) => results.every(Boolean));
 
       if (!isValid) {
-        toast.error("Please check all fields and try again");
+        addToast("Please check all fields and try again",ToastType.ERROR);
         return;
       }
 
@@ -297,7 +301,6 @@ const CreateBook = () => {
 
       // Generate the book
       const response: any = await generateBook(payload).unwrap();
-      setIsBookDownloadName(formData.bookTitle);
       setProgress(70);
 
       if (response?.data?.additionalData?.fullContent) {
@@ -305,7 +308,7 @@ const CreateBook = () => {
         setCoverImageUrl(response.data.additionalData.coverImageUrl);
         setProgress(100);
 
-        toast.success("Book generated successfully!");
+        addToast("Book generated successfully!",ToastType.SUCCESS);
         navigate("/books");
 
         // Reset form after successful submission
@@ -377,7 +380,7 @@ const CreateBook = () => {
       }
     } catch (error: any) {
       console.error("Book generation error:", error);
-      toast.error(error.message || "Failed to generate book. Please try again.");
+      addToast(error.message || "Failed to generate book. Please try again.",ToastType.ERROR);
       setProgress(0);
     }
   };

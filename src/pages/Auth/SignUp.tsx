@@ -9,6 +9,7 @@ import * as yup from 'yup';
 import 'react-toastify/dist/ReactToastify.css';
 import { useToast } from '@/context/ToastContext'; // Import custom toast hook
 import ToastContainer from '@/components/Toast/ToastContainer'; // Import custom ToastContainer
+import { ToastType } from '@/constant';
 
 // Define the validation schema using yup
 const signUpSchema = yup.object().shape({
@@ -62,7 +63,7 @@ export default function SignUp() {
      const response= await signUp({ email, password, name, phoneNumber }).unwrap();
      if(response){ 
      navigate('/home'); // Redirect to home page
-     addToast('Account created successfully!','success');
+     addToast('Account created successfully!',ToastType.SUCCESS);
 }
     } catch (error: any) {
       if (error.name === 'ValidationError') {
@@ -76,11 +77,10 @@ export default function SignUp() {
         setErrors(validationErrors);
 
         // Display the first validation error using toast
-        addToast(validationErrors[Object.keys(validationErrors)[0]] || 'Something went wrong!',"error");
+        addToast(validationErrors[Object.keys(validationErrors)[0]] || 'Something went wrong!',ToastType.ERROR);
       } else {
-        console.log("error",error.data)
         // Handle API errors
-        addToast(error.data.message??error.data.message?.errors[0].constraints.matches,"error");
+        addToast(error.data.message??error.data.message?.errors[0].constraints.matches,ToastType.ERROR);
       }
     } finally {
       setIsLoading(false);
