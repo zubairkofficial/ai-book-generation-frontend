@@ -918,8 +918,12 @@ const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverIma
           ` : ''}
         </div>
       ` : ''}
+      <div class="book-section">
+        <div class="book-section back-cover">
+
   ${backCoverImageUrl ? `<img src="${backCoverImageUrl}" alt="Book Cover" class="cover-image">` : ''}
-        
+        </div>
+        </div>
       ${bookInfo.backCover.synopsis || bookInfo.backCover.authorBio ? `
         <div class="book-section back-cover">
           ${backCoverImageUrl ? `<img src="${backCoverImageUrl}" alt="Back Cover" class="back-cover-image">` : ''}
