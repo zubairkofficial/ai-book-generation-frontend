@@ -389,13 +389,67 @@ const extractBookInfo = (content: string): BookInfo => {
   return bookInfo;
 };
 
+const getRandomImageSize = () => {
+  const sizes = [
+    { width: '60%', height: 'auto' },
+    { width: '75%', height: 'auto' },
+    { width: '85%', height: 'auto' },
+    { width: '100%', height: 'auto' }
+  ];
+  return sizes[Math.floor(Math.random() * sizes.length)];
+};
+
+const getRandomAlignment = () => {
+  const alignments = ['left', 'center', 'right'];
+  return alignments[Math.floor(Math.random() * alignments.length)];
+};
+
 const formatChapterContent = (content: string) => {
   if (!content) return '';
-  return content.split('\n\n')
-    .map(paragraph => paragraph.trim())
-    .filter(paragraph => paragraph.length > 0)
-    .map(paragraph => `<p>${paragraph}</p>`)
-    .join('\n');
+  
+  const parts = content.split(/!\[(.*?)\]\((.*?)\)/);
+  let formattedContent = '';
+  let imageCount = 0;
+  
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 3 === 0) {
+      formattedContent += parts[i].split('\n\n')
+        .map(paragraph => `<p>${paragraph.trim()}</p>`)
+        .join('\n');
+    } else if (i % 3 === 1) {
+      const altText = parts[i];
+      const imageUrl = parts[i + 1];
+      const size = getRandomImageSize();
+      const alignment = getRandomAlignment();
+      const isFullWidth = size.width === '100%';
+      imageCount++;
+      
+      const imageClass = `chapter-image-${imageCount} ${
+        altText.toLowerCase().includes('start') ? 'image-start' :
+        altText.toLowerCase().includes('middle') ? 'image-middle' :
+        'image-end'
+      }`;
+
+      formattedContent += `
+        <figure class="${imageClass}" style="
+          width: ${size.width};
+          margin: ${isFullWidth ? '3rem auto' : '2rem'};
+          float: ${isFullWidth ? 'none' : alignment};
+          ${!isFullWidth ? `margin-${alignment === 'left' ? 'right' : 'left'}: 2rem;` : ''}
+        ">
+          <div class="image-container">
+            <img src="${imageUrl}" alt="${altText}" />
+            <div class="image-overlay">
+              <span class="zoom-icon">🔍</span>
+            </div>
+          </div>
+          <figcaption>${altText}</figcaption>
+        </figure>
+      `;
+    }
+  }
+  
+  return formattedContent;
 };
 
 const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverImageUrl?: string) => {
@@ -588,208 +642,224 @@ const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverIma
         }
 
         .chapter-content {
-          font-size: 1.1rem;
-          line-height: 1.8;
-          color: #2D3748;
-          text-align: justify;
-        }
-
-        .chapter-content p {
-          margin-bottom: 1.5rem;
-          text-indent: 2rem;
-        }
-
-        .back-cover {
-          margin: 4rem 0;
-          padding: 3rem;
-          background-color: #2D3748;
-          color: #FFFFFF;
-          border-radius: 8px;
-          font-family: 'Merriweather', serif;
-          line-height: 1.8;
           position: relative;
           overflow: hidden;
         }
 
-        .back-cover-image {
+        figure {
+          break-inside: avoid;
+          transition: transform 0.3s ease;
+          position: relative;
+          margin-bottom: 3rem;
+        }
+
+        .image-container {
+          position: relative;
+          overflow: hidden;
+          border-radius: 12px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+          transition: transform 0.3s ease;
+        }
+
+        .image-container:hover {
+          transform: scale(1.02);
+        }
+
+        .image-container img {
           width: 100%;
           height: auto;
-          max-height: 500px;
-          object-fit: cover;
-          margin-bottom: 2rem;
-          border-radius: 4px;
-          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+          display: block;
+          transition: filter 0.3s ease;
         }
 
-        .back-cover-content {
-          position: relative;
-          z-index: 2;
-          font-size: 1.1rem;
-          line-height: 1.8;
-        }
-
-        .glossary-item,
-        .index-item,
-        .reference-item {
-          margin-bottom: 1.5rem;
-          padding-bottom: 1.5rem;
-          border-bottom: 1px solid #E2E8F0;
-        }
-
-        .glossary-term {
-          font-family: 'Lato', sans-serif;
-          font-weight: 700;
-          color: #2D3748;
-          margin-bottom: 0.5rem;
-        }
-
-        .glossary-definition {
-          color: #4A5568;
-          font-size: 1rem;
-          line-height: 1.6;
-        }
-
-        .index-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-          gap: 1.5rem;
-          margin: 2rem 0;
-        }
-
-        .index-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0.5rem;
-          border-bottom: 1px solid #E2E8F0;
-        }
-
-        .index-page {
-          color: #718096;
-          font-family: 'Lato', sans-serif;
-        }
-
-        .references-section {
-          margin: 2rem 0;
-        }
-
-        .references-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 1.5rem;
-          color: #1A202C;
-          margin-bottom: 1rem;
-        }
-
-        .reference-item {
-          margin-bottom: 1rem;
-          padding-left: 1.5rem;
-          position: relative;
-        }
-
-        .reference-item::before {
-          content: "•";
+        .image-overlay {
           position: absolute;
+          top: 0;
           left: 0;
-          color: #718096;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.3s ease;
         }
 
-        .book-section {
-          margin: 4rem 0;
-          padding: 3rem;
-          background-color: #F7FAFC;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        .image-container:hover .image-overlay {
+          opacity: 1;
         }
 
-        .book-section-title {
-          font-family: 'Playfair Display', serif;
+        .zoom-icon {
+          color: white;
           font-size: 2rem;
-          color: #1A202C;
-          text-align: center;
-          margin-bottom: 2rem;
-          letter-spacing: 0.5px;
+          transform: scale(0.8);
+          transition: transform 0.3s ease;
         }
 
-        .book-meta {
+        .image-container:hover .zoom-icon {
+          transform: scale(1);
+        }
+
+        figcaption {
           font-family: 'Lato', sans-serif;
-          color: #718096;
-          font-size: 0.9rem;
+          font-size: 0.95rem;
+          color: #4A5568;
           margin-top: 1rem;
           text-align: center;
+          font-style: italic;
+          line-height: 1.4;
+          padding: 0.5rem;
+          background: #F7FAFC;
+          border-radius: 6px;
         }
 
-        .author-bio {
-          margin-top: 2rem;
-          padding-top: 2rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.2);
-          font-style: italic;
+        .image-start {
+          margin-top: 0;
+        }
+
+        .image-middle {
+          margin: 3rem auto;
+        }
+
+        .image-end {
+          margin-bottom: 0;
+        }
+
+        /* Random decorative elements */
+        figure::before {
+          content: '';
+          position: absolute;
+          width: 100px;
+          height: 100px;
+          background: linear-gradient(45deg, #FED7D7, #FED7E2);
+          border-radius: 50%;
+          opacity: 0.1;
+          z-index: -1;
+          transform: translate(-30%, -30%);
+        }
+
+        figure:nth-child(even)::before {
+          right: 0;
+          transform: translate(30%, -30%);
+          background: linear-gradient(45deg, #C6F6D5, #B2F5EA);
+        }
+
+        /* Responsive styles */
+        @media (max-width: 1024px) {
+          figure {
+            width: 85% !important;
+            margin: 2rem auto !important;
+            float: none !important;
+          }
         }
 
         @media (max-width: 768px) {
-          .book-preview {
-            padding: 1rem;
+          figure {
+            width: 100% !important;
           }
-          .book-title {
-            font-size: 2rem;
-          }
-          .author-name {
-            font-size: 1.2rem;
-          }
-          .publisher-name {
-            font-size: 1rem;
-          }
-          .chapter-title {
-            font-size: 1.6rem;
-          }
-          .chapter {
-            padding: 1.5rem;
-          }
-          .dedication,
-          .preface,
-          .back-cover {
-            padding: 2rem;
-          }
-          .cover-design {
-            font-size: 0.8rem;
-            padding: 1rem;
+
+          .image-container {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
           }
         }
 
-        @media (max-width: 480px) {
-          .book-title {
-            font-size: 1.8rem;
-          }
-          .chapter-content {
-            font-size: 1rem;
-          }
-          .dedication::before,
-          .dedication::after {
-            font-size: 3rem;
-          }
-        }
-
+        /* Print styles */
         @media print {
-          .book-preview {
-            max-width: none;
-            padding: 0;
+          figure {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            width: 85% !important;
+            margin: 2rem auto !important;
+            float: none !important;
           }
-          .chapter {
-            page-break-before: always;
+
+          .image-overlay {
+            display: none;
           }
-          @page {
-            margin: 2.5cm;
-          }
-          .cover-page,
-          .dedication,
-          .preface,
-          .chapter,
-          .back-cover {
-            background-color: #FFFFFF;
-            box-shadow: none;
-            border-radius: 0;
+
+          figure::before {
+            display: none;
           }
         }
       </style>
+
+      <!-- Modal for image preview -->
+      <div id="imageModal" class="modal">
+        <span class="modal-close">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <div id="modalCaption"></div>
+      </div>
+
+      <style>
+        .modal {
+          display: none;
+          position: fixed;
+          z-index: 1000;
+          padding-top: 50px;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-content {
+          margin: auto;
+          display: block;
+          max-width: 90%;
+          max-height: 80vh;
+          object-fit: contain;
+        }
+
+        .modal-close {
+          position: absolute;
+          right: 35px;
+          top: 15px;
+          color: #f1f1f1;
+          font-size: 40px;
+          font-weight: bold;
+          cursor: pointer;
+        }
+
+        #modalCaption {
+          margin: auto;
+          display: block;
+          width: 80%;
+          text-align: center;
+          color: #ccc;
+          padding: 10px 0;
+          height: 150px;
+        }
+      </style>
+
+      <script>
+        // Add click handlers for images
+        document.addEventListener('DOMContentLoaded', function() {
+          const modal = document.getElementById('imageModal');
+          const modalImg = document.getElementById('modalImage');
+          const modalCaption = document.getElementById('modalCaption');
+          const closeBtn = document.getElementsByClassName('modal-close')[0];
+
+          document.querySelectorAll('.image-container img').forEach(img => {
+            img.onclick = function() {
+              modal.style.display = 'block';
+              modalImg.src = this.src;
+              modalCaption.innerHTML = this.alt;
+            }
+          });
+
+          closeBtn.onclick = function() {
+            modal.style.display = 'none';
+          }
+
+          window.onclick = function(event) {
+            if (event.target == modal) {
+              modal.style.display = 'none';
+            }
+          }
+        });
+      </script>
 
       <div class="book-section">
         <div class="cover-page">
@@ -863,9 +933,7 @@ const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverIma
           <div class="chapter-number">Chapter ${chapter.number}</div>
           <h2 class="chapter-title">${chapter.title}</h2>
           <div class="chapter-content">
-            ${chapter.content.split('\n\n')
-              .map(paragraph => `<p>${paragraph.trim()}</p>`)
-              .join('\n')}
+            ${formatChapterContent(chapter.content)}
           </div>
         </div>
       `).join('\n')}
@@ -1149,8 +1217,51 @@ const BookPDF: React.FC<BookPDFProps> = ({
       color: '#718096',
       borderTop: '1pt solid #E2E8F0',
       paddingTop: 16
-    }
+    },
+    chapterImage: {
+      width: '100%',
+      marginVertical: 20,
+    },
+    
+    chapterImageCaption: {
+      fontSize: 10,
+      fontFamily: 'Times-Italic',
+      color: '#666',
+      textAlign: 'center',
+      marginTop: 8,
+    },
+    
+    imageContainer: {
+      breakInside: 'avoid',
+      marginVertical: 20,
+    },
   });
+
+  // Update the chapter rendering to include images
+  const renderChapterContent = (content: string) => {
+    const parts = content.split(/!\[(.*?)\]\((.*?)\)/);
+    return parts.map((part, index) => {
+      if (index % 3 === 0) {
+        // Text content
+        return part.split('\n\n').map((paragraph, pIndex) => (
+          <Text key={pIndex} style={styles.chapterContent}>
+            {paragraph.trim()}
+          </Text>
+        ));
+      } else if (index % 3 === 1) {
+        // Image
+        const altText = part;
+        const imageUrl = parts[index + 1];
+        return (
+          <View key={index} style={styles.imageContainer}>
+            <Image src={imageUrl} style={styles.chapterImage} />
+            <Text style={styles.chapterImageCaption}>{altText}</Text>
+          </View>
+        );
+      }
+      return null;
+    });
+  };
 
   return (
     <Document>
@@ -1218,19 +1329,16 @@ const BookPDF: React.FC<BookPDFProps> = ({
               </Text>
             </View>
 
-            {chapter.content.split('\n\n').map((paragraph, pIndex) => (
-              <Text key={pIndex} style={styles.chapterContent}>
-                {paragraph.trim()}
-              </Text>
-            ))}
+            {renderChapterContent(chapter.content)}
 
-<Text
+
+
+          </View>
+          <Text
   style={styles.pageNumber}
   render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
   fixed
 />
-
-          </View>
         </Page>
       ))}
 

@@ -309,74 +309,74 @@ const CreateBook = () => {
         setProgress(100);
 
         addToast("Book generated successfully!",ToastType.SUCCESS);
-        navigate("/books");
+        // navigate("/books");
 
         // Reset form after successful submission
-        setFormData({
-          bookTitle: "",
-          subtitle: "",
-          authorName: "",
-          authorBio: "",
-          genre: "",
-          theme: "",
-          characters: "",
-          setting: "",
-          tone: "",
-          plotTwists: "",
-          numberOfPages: "",
-          numberOfChapters: "",
-          targetAudience: "",
-          language: "",
-          additionalContent: "",
-        });
-        setCurrentStep(1);
-        setAdvancedOptions({
-          coverImagePrompt: "",
-          colorScheme: "#F59E0B",
-          fontStyle: "",
-          styling: {
-            fontSize: {
-              title: "",
-              chapterTitle: "",
-              headers: "",
-              body: "",
-            },
-            lineHeight: {
-              title: "",
-              chapterTitle: "",
-              headers: "",
-              body: "",
-            },
-            fontFamily: {
-              title: "",
-              chapterTitle: "",
-              headers: "",
-              body: "",
-            },
-            textAlignment: {
-              title: "",
-              chapterTitle: "",
-              headers: "",
-              body: "",
-            },
-            margins: {
-              top: "",
-              bottom: "",
-              left: "",
-              right: "",
-            },
-            spacing: {
-              paragraphSpacing: "",
-              chapterSpacing: "",
-              sectionSpacing: "",
-            },
-            pageLayout: {
-              pageSize: "",
-              orientation: "",
-              columns: 1,
-            },
-          },
-        });
+        // setFormData({
+        //   bookTitle: "",
+        //   subtitle: "",
+        //   authorName: "",
+        //   authorBio: "",
+        //   genre: "",
+        //   theme: "",
+        //   characters: "",
+        //   setting: "",
+        //   tone: "",
+        //   plotTwists: "",
+        //   numberOfPages: "",
+        //   numberOfChapters: "",
+        //   targetAudience: "",
+        //   language: "",
+        //   additionalContent: "",
+        // });
+        // setCurrentStep(1);
+        // setAdvancedOptions({
+        //   coverImagePrompt: "",
+        //   colorScheme: "#F59E0B",
+        //   fontStyle: "",
+        //   styling: {
+        //     fontSize: {
+        //       title: "",
+        //       chapterTitle: "",
+        //       headers: "",
+        //       body: "",
+        //     },
+        //     lineHeight: {
+        //       title: "",
+        //       chapterTitle: "",
+        //       headers: "",
+        //       body: "",
+        //     },
+        //     fontFamily: {
+        //       title: "",
+        //       chapterTitle: "",
+        //       headers: "",
+        //       body: "",
+        //     },
+        //     textAlignment: {
+        //       title: "",
+        //       chapterTitle: "",
+        //       headers: "",
+        //       body: "",
+        //     },
+        //     margins: {
+        //       top: "",
+        //       bottom: "",
+        //       left: "",
+        //       right: "",
+        //     },
+        //     spacing: {
+        //       paragraphSpacing: "",
+        //       chapterSpacing: "",
+        //       sectionSpacing: "",
+        //     },
+        //     pageLayout: {
+        //       pageSize: "",
+        //       orientation: "",
+        //       columns: 1,
+        //     },
+        //   },
+        // });
       }
     } catch (error: any) {
       console.error("Book generation error:", error);
