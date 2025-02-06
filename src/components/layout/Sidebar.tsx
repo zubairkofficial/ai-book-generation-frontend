@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '@/features/auth/authSlice';
 import { cn } from '@/lib/utils';
 import { RootState } from '@/store/store';
+import { useUserMeQuery } from '@/api/userApi';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { data:user } = useUserMeQuery();
 
   const handleLogout = () => {
     dispatch(logout());

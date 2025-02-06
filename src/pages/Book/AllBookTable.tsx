@@ -1,4 +1,4 @@
-import { SetStateAction, useState } from 'react';
+import {  useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast, ToastContainer } from 'react-toastify';
@@ -181,10 +181,11 @@ export default function BookTable() {
           <BookModal
             isOpen={!!selectedBook}
             onClose={closeModal}
-            htmlContent={selectedBook.additionalData?.content || selectedBook.additionalData?.fullContent}
+            htmlContent={selectedBook.additionalData?.fullContent || selectedBook.additionalData?.fullContent}
             coverImageUrl={selectedBook.additionalData?.coverImageUrl || selectedBook.additionalData?.coverImagePath}
             backCoverImageUrl={selectedBook.additionalData?.backCoverImageUrl }
-          />
+         selectedBook={selectedBook}
+            />
         )}
       </div>
     </Layout>

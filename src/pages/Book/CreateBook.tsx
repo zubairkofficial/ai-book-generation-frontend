@@ -14,6 +14,7 @@ import * as yup from "yup"; // Import Yup
 import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useFetchBooksQuery } from "@/api/bookApi";
 
 // Define the Yup validation schema
 const bookSchema: any = yup.object().shape({
@@ -46,7 +47,8 @@ const bookSchema: any = yup.object().shape({
 
 const CreateBook = () => {
   const [generateBook, { isLoading }] = useGenerateBookMutation();
-
+ const { refetch:refectAllBooks } = useFetchBooksQuery(); // Fetch books with the hook
+ 
   const [formData, setFormData] = useState({
     bookTitle: "",
     subtitle: "", // Added subtitle
@@ -307,76 +309,76 @@ const CreateBook = () => {
         setBookContent(response.data.additionalData.fullContent);
         setCoverImageUrl(response.data.additionalData.coverImageUrl);
         setProgress(100);
-
         addToast("Book generated successfully!",ToastType.SUCCESS);
-        // navigate("/books");
+        refectAllBooks()
+      
+        navigate("/books");
 
-        // Reset form after successful submission
-        // setFormData({
-        //   bookTitle: "",
-        //   subtitle: "",
-        //   authorName: "",
-        //   authorBio: "",
-        //   genre: "",
-        //   theme: "",
-        //   characters: "",
-        //   setting: "",
-        //   tone: "",
-        //   plotTwists: "",
-        //   numberOfPages: "",
-        //   numberOfChapters: "",
-        //   targetAudience: "",
-        //   language: "",
-        //   additionalContent: "",
-        // });
-        // setCurrentStep(1);
-        // setAdvancedOptions({
-        //   coverImagePrompt: "",
-        //   colorScheme: "#F59E0B",
-        //   fontStyle: "",
-        //   styling: {
-        //     fontSize: {
-        //       title: "",
-        //       chapterTitle: "",
-        //       headers: "",
-        //       body: "",
-        //     },
-        //     lineHeight: {
-        //       title: "",
-        //       chapterTitle: "",
-        //       headers: "",
-        //       body: "",
-        //     },
-        //     fontFamily: {
-        //       title: "",
-        //       chapterTitle: "",
-        //       headers: "",
-        //       body: "",
-        //     },
-        //     textAlignment: {
-        //       title: "",
-        //       chapterTitle: "",
-        //       headers: "",
-        //       body: "",
-        //     },
-        //     margins: {
-        //       top: "",
-        //       bottom: "",
-        //       left: "",
-        //       right: "",
-        //     },
-        //     spacing: {
-        //       paragraphSpacing: "",
-        //       chapterSpacing: "",
-        //       sectionSpacing: "",
-        //     },
-        //     pageLayout: {
-        //       pageSize: "",
-        //       orientation: "",
-        //       columns: 1,
-        //     },
-        //   },
-        // });
+        setFormData({
+          bookTitle: "",
+          subtitle: "",
+          authorName: "",
+          authorBio: "",
+          genre: "",
+          theme: "",
+          characters: "",
+          setting: "",
+          tone: "",
+          plotTwists: "",
+          numberOfPages: "",
+          numberOfChapters: "",
+          targetAudience: "",
+          language: "",
+          additionalContent: "",
+        });
+        setCurrentStep(1);
+        setAdvancedOptions({
+          coverImagePrompt: "",
+          colorScheme: "#F59E0B",
+          fontStyle: "",
+          styling: {
+            fontSize: {
+              title: "",
+              chapterTitle: "",
+              headers: "",
+              body: "",
+            },
+            lineHeight: {
+              title: "",
+              chapterTitle: "",
+              headers: "",
+              body: "",
+            },
+            fontFamily: {
+              title: "",
+              chapterTitle: "",
+              headers: "",
+              body: "",
+            },
+            textAlignment: {
+              title: "",
+              chapterTitle: "",
+              headers: "",
+              body: "",
+            },
+            margins: {
+              top: "",
+              bottom: "",
+              left: "",
+              right: "",
+            },
+            spacing: {
+              paragraphSpacing: "",
+              chapterSpacing: "",
+              sectionSpacing: "",
+            },
+            pageLayout: {
+              pageSize: "",
+              orientation: "",
+              columns: 1,
+            },
+          },
+        });
       }
     } catch (error: any) {
       console.error("Book generation error:", error);

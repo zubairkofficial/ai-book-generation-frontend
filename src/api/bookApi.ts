@@ -1,5 +1,4 @@
 import { baseApi } from './baseApi'; // Correct import
-import { RootState } from '@/store/store';
 
 interface Book {
   id: string;
