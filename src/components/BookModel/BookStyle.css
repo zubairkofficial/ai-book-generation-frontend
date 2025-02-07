@@ -1,0 +1,168 @@
+/* BookStyles.css */
+
+.book-preview {
+    font-family: 'Merriweather', serif;
+    line-height: 1.6;
+    color: #2D3748;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #FFFFFF;
+  }
+  
+  .cover-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 90vh;
+    text-align: center;
+    margin-bottom: 4rem;
+    padding: 2rem;
+    background-color: #F7FAFC;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .cover-page::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.2) 100%);
+    z-index: 1;
+    pointer-events: none;
+  }
+  
+  .cover-image {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    margin-bottom: 2rem;
+    border-radius: 4px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  .book-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #1A202C;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 2rem 0 1rem;
+    line-height: 1.2;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .author-name {
+    font-family: 'Lato', sans-serif;
+    font-size: 1.4rem;
+    color: #4A5568;
+    margin-bottom: 1rem;
+    font-weight: 400;
+    letter-spacing: 1px;
+  }
+  
+  .publisher-name {
+    font-family: 'Lato', sans-serif;
+    font-size: 1.1rem;
+    color: #718096;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .book-section {
+    font-family: 'Lato', sans-serif;
+    margin-bottom: 4rem;
+  }
+  
+  .book-section h2 {
+    font-size: 1.5rem;
+    color: #1A202C;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  
+  .back-cover {
+    margin-top: 4rem;
+  }
+  
+  .back-cover-image {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .book-section img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 2rem;
+  }
+  
+  @media (max-width: 1024px) {
+    .book-preview {
+      padding: 1rem;
+    }
+    
+    .cover-page {
+      padding: 1rem;
+      margin-bottom: 2rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .cover-page {
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+    }
+  
+    .cover-image {
+      width: 80%;
+      margin-bottom: 1.5rem;
+    }
+  
+    .book-title {
+      font-size: 2.5rem;
+    }
+  
+    .author-name {
+      font-size: 1.2rem;
+    }
+  
+    .publisher-name {
+      font-size: 1rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .cover-page {
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+  
+    .cover-image {
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+  
+    .book-title {
+      font-size: 2rem;
+    }
+  
+    .author-name {
+      font-size: 1rem;
+    }
+  
+    .publisher-name {
+      font-size: 0.9rem;
+    }
+  }
+  
