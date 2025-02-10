@@ -7,6 +7,20 @@ interface Book {
   publishedYear: number;
 }
 
+interface SearchRequest {
+  genre?: string;
+  bookTitle?: string;
+  theme?: string;
+  characters?: string;
+  setting?: string;
+  tone?: string;
+  plotTwists?: string;
+  numberOfPages?: number;
+  numberOfChapters?: number;
+  targetAudience?: string;
+  language?: string;
+  additionalContent?: string;
+}
 interface GenerateBookRequest {
   bookTitle: string;
   genre: string;
@@ -48,10 +62,20 @@ export const bookApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+
+    // Endpoint to search books
+    searchBook: builder.query<FetchBooksResponse, { userId: number; searchParams:SearchRequest }>({
+      query: ({ userId, searchParams }) => ({
+        url: `/book-generation/search-by-id`,
+        method: 'GET',
+        params: { userId, ...searchParams },
+      }),
+    }),
   }),
 });
 
 export const {
   useFetchBooksQuery, // Hook to fetch all books
   useGenerateBookMutation, // Hook to generate a new book
+  useSearchBookQuery, // Hook to search books
 } = bookApi;

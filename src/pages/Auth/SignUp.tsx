@@ -28,7 +28,6 @@ const signUpSchema = yup.object().shape({
     .required('Confirm Password is required.'),
   phoneNumber: yup
     .string()
-    .matches(/^\+92\d{10}$/, 'Invalid phone number. Please use a valid format like +92XXXXXXXXXX.')
     .required('Phone number is required.'),
 });
 

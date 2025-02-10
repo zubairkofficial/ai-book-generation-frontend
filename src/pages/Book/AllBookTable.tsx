@@ -1,11 +1,11 @@
-import {  useState } from 'react';
+import {  ChangeEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Loader2, Eye, BookOpen } from 'lucide-react'; // Import Eye icon
 import Layout from '@/components/layout/Layout';
-import { useFetchBooksQuery } from '@/api/bookApi';
+import { useFetchBooksQuery, useSearchBookQuery } from '@/api/bookApi';
 import ReactPaginate from 'react-paginate';
 import BookModal from '@/components/BookModel/BookModel';
 import Header from '@/components/layout/Header';
@@ -27,8 +27,12 @@ export default function BookTable() {
   const { data, isLoading, isError, error }:any = useFetchBooksQuery(); // Fetch books with the hook
   const [selectedBook, setSelectedBook] = useState<BookData | null>(null); // State to store the selected book for the modal
   const [currentPage, setCurrentPage] = useState(0); // State for pagination
+  const [searchParams, setSearchParams] = useState<{ [key: string]: string }>({}); // State for search parameters
+ 
   const itemsPerPage = 10; // Number of items per page
 
+  const { data:searchData } = useSearchBookQuery({userId:45,searchParams}); // Fetch books with the hook
+  console.log("searchData",searchData)
   // Handle the error case
   if (isError) {
     toast.error(error?.data?.message || 'An error occurred');
@@ -54,6 +58,13 @@ export default function BookTable() {
     setSelectedBook(null);
   };
 
+  const handleSearch=(e: ChangeEvent<HTMLInputElement>)=>{
+    console.log("e",e.target.value)
+    setSearchParams({ ...searchParams, query: e.target.value }); // Update searchParams with the query value
+ 
+
+  }
+
   return (
     <Layout>
       <Header />
@@ -72,6 +83,7 @@ export default function BookTable() {
             <input
               type="search"
               placeholder="Search books..."
+              onChange={(e)=>handleSearch(e)}
               className="px-4 py-2 border bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 md:w-64 text-black"
             />
           </div>

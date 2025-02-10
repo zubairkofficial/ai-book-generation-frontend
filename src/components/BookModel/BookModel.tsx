@@ -174,7 +174,7 @@ const extractBookInfo = (content: string, selectedBook?: any): BookInfo => {
     }
   };
 
-  let currentChapter: { number: number; title: string; content: string } | null = null;
+  let currentChapter: any = null;
   let isCollectingChapterContent = false;
   let isPrefaceSection = false;
   let processedChapters = new Set(); // Add this to track processed chapters
@@ -1602,35 +1602,20 @@ const BookPDF: React.FC<BookPDFProps> = ({
         figureCount++;
         const isDiagram = isDiagramOrFlowchart(altText);
         const dimensions = imageCache.getImageSize(imageUrl, altText);
-console.log("isDiagram",isDiagram,imageUrl)
-        // Handle diagrams differently
-        if (isDiagram) {
-          console.log("imageUrl",imageUrl)
-          return (
-            <View key={index} style={styles.diagramContainer}>
-              <View style={styles.figureHeader}>
-                <Text style={styles.figureNumber}>Figure {figureCount}</Text>
-              </View>
-              <View style={styles.imageWrapper}>
-                <img
-                  src={imageUrl}
-                  style={{ maxWidth: '100%', height: 'auto' }}
-                />
-              </View>
-              <Text style={styles.diagramCaption}>{altText}</Text>
-            </View>
-          );
-        }
 
-        // Handle regular images
+        // Convert SVG URL to PNG URL for diagrams/flowcharts
+        const processedImageUrl = imageUrl.endsWith('.svg') 
+          ? imageUrl.replace('.svg', '.png') // Assuming you'll implement SVG to PNG conversion on backend
+          : imageUrl;
+
         return (
-          <View key={index} style={styles.imageContainer}>
+          <View key={index} style={isDiagram ? styles.diagramContainer : styles.imageContainer}>
             <View style={styles.figureHeader}>
-              {/* <Text style={styles.figureNumber}>Figure {figureCount}</Text> */}
+              <Text style={styles.figureNumber}>Figure {figureCount}</Text>
             </View>
             <View style={styles.imageWrapper}>
               <Image
-                src={imageUrl}
+                src={processedImageUrl}
                 style={{
                   width: dimensions.width,
                   height: dimensions.height,

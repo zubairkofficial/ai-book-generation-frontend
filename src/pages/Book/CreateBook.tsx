@@ -42,7 +42,9 @@ const bookSchema: any = yup.object().shape({
     .integer("Number of chapters must be an integer"),
   targetAudience: yup.string().required("Target audience is required"),
   language: yup.string().required("Language is required"),
-  additionalContent: yup.string().optional(),
+  additionalContent:yup.string().optional(),
+  isFlowChart: yup.boolean().optional(),
+  isDiagram: yup.boolean().optional(),
 });
 
 const CreateBook = () => {
@@ -64,7 +66,9 @@ const CreateBook = () => {
     numberOfChapters: "",
     targetAudience: "",
     language: "",
-    additionalContent: "",
+    additionalContent:"",
+    isDiagram: false,
+    isFlowChart: false,
   });
   const [bookContent, setBookContent] = useState<string | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
@@ -142,7 +146,7 @@ const CreateBook = () => {
     },
     4: {
       title: "Additional Details",
-      fields: ["additionalContent"],
+      fields: ["additionalContent","isDiagram","isFlowChart"],
       description: "Add any extra details or special requirements",
     },
     5: {
@@ -167,7 +171,9 @@ const CreateBook = () => {
     numberOfChapters: "How many chapters you want in your book",
     targetAudience: "Who is this book primarily written for?",
     language: "The primary language of your book",
-    additionalContent: "Any extra notes or special requirements",
+    additionalContent:"Any extra notes or special requirements",
+    isDiagram: "Diagrams required",
+    isFlowChart: "Flow chart required",
   };
 
   const handleChange = (
@@ -296,6 +302,8 @@ const CreateBook = () => {
       // Prepare the payload
       const payload: any = {
         ...formData,
+        isFlowChart: formData.isFlowChart === true, // Convert string to boolean
+        isDiagram: formData.isDiagram === true, // Convert string to boolean  
         advancedOptions: showAdvancedOptions ? advancedOptions : undefined,
       };
 
@@ -329,7 +337,9 @@ const CreateBook = () => {
           numberOfChapters: "",
           targetAudience: "",
           language: "",
-          additionalContent: "",
+          additionalContent:"",
+          isDiagram:false,
+          isFlowChart:false,
         });
         setCurrentStep(1);
         setAdvancedOptions({
@@ -709,6 +719,42 @@ const CreateBook = () => {
                 </div>
               );
             }
+
+            // Special handling for Additional Details step
+            if (step === 4) {
+              if (field === "additionalContent") {
+                return renderField(field);
+              }
+              if (field === "isFlowChart" || field === "isDiagram") {
+                return (
+                  <div key={field} className="space-y-2">
+                    <Label htmlFor={field} className="text-base font-medium">
+                      {formatLabel(field)}
+                    </Label>
+                    <Select
+                      value={(formData as any)[field].toString()}
+                      onValueChange={(value) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          [field]: value === "true",
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={`Select ${formatLabel(field)}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Yes</SelectItem>
+                        <SelectItem value="false">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500">{fieldDescriptions[field]}</p>
+                    {errors[field] && <p className="text-red-500 text-sm">{errors[field]}</p>}
+                  </div>
+                );
+              }
+            }
+
             return renderField(field);
           })}
         </div>

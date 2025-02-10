@@ -70,6 +70,8 @@ interface GenerateBookRequest {
   targetAudience: string;
   language: string;
   additionalContent?: string;
+  isDiagram?: boolean;
+  isFlowChart?: boolean;
 }
 
 interface GenerateBookResponse {
