@@ -1,7 +1,6 @@
 import  { ReactNode, useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import { cn } from '@/lib/utils';
-import { Menu } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -30,7 +29,7 @@ const Layout = ({ children }: LayoutProps) => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       {/* Mobile Overlay */}
       {isMobile && isSidebarOpen && (
         <div
@@ -45,9 +44,9 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Main Content */}
       <main
         className={cn(
-          "min-h-screen bg-gray-50 transition-all duration-300 ease-in-out",
+          "min-h-screen  transition-all duration-300 ease-in-out",
           isSidebarOpen ? "md:ml-64" : "md:ml-0",
-          "p-4 md:p-8"
+          "p-4 md:p-2"
         )}
       >
         {/* Top Navigation Bar */}
@@ -55,15 +54,10 @@ const Layout = ({ children }: LayoutProps) => {
 
         {/* Page Content */}
         <div className="max-w-[1400px] mx-auto">
-          {/* Breadcrumb - optional */}
-          <div className="mb-6 text-sm text-gray-500">
-            <nav className="flex" aria-label="Breadcrumb">
-              {/* Add your breadcrumb navigation here if needed */}
-            </nav>
-          </div>
+         
 
           {/* Main Content Area */}
-          <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
+          <div className=" rounded-lg shadow-sm p-4 md:p-2">
             {children}
           </div>
         </div>

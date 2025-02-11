@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 // Define the shape of the authentication state
-interface AuthState {
+export interface AuthState {
   user: { id: string; email: string,name:string } | null;
   token: string | null;
   accessToken: string | null;

@@ -35,6 +35,13 @@ interface GenerateBookRequest {
   language: string;
   additionalContent?: string;
 }
+interface CreateBookGenerateRequest {
+ 
+  minCharacters: number;
+  maxCharacters: number;
+  chapterNo:number;
+  bookGenerationId:number
+}
 
 interface GenerateBookResponse {
   bookContent: string;
@@ -42,6 +49,10 @@ interface GenerateBookResponse {
 
 interface FetchBooksResponse {
   books: Book[];
+}
+
+interface StreamChapterResponse {
+  data: string;
 }
 
 export const bookApi = baseApi.injectEndpoints({
@@ -62,6 +73,13 @@ export const bookApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+    createChapter: builder.mutation<GenerateBookResponse, CreateBookGenerateRequest>({
+      query: (payload) => ({
+        url: '/book-generation/chapter/create',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
 
     // Endpoint to search books
     searchBook: builder.query<FetchBooksResponse, { userId: number; searchParams:SearchRequest }>({
@@ -71,11 +89,20 @@ export const bookApi = baseApi.injectEndpoints({
         params: { userId, ...searchParams },
       }),
     }),
+
+    streamChapter: builder.query<StreamChapterResponse, void>({
+      query: () => ({
+        url: '/book-generation/chapter/stream-from-llm',
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
 export const {
   useFetchBooksQuery, // Hook to fetch all books
   useGenerateBookMutation, // Hook to generate a new book
+  useCreateChapterMutation, // Hook to generate a new book
   useSearchBookQuery, // Hook to search books
+  useStreamChapterQuery,
 } = bookApi;

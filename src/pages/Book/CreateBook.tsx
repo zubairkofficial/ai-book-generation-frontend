@@ -11,64 +11,42 @@ import { ToastType } from '@/constant';
 import { useGenerateBookMutation } from "@/api/authApi";
 import DOMPurify from "dompurify"; // For sanitizing HTML
 import * as yup from "yup"; // Import Yup
-import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useFetchBooksQuery } from "@/api/bookApi";
+import { useCreateChapterMutation, useFetchBooksQuery } from "@/api/bookApi";
+import ChapterConfiguration from './ChapterConfiguration';
 
 // Define the Yup validation schema
 const bookSchema: any = yup.object().shape({
   bookTitle: yup.string().required("Book title is required"),
-  subtitle: yup.string().optional(), // Subtitle is optional
-  authorName: yup.string().required("Author name is required"), // Author name is required
-  authorBio: yup.string().optional(), // Author bio is optional
+  authorName: yup.string().required("Author name is required"),
+  authorBio: yup.string().optional(),
+  ideaCore: yup.string().required("Core idea is required"),
   genre: yup.string().required("Genre is required"),
-  theme: yup.string().required("Theme is required"),
   characters: yup.string().required("Characters are required"),
-  setting: yup.string().required("Setting is required"),
-  tone: yup.string().required("Tone is required"),
-  plotTwists: yup.string().required("Plot twists are required"),
-  numberOfPages: yup
-    .number()
-    .typeError("Number of pages must be a number")
-    .required("Number of pages is required")
-    .positive("Number of pages must be positive")
-    .integer("Number of pages must be an integer"),
-  numberOfChapters: yup
-    .number()
-    .typeError("Number of chapters must be a number")
-    .required("Number of chapters is required")
-    .positive("Number of chapters must be positive")
-    .integer("Number of chapters must be an integer"),
   targetAudience: yup.string().required("Target audience is required"),
   language: yup.string().required("Language is required"),
-  additionalContent:yup.string().optional(),
-  isFlowChart: yup.boolean().optional(),
-  isDiagram: yup.boolean().optional(),
+  numberOfChapters: yup.number()
+    .required("Number of chapters is required")
+    .min(1, "Must have at least 1 chapter")
+    .max(50, "Maximum 50 chapters allowed"),
 });
 
 const CreateBook = () => {
   const [generateBook, { isLoading }] = useGenerateBookMutation();
  const { refetch:refectAllBooks } = useFetchBooksQuery(); // Fetch books with the hook
+ const [createBookChapter] = useCreateChapterMutation(); // Fetch books with the hook
  
   const [formData, setFormData] = useState({
     bookTitle: "",
-    subtitle: "", // Added subtitle
-    authorName: "", // Added author name
-    authorBio: "", // Added author bio
+    authorName: "",
+    authorBio: "",
+    ideaCore: "",
     genre: "",
-    theme: "",
     characters: "",
-    setting: "",
-    tone: "",
-    plotTwists: "",
-    numberOfPages: "",
-    numberOfChapters: "",
     targetAudience: "",
     language: "",
-    additionalContent:"",
-    isDiagram: false,
-    isFlowChart: false,
+    numberOfChapters: "",
   });
   const [bookContent, setBookContent] = useState<string | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
@@ -126,54 +104,33 @@ const CreateBook = () => {
   const [currentStep, setCurrentStep] = useState(1);
     const { addToast } = useToast(); // Use custom toast hook
   
-  const navigate = useNavigate();
 
   const steps = {
     1: {
       title: "Basic Information",
-      fields: ["bookTitle", "subtitle", "authorName", "authorBio", "genre", "targetAudience", "language"],
-      description: "Let's start with the basic details of your book",
+      fields: ["bookTitle", "authorName", "authorBio"],
+      description: "Enter the basic author and book information",
     },
     2: {
-      title: "Story Elements",
-      fields: ["theme", "characters", "setting", "tone"],
-      description: "Define the core elements of your story",
-    },
-    3: {
-      title: "Structure",
-      fields: ["numberOfPages", "numberOfChapters", "plotTwists"],
-      description: "Set up the structure and flow of your book",
-    },
-    4: {
-      title: "Additional Details",
-      fields: ["additionalContent","isDiagram","isFlowChart"],
-      description: "Add any extra details or special requirements",
-    },
-    5: {
-      title: "Styling Options",
-      fields: ["advancedOptions"],
-      description: "Customize the look and feel of your book",
-    },
+      title: "Book Details",
+      fields: ["ideaCore", "genre", "characters", "targetAudience", "language", "numberOfChapters"],
+      description: "Enter the detailed information about your book",
+    }
   };
 
   const fieldDescriptions: Record<string, string> = {
-    bookTitle: "The main title of your book that captures its essence",
-    subtitle: "A short description or tagline for your book",
+    // Basic Information
+    bookTitle: "The main title of your book",
     authorName: "The name of the author",
-    authorBio: "A short biography of the author",
-    genre: "The category or style of your book (e.g., Fantasy, Mystery, Romance)",
-    theme: "The central idea or message of your story",
+    authorBio: "A short biography of the author (optional)",
+    
+    // Book Details
+    ideaCore: "The main idea or concept of your book",
+    genre: "The category or style of your book",
     characters: "Main characters that will appear in your story",
-    setting: "The time and place where your story takes place",
-    tone: "The overall mood or feeling of your book",
-    plotTwists: "Unexpected turns in your story to keep readers engaged",
-    numberOfPages: "Estimated length of your book in pages",
-    numberOfChapters: "How many chapters you want in your book",
     targetAudience: "Who is this book primarily written for?",
     language: "The primary language of your book",
-    additionalContent:"Any extra notes or special requirements",
-    isDiagram: "Diagrams required",
-    isFlowChart: "Flow chart required",
+    numberOfChapters: "How many chapters would you like in your book?",
   };
 
   const handleChange = (
@@ -183,7 +140,7 @@ const CreateBook = () => {
     setFormData((prevData) => ({
       ...prevData,
       [name]:
-        name === "numberOfPages" || name === "numberOfChapters"
+        name === "numberOfChapters"
           ? value === ""
             ? ""
             : parseInt(value, 10)
@@ -251,7 +208,9 @@ const CreateBook = () => {
       );
 
       await stepSchema.validate(fieldsToValidate, { abortEarly: false });
+      
       setErrors({});
+
       return true;
     } catch (error) {
       if (error instanceof yup.ValidationError) {
@@ -286,114 +245,29 @@ const CreateBook = () => {
   };
 
   const handleGenerateBook = async () => {
-    setProgress(10);
-
     try {
-      // Validate all steps before submission
+      // Validate the current form data
       const isValid = await Promise.all(
         Object.keys(steps).map((step) => validateStep(parseInt(step)))
       ).then((results) => results.every(Boolean));
 
       if (!isValid) {
-        addToast("Please check all fields and try again",ToastType.ERROR);
+        addToast("Please check all fields and try again", ToastType.ERROR);
         return;
       }
-
-      // Prepare the payload
       const payload: any = {
         ...formData,
-        isFlowChart: formData.isFlowChart === true, // Convert string to boolean
-        isDiagram: formData.isDiagram === true, // Convert string to boolean  
         advancedOptions: showAdvancedOptions ? advancedOptions : undefined,
       };
-
-      setProgress(30);
-
-      // Generate the book
-      const response: any = await generateBook(payload).unwrap();
-      setProgress(70);
-
-      if (response?.data?.additionalData?.fullContent) {
-        setBookContent(response.data.additionalData.fullContent);
-        setCoverImageUrl(response.data.additionalData.coverImageUrl);
-        setProgress(100);
-        addToast("Book generated successfully!",ToastType.SUCCESS);
-        refectAllBooks()
-      
-        navigate("/books");
-
-        setFormData({
-          bookTitle: "",
-          subtitle: "",
-          authorName: "",
-          authorBio: "",
-          genre: "",
-          theme: "",
-          characters: "",
-          setting: "",
-          tone: "",
-          plotTwists: "",
-          numberOfPages: "",
-          numberOfChapters: "",
-          targetAudience: "",
-          language: "",
-          additionalContent:"",
-          isDiagram:false,
-          isFlowChart:false,
-        });
-        setCurrentStep(1);
-        setAdvancedOptions({
-          coverImagePrompt: "",
-          colorScheme: "#F59E0B",
-          fontStyle: "",
-          styling: {
-            fontSize: {
-              title: "",
-              chapterTitle: "",
-              headers: "",
-              body: "",
-            },
-            lineHeight: {
-              title: "",
-              chapterTitle: "",
-              headers: "",
-              body: "",
-            },
-            fontFamily: {
-              title: "",
-              chapterTitle: "",
-              headers: "",
-              body: "",
-            },
-            textAlignment: {
-              title: "",
-              chapterTitle: "",
-              headers: "",
-              body: "",
-            },
-            margins: {
-              top: "",
-              bottom: "",
-              left: "",
-              right: "",
-            },
-            spacing: {
-              paragraphSpacing: "",
-              chapterSpacing: "",
-              sectionSpacing: "",
-            },
-            pageLayout: {
-              pageSize: "",
-              orientation: "",
-              columns: 1,
-            },
-          },
-        });
-      }
+      const response:any = await generateBook(payload).unwrap();
+     console.log("response+++++++",response)
+      // Instead of generating the book immediately, show the chapter configuration
+    if(response){  setShowChapterConfig(true);
+      setPreviousContent(JSON.stringify(response?.data, null, 2)); // Pass form data as previous content
+}
     } catch (error: any) {
-      console.error("Book generation error:", error);
-      addToast(error.message || "Failed to generate book. Please try again.",ToastType.ERROR);
-      setProgress(0);
+      console.error("Error:", error);
+      addToast(error.message || "An error occurred", ToastType.ERROR);
     }
   };
 
@@ -411,33 +285,70 @@ const CreateBook = () => {
     });
   };
 
-  const renderField = (key: string) => (
-    <div key={key} className="space-y-2">
-      <Label htmlFor={key} className="text-base font-medium">
-        {formatLabel(key)}
-      </Label>
-      <Input
-        id={key}
-        name={key}
-        type={key === "numberOfPages" || key === "numberOfChapters" ? "number" : "text"}
-        placeholder={`Enter ${formatLabel(key)}`}
-        value={(formData as any)[key]}
-        onChange={handleChange}
-        className="w-full"
-        min={1} // Allow only positive numbers
-        onKeyDown={(event) => {
-          if (key === "numberOfPages" || key === "numberOfChapters") {
-            // Prevent negative numbers from being typed
-            if (event.key === "-" || event.key === "+") {
-              event.preventDefault();
-            }
-          }
-        }}
-      />
-      <p className="text-sm text-gray-500">{fieldDescriptions[key]}</p>
-      {errors[key] && <p className="text-red-500 text-sm">{errors[key]}</p>}
-    </div>
-  );
+  const renderField = (key: string) => {
+    if (key === 'ideaCore' || key === 'authorBio') {
+      return (
+        <div key={key} className="space-y-2">
+          <Label htmlFor={key} className="text-base font-medium">
+            {formatLabel(key)}
+          </Label>
+          <textarea
+            id={key}
+            name={key}
+            placeholder={`Enter ${formatLabel(key)}`}
+            value={(formData as any)[key]}
+            onChange={handleChange}
+            className="w-full min-h-[100px] p-2 border rounded-md"
+          />
+          <p className="text-sm text-gray-500">{fieldDescriptions[key]}</p>
+          {errors[key] && <p className="text-red-500 text-sm">{errors[key]}</p>}
+        </div>
+      );
+    }
+
+    if (key === 'numberOfChapters') {
+      return (
+        <div key={key} className="space-y-2">
+          <Label htmlFor={key} className="text-base font-medium">
+            Number of Chapters
+          </Label>
+          <Input
+            id={key}
+            name={key}
+            type="number"
+            min={1}
+            max={50}
+            placeholder="Enter number of chapters"
+            value={(formData as any)[key]}
+            onChange={handleChange}
+            className="w-full"
+          />
+          <p className="text-sm text-gray-500">{fieldDescriptions[key]}</p>
+          {errors[key] && <p className="text-red-500 text-sm">{errors[key]}</p>}
+        </div>
+      );
+    }
+
+    return (
+      <div key={key} className="space-y-2">
+        <Label htmlFor={key} className="text-base font-medium">
+          {formatLabel(key)}
+        </Label>
+        <Input
+          id={key}
+          name={key}
+          type={key === "numberOfChapters" ? "number" : "text"}
+          placeholder={`Enter ${formatLabel(key)}`}
+          value={(formData as any)[key]}
+          onChange={handleChange}
+          className="w-full"
+          min={key === "numberOfChapters" ? 1 : undefined}
+        />
+        <p className="text-sm text-gray-500">{fieldDescriptions[key]}</p>
+        {errors[key] && <p className="text-red-500 text-sm">{errors[key]}</p>}
+      </div>
+    );
+  };
 
   const renderAdvancedOptionsToggle = () => (
     <div className="border-t pt-4">
@@ -720,41 +631,6 @@ const CreateBook = () => {
               );
             }
 
-            // Special handling for Additional Details step
-            if (step === 4) {
-              if (field === "additionalContent") {
-                return renderField(field);
-              }
-              if (field === "isFlowChart" || field === "isDiagram") {
-                return (
-                  <div key={field} className="space-y-2">
-                    <Label htmlFor={field} className="text-base font-medium">
-                      {formatLabel(field)}
-                    </Label>
-                    <Select
-                      value={(formData as any)[field].toString()}
-                      onValueChange={(value) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          [field]: value === "true",
-                        }));
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder={`Select ${formatLabel(field)}`} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Yes</SelectItem>
-                        <SelectItem value="false">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-gray-500">{fieldDescriptions[field]}</p>
-                    {errors[field] && <p className="text-red-500 text-sm">{errors[field]}</p>}
-                  </div>
-                );
-              }
-            }
-
             return renderField(field);
           })}
         </div>
@@ -829,7 +705,7 @@ const CreateBook = () => {
 
   const renderProgress = () => (
     <div className="mb-8">
-      <div className="flex justify-between mb-2">
+      <div className="flex justify-around mb-2">
         {Object.entries(steps).map(([step, { title }]) => (
           <div
             key={step}
@@ -860,10 +736,35 @@ const CreateBook = () => {
     </div>
   );
 
+  const [showChapterConfig, setShowChapterConfig] = useState(false);
+  const [previousContent, setPreviousContent] = useState<string>('');
+// console.log("previousContent",JSON.parse(previousContent).id)
+  const handleChapterGeneration =async (input: any) => {
+    // Handle the chapter generation with the config
+    console.log('Generating chapters with config:', input);
+    const payload={
+      minCharacters:+input.minLength,
+      maxCharacters:+input.maxLength,
+      chapterNo:+input.numberOfChapters,
+      bookGenerationId:1
+    }
+    await createBookChapter({...payload}).unwrap()
+   
+  };
+
+  if (showChapterConfig) {
+    return (
+      <Layout>
+        <ChapterConfiguration
+          onGenerate={handleChapterGeneration}
+          previousContent={previousContent}
+        />
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto">
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
           <Card className="w-full max-w-5xl p-8 bg-white shadow-lg">
             {renderProgress()}
 
@@ -906,8 +807,6 @@ const CreateBook = () => {
               </div>
             </div>
           )}
-        </div>
-      </div>
     </Layout>
   );
 };

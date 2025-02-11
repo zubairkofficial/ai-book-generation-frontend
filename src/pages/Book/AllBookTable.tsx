@@ -1,52 +1,50 @@
-import {  ChangeEvent, useState } from 'react';
+import {  ChangeEvent, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, Eye, BookOpen } from 'lucide-react'; // Import Eye icon
+import { Loader2, Eye,  Search } from 'lucide-react'; // Import Eye icon
 import Layout from '@/components/layout/Layout';
-import { useFetchBooksQuery, useSearchBookQuery } from '@/api/bookApi';
-import ReactPaginate from 'react-paginate';
+import { useFetchBooksQuery } from '@/api/bookApi';
 import BookModal from '@/components/BookModel/BookModel';
 import Header from '@/components/layout/Header';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { BASE_URl } from '@/constant';
 
 interface BookData {
   id: number;
   bookTitle: string;
+  authorName?: string;
+  genre?: string;
   additionalData: {
     content: string;
     fullContent?: string;
     coverImageUrl?: string;
     backCoverImageUrl?: string;
     coverImagePath?: string;
+  
   };
   // ... other properties
 }
 
 export default function BookTable() {
-  const { data, isLoading, isError, error }:any = useFetchBooksQuery(); // Fetch books with the hook
-  const [selectedBook, setSelectedBook] = useState<BookData | null>(null); // State to store the selected book for the modal
-  const [currentPage, setCurrentPage] = useState(0); // State for pagination
-  const [searchParams, setSearchParams] = useState<{ [key: string]: string }>({}); // State for search parameters
- 
-  const itemsPerPage = 10; // Number of items per page
+  const { data:allBookData, isLoading, isError, error, refetch: refetchAllBooks }:any = useFetchBooksQuery();
+  const [selectedBook, setSelectedBook] = useState<BookData | null>(null);
+  const [searchParams, setSearchParams] = useState<{ [key: string]: string }>({});
 
-  const { data:searchData } = useSearchBookQuery({userId:45,searchParams}); // Fetch books with the hook
-  console.log("searchData",searchData)
+  // const { data: searchData } = useSearchBookQuery({ userId: user.id, searchParams }); // Fetch books with the hook
+  // console.log("searchData", searchData)
   // Handle the error case
   if (isError) {
     toast.error(error?.data?.message || 'An error occurred');
   }
+  useEffect(() => {
+    refetchAllBooks()
+  }, [])
 
   // Pagination logic
-  const pageCount = Math.ceil((data?.data?.length || 0) / itemsPerPage);
-  const offset = currentPage * itemsPerPage;
-  const currentItems = data?.data?.slice(offset, offset + itemsPerPage) || [];
 
-  // Handle page change
-  const handlePageClick = ({ selected }:any) => {
-    setCurrentPage(selected);
-  };
+
 
   // Open modal with book details
   const openModal = (book: BookData) => {
@@ -58,11 +56,9 @@ export default function BookTable() {
     setSelectedBook(null);
   };
 
-  const handleSearch=(e: ChangeEvent<HTMLInputElement>)=>{
-    console.log("e",e.target.value)
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    console.log("e", e.target.value)
     setSearchParams({ ...searchParams, query: e.target.value }); // Update searchParams with the query value
- 
-
   }
 
   return (
@@ -71,133 +67,87 @@ export default function BookTable() {
       <div className="p-4 md:p-8 max-w-[1400px] mx-auto">
         <ToastContainer />
         
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl  text-gray-800">Book Collection</h1>
-            <p className="text-gray-500 mt-1">Browse and manage your book library</p>
-          </div>
-          
-          {/* Search and Filter Section (Optional) */}
-          <div className="flex gap-3 bg-gray-50 w-full md:w-auto">
-            <input
-              type="search"
-              placeholder="Search books..."
-              onChange={(e)=>handleSearch(e)}
-              className="px-4 py-2 border bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 md:w-64 text-black"
-            />
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg border border-gray-100">
-            <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
-            <p className="text-gray-500 mt-2">Loading books...</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Table Container */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50/60">
-                      <TableHead className="font-semibold text-gray-700 py-4">Title</TableHead>
-                      <TableHead className="font-semibold text-gray-700 hidden md:table-cell">Genre</TableHead>
-                      <TableHead className="font-semibold text-gray-700 hidden lg:table-cell">Theme</TableHead>
-                      <TableHead className="font-semibold text-gray-700 hidden xl:table-cell">Characters</TableHead>
-                      <TableHead className="font-semibold text-gray-700 hidden 2xl:table-cell">Setting</TableHead>
-                      <TableHead className="font-semibold text-gray-700 hidden lg:table-cell">Tone</TableHead>
-                      <TableHead className="font-semibold text-gray-700 hidden xl:table-cell">Plot Twists</TableHead>
-                      <TableHead className="font-semibold text-gray-700 hidden md:table-cell">Pages</TableHead>
-                      <TableHead className="font-semibold text-gray-700 hidden lg:table-cell">Chapters</TableHead>
-                      <TableHead className="font-semibold text-gray-700 hidden md:table-cell">Audience</TableHead>
-                      <TableHead className="font-semibold text-gray-700 hidden lg:table-cell">Language</TableHead>
-                      <TableHead className="font-semibold text-gray-700 w-20">View</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentItems.length > 0 ? (
-                      currentItems.map((book: any) => (
-                        <TableRow 
-                          key={book.id} 
-                          className="hover:bg-gray-50/50 transition-colors duration-200"
-                        >
-                          <TableCell className="font-medium max-w-[200px] truncate">
-                            {book.bookTitle}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">{book.genre}</TableCell>
-                          <TableCell className="hidden lg:table-cell">{book.theme}</TableCell>
-                          <TableCell className="hidden xl:table-cell">{book.characters}</TableCell>
-                          <TableCell className="hidden 2xl:table-cell">{book.setting}</TableCell>
-                          <TableCell className="hidden lg:table-cell">{book.tone}</TableCell>
-                          <TableCell className="hidden xl:table-cell">{book.plotTwists}</TableCell>
-                          <TableCell className="hidden md:table-cell">{book.numberOfPages}</TableCell>
-                          <TableCell className="hidden lg:table-cell">{book.numberOfChapters}</TableCell>
-                          <TableCell className="hidden md:table-cell">{book.targetAudience}</TableCell>
-                          <TableCell className="hidden lg:table-cell">{book.language}</TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openModal(book)}
-                              className="hover:bg-amber-50 hover:text-amber-600 rounded-full transition-colors duration-200"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell 
-                          colSpan={12} 
-                          className="text-center py-12 text-gray-500 bg-gray-50/50"
-                        >
-                          <div className="flex flex-col items-center gap-2">
-                            <BookOpen className="h-8 w-8 text-gray-400" />
-                            <p>No books found in the collection.</p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-
-            {/* Enhanced Pagination */}
-            <div className="flex justify-center mt-8">
-              <ReactPaginate
-                previousLabel={'← Prev'}
-                nextLabel={'Next →'}
-                breakLabel={'...'}
-                pageCount={pageCount}
-                marginPagesDisplayed={2}
-                pageRangeDisplayed={5}
-                onPageChange={handlePageClick}
-                containerClassName={'flex flex-wrap items-center gap-2'}
-                pageClassName={'px-3 py-2 border rounded-lg hover:bg-gray-50 transition-colors'}
-                activeClassName={'!bg-amber-500 !text-white border-amber-500 hover:!bg-amber-600'}
-                previousClassName={'px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors'}
-                nextClassName={'px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors'}
-                disabledClassName={'opacity-50 cursor-not-allowed'}
-                breakClassName={'px-3 py-2'}
+        {/* Search and Filter Section */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">My Books Collection</h1>
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Input
+                placeholder="Search books..."
+                className="pl-10"
+                onChange={handleSearch}
               />
             </div>
           </div>
+        </div>
+
+        {/* Books Grid */}
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="animate-spin" size={40} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {allBookData?.data?.map((book: BookData) => (
+              <Card 
+                key={book.id}
+                className="group hover:shadow-lg transition-shadow duration-200 overflow-hidden"
+                onClick={() => openModal(book)}
+              >
+                {/* Book Cover */}
+                <div className="aspect-w-3 aspect-h-4 relative overflow-hidden">
+                  <img
+                    src={`${BASE_URl}/uploads/${book.additionalData.coverImageUrl}`}
+                    alt={book.bookTitle}
+                    className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-200"
+                  />
+                  {/* Overlay with Quick Actions */}
+                  <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="bg-white hover:bg-gray-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openModal(book);
+                      }}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Preview
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Book Info */}
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 line-clamp-1 mb-1">
+                    {book.bookTitle}
+                  </h3>
+                  <p className="text-sm text-gray-600 line-clamp-1">
+                    {book.authorName}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs px-2 py-1 bg-amber-50 text-amber-600 rounded-full">
+                      {book.genre}
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
         )}
 
-        {/* Enhanced Modal */}
+        {/* Book Modal */}
         {selectedBook && (
           <BookModal
             isOpen={!!selectedBook}
             onClose={closeModal}
-            htmlContent={selectedBook.additionalData?.fullContent || selectedBook.additionalData?.fullContent}
-            coverImageUrl={selectedBook.additionalData?.coverImageUrl || selectedBook.additionalData?.coverImagePath}
-            backCoverImageUrl={selectedBook.additionalData?.backCoverImageUrl }
-         selectedBook={selectedBook}
-            />
+            htmlContent={selectedBook.additionalData?.fullContent}
+            coverImageUrl={selectedBook.additionalData?.coverImageUrl}
+            backCoverImageUrl={selectedBook.additionalData?.backCoverImageUrl}
+            selectedBook={selectedBook}
+          />
         )}
       </div>
     </Layout>

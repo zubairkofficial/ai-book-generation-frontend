@@ -1,5 +1,5 @@
 // interfaces/user.interface.ts
-export interface User {
+export interface UserInterface {
     id: number;
     createdAt: string;
     updatedAt: string;

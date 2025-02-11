@@ -11,10 +11,9 @@ import {
   X,
   Home,
 } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { logout } from '@/features/auth/authSlice';
 import { cn } from '@/lib/utils';
-import { RootState } from '@/store/store';
 import { useUserMeQuery } from '@/api/userApi';
 
 interface SidebarProps {
@@ -52,37 +51,40 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       {/* Mobile Menu Button */}
       <button
         onClick={toggleSidebar}
-        className="fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-md md:hidden"
+        className="fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 md:hidden"
       >
-        {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
-      {/* Overlay */}
+      {/* Improved Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden transition-all duration-300"
           onClick={toggleSidebar}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Optimized Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-screen bg-white border-r shadow-lg z-40 transition-transform duration-300 ease-in-out",
-          "w-64 transform md:translate-x-0",
+          "fixed left-0 top-0 h-screen bg-white/95 backdrop-blur-md border-r shadow-lg z-40",
+          "w-60 transform transition-all duration-300 ease-out",
+          "md:translate-x-0 md:hover:shadow-xl md:hover:w-64",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Logo */}
+        {/* Compact Logo */}
         <div className="p-4 border-b">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 transform hover:scale-102 transition-transform duration-200">
             <BookOpenCheck className="h-6 w-6 text-amber-500" />
-            <span className="text-lg font-bold">AI Book Legacy</span>
+            <span className="text-lg font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">
+              AI Book Legacy
+            </span>
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-2">
+        {/* Streamlined Navigation */}
+        <nav className="p-3 space-y-1">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -90,37 +92,43 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               onClick={() => setIsOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-                  "hover:bg-amber-50 active:bg-amber-100",
-                  "font-medium text-gray-600 hover:text-amber-600",
-                  isActive && "bg-amber-100 text-amber-600"
+                  "flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all duration-200",
+                  "hover:bg-amber-50/80 active:bg-amber-100",
+                  "font-medium text-sm text-gray-600 hover:text-amber-600",
+                  "group hover:shadow-sm",
+                  isActive && "bg-gradient-to-r from-amber-50 to-amber-100/50 text-amber-600 shadow-sm"
                 )
               }
             >
-              {item.icon}
-              <span>{item.label}</span>
+              <span className="group-hover:scale-110 transition-transform duration-200">
+                {item.icon}
+              </span>
+              <span className="truncate">{item.label}</span>
             </NavLink>
           ))}
         </nav>
 
-        {/* User Section & Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-gray-50">
-          <div className="mb-4 p-3 rounded-lg bg-white shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
-                <span className="text-amber-600 font-semibold">{user?.name?.charAt(0).toUpperCase() || 'U'}
+        {/* Compact User Section */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 border-t bg-gradient-to-b from-transparent to-gray-50/80">
+          <div className="mb-3 p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center shadow-inner">
+                <span className="text-amber-600 font-semibold text-sm">
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
                 </span>
               </div>
-              <div>
-                <p className="font-medium text-sm">{user?.name}</p>
-                  <p className="text-xs text-gray-500 break-words ">{trimText(user?.email??"",20)}</p>
+              <div className="min-w-0">
+                <p className="font-medium text-sm truncate">{user?.name}</p>
+                <p className="text-xs text-gray-500 truncate">
+                  {trimText(user?.email ?? "", 18)}
+                </p>
               </div>
             </div>
           </div>
           <Button
             onClick={handleLogout}
             variant="ghost"
-            className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+            className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50/80 transition-all duration-200 rounded-lg py-2 text-sm"
           >
             <LogOut className="mr-2 h-4 w-4" />
             Logout
