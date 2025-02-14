@@ -244,10 +244,11 @@ console.log("selectedBook============",selectedBook,content)
       objectFit: 'cover'
     },
     backCoverContent: {
-      marginTop: 30
+      padding: 20,
+      marginTop: 20,
     },
     synopsis: {
-      fontSize: 14,
+      fontSize: 12,
       fontFamily: 'Times-Roman',
       lineHeight: 1.6,
       textAlign: 'justify',
@@ -255,18 +256,17 @@ console.log("selectedBook============",selectedBook,content)
       color: '#2D3748'
     },
     authorBio: {
-      fontSize: 12,
-      fontFamily: 'Times-Italic',
+      fontSize: 11,
+      fontFamily: 'Times-Roman',
       lineHeight: 1.4,
       textAlign: 'justify',
       marginTop: 24,
       color: '#4A5568',
-      borderTop: '1pt solid #E2E8F0',
       paddingTop: 16
     },
     divider: {
-      borderBottom: '2pt solid #E2E8F0',
-      marginVertical: 24,
+      borderBottom: '1pt solid #E2E8F0',
+      marginVertical: 20,
       width: '30%',
       alignSelf: 'center'
     },
@@ -276,8 +276,6 @@ console.log("selectedBook============",selectedBook,content)
       left: 40,
       right: 40,
       textAlign: 'center',
-      fontSize: 10,
-      color: '#718096',
       borderTop: '1pt solid #E2E8F0',
       paddingTop: 16
     },
@@ -557,29 +555,8 @@ console.log("bookInfo",bookInfo)
         </Page>
       ))}
 
-      {/* Glossary */}
-      <Page size="A4" style={styles.page}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Glossary</Text>
-          {glossary ? (
-            glossary.split('\n').map((item, index) => {
-              const [term, ...definitionParts] = item.split(':');
-              const definition = definitionParts.join(':').trim();
-              
-              if (!term || !definition) return null;
-              
-              return (
-                <View key={index} style={[styles.glossaryItem, { marginBottom: 12 }]}>
-                  <Text style={{ fontWeight: 'bold', fontFamily: 'Times-Roman' }}>{term.trim()}: </Text>
-                  <Text style={{ fontFamily: 'Times-Roman' }}>{definition}</Text>
-                </View>
-              );
-            }).filter(Boolean)
-          ) : (
-            <Text style={styles.bodyText}>No glossary entries available.</Text>
-          )}
-        </View>
-      </Page>
+      
+     
 
       {/* References - Exactly matching Glossary */}
       <Page size="A4" style={styles.page}>
@@ -606,7 +583,48 @@ console.log("bookInfo",bookInfo)
         </View>
       </Page>
 
-      {/* Back Cover */}
+      {/* Copyright Page */}
+      <Page size="A4" style={styles.page}>
+        <View style={[styles.section, { justifyContent: 'center', minHeight: '80vh' }]}>
+          <View style={{ marginBottom: 40 }}>
+            <Text style={[styles.bodyText, { textAlign: 'center', marginBottom: 20 }]}>
+              {bookInfo.bookTitle}
+            </Text>
+            <Text style={[styles.bodyText, { textAlign: 'center', marginBottom: 40 }]}>
+              By {bookInfo.authorName}
+            </Text>
+          </View>
+
+          <View style={{ marginBottom: 40 }}>
+            <Text style={[styles.bodyText, { textAlign: 'center', marginBottom: 10 }]}>
+              Copyright © {new Date().getFullYear()} {bookInfo.authorName}
+            </Text>
+            <Text style={[styles.bodyText, { textAlign: 'center', fontSize: 10, marginBottom: 20 }]}>
+              All rights reserved.
+            </Text>
+            <Text style={[styles.bodyText, { textAlign: 'center', fontSize: 10, marginBottom: 10 }]}>
+              No part of this publication may be reproduced, distributed, or transmitted in any form or by any means,
+              including photocopying, recording, or other electronic or mechanical methods, without the prior written
+              permission of the author, except in the case of brief quotations embodied in critical reviews and certain
+              other noncommercial uses permitted by copyright law.
+            </Text>
+          </View>
+
+          <View style={{ marginTop: 'auto' }}>
+            <Text style={[styles.bodyText, { textAlign: 'center', fontSize: 10 }]}>
+              Published by Cyberify Publications
+            </Text>
+            <Text style={[styles.bodyText, { textAlign: 'center', fontSize: 10 }]}>
+              First Edition: {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </Text>
+            <Text style={[styles.bodyText, { textAlign: 'center', fontSize: 10, marginTop: 20 }]}>
+              Printed in India
+            </Text>
+          </View>
+        </View>
+      </Page>
+
+      {/* Back Cover with improved layout */}
       <Page size="A4" style={styles.page}>
         <View style={styles.backCover}>
           {backCoverImageUrl && (
@@ -615,6 +633,28 @@ console.log("bookInfo",bookInfo)
               style={styles.backCoverImage}
             />
           )}
+          <View style={styles.backCoverContent}>
+            <Text style={[styles.bodyText, { 
+              fontSize: 14, 
+              fontWeight: 'bold',
+              marginBottom: 20,
+              textAlign: 'center'
+            }]}>
+              About the Book
+            </Text>
+            <Text style={styles.synopsis}>
+              {bookInfo.bookTitle}
+            </Text>
+            <View style={styles.divider} />
+            <Text style={styles.authorBio}>
+              About the Author:{'\n'}{<h6 className='m-2'>bookInfo.authorBio </h6>}
+            </Text>
+          </View>
+          <View style={styles.footer}>
+            <Text style={{ fontSize: 10, color: '#666' }}>
+              Cyberify Publications
+            </Text>
+          </View>
         </View>
       </Page>
     </Document>
