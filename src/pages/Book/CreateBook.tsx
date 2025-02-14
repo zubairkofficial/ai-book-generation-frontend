@@ -21,7 +21,7 @@ const bookSchema: any = yup.object().shape({
   bookTitle: yup.string().required("Book title is required"),
   authorName: yup.string().required("Author name is required"),
   authorBio: yup.string().optional(),
-  ideaCore: yup.string().required("Core idea is required"),
+  bookInformation: yup.string().required("Core idea is required"),
   genre: yup.string().required("Genre is required"),
   characters: yup.string().required("Characters are required"),
   targetAudience: yup.string().required("Target audience is required"),
@@ -41,7 +41,7 @@ const CreateBook = () => {
     bookTitle: "",
     authorName: "",
     authorBio: "",
-    ideaCore: "",
+    bookInformation: "",
     genre: "",
     characters: "",
     targetAudience: "",
@@ -113,7 +113,7 @@ const CreateBook = () => {
     },
     2: {
       title: "Book Details",
-      fields: ["ideaCore", "genre", "characters", "targetAudience", "language", "numberOfChapters"],
+      fields: ["bookInformation", "genre", "characters", "targetAudience", "language", "numberOfChapters"],
       description: "Enter the detailed information about your book",
     }
   };
@@ -125,7 +125,7 @@ const CreateBook = () => {
     authorBio: "A short biography of the author (optional)",
     
     // Book Details
-    ideaCore: "The main idea or concept of your book",
+    bookInformation: "The main idea or concept of your book",
     genre: "The category or style of your book",
     characters: "Main characters that will appear in your story",
     targetAudience: "Who is this book primarily written for?",
@@ -186,6 +186,7 @@ const CreateBook = () => {
       .replace(/([A-Z])/g, " $1")
       .replace(/^./, (str) => str.toUpperCase());
   };
+  
 
   const validateStep = async (step: number): Promise<boolean> => {
     const currentStepData = steps[step as keyof typeof steps];
@@ -260,7 +261,6 @@ const CreateBook = () => {
         advancedOptions: showAdvancedOptions ? advancedOptions : undefined,
       };
       const response:any = await generateBook(payload).unwrap();
-     console.log("response+++++++",response)
       // Instead of generating the book immediately, show the chapter configuration
     if(response){  setShowChapterConfig(true);
       setPreviousContent(JSON.stringify(response?.data, null, 2)); // Pass form data as previous content
@@ -286,7 +286,7 @@ const CreateBook = () => {
   };
 
   const renderField = (key: string) => {
-    if (key === 'ideaCore' || key === 'authorBio') {
+    if (key === 'bookInformation' || key === 'authorBio') {
       return (
         <div key={key} className="space-y-2">
           <Label htmlFor={key} className="text-base font-medium">
@@ -738,25 +738,12 @@ const CreateBook = () => {
 
   const [showChapterConfig, setShowChapterConfig] = useState(false);
   const [previousContent, setPreviousContent] = useState<string>('');
-// console.log("previousContent",JSON.parse(previousContent).id)
-  const handleChapterGeneration =async (input: any) => {
-    // Handle the chapter generation with the config
-    console.log('Generating chapters with config:', input);
-    const payload={
-      minCharacters:+input.minLength,
-      maxCharacters:+input.maxLength,
-      chapterNo:+input.numberOfChapters,
-      bookGenerationId:1
-    }
-    await createBookChapter({...payload}).unwrap()
-   
-  };
+ 
 
   if (showChapterConfig) {
     return (
       <Layout>
         <ChapterConfiguration
-          onGenerate={handleChapterGeneration}
           previousContent={previousContent}
         />
       </Layout>

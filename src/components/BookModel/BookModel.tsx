@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Document, Page, Text, View, StyleSheet, pdf, Image, Font } from '@react-pdf/renderer';
+import {  pdf, Font } from '@react-pdf/renderer';
 import { Loader2, X } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import { BASE_URl, ToastType } from '@/constant';
 import { useToast } from '@/context/ToastContext';
 import ToastContainer from '@/components/Toast/ToastContainer'; // Import custom ToastContainer
+import PdfBook from './PdfBook';
 
 // Register custom fonts
 Font.register({
@@ -17,130 +18,7 @@ Font.register({
   src: 'https://fonts.gstatic.com/s/lato/v24/S6u9w4BMUTPHh7USSwiPHA.ttf',
 });
 
-interface BookStyles {
-  fontFamily: {
-    body: string;
-    title: string;
-    headers: string;
-    chapterTitle: string;
-  };
-  fontSize: {
-    body: string;
-    title: string;
-    headers: string;
-    chapterTitle: string;
-  };
-  lineHeight: {
-    body: string;
-    title: string;
-    headers: string;
-    chapterTitle: string;
-  };
-  margins: {
-    top: string;
-    right: string;
-    bottom: string;
-    left: string;
-  };
-  spacing: {
-    chapterSpacing: string;
-    sectionSpacing: string;
-    paragraphSpacing: string;
-  };
-  textAlignment: {
-    body: string;
-    title: string;
-    headers: string;
-    chapterTitle: string;
-  };
-  pageLayout: {
-    columns: number;
-    pageSize: string;
-    orientation: string;
-  };
-}
 
-interface BookInfo {
-  title: string;
-  author: string;
-  publisher: string;
-  coverDesign: string;
-  dedication: string;
-  preface: {
-    coverage: string;
-    curriculum: string;
-    prerequisites: string;
-    goals: string;
-    acknowledgements: string;
-  };
-  tableOfContents: any[];
-  introduction: string;
-  chapters: Array<{
-    number: number;
-    title: string;
-    content: string;
-  }>;
-  glossary: Array<{
-    term: string;
-    definition: string;
-  }>;
-  index: Array<{
-    title: string;
-    page: string;
-  }>;
-  references: {
-    main: string[];
-    inspirations: string[];
-  };
-  authorProfile: string;
-  backCover: {
-    synopsis: string;
-    authorBio: string;
-  };
-}
-
-const defaultBookStyles: BookStyles = {
-  fontFamily: {
-    body: 'Georgia, serif',
-    title: 'Georgia, serif',
-    headers: 'Georgia, serif',
-    chapterTitle: 'Georgia, serif'
-  },
-  fontSize: {
-    body: '16px',
-    title: '32px',
-    headers: '20px',
-    chapterTitle: '24px'
-  },
-  lineHeight: {
-    body: '1.6',
-    title: '1.2',
-    headers: '1.6',
-    chapterTitle: '1.3'
-  },
-  margins: {
-    top: '72pt',
-    right: '72pt',
-    bottom: '72pt',
-    left: '72pt'
-  },
-  spacing: {
-    chapterSpacing: '4rem',
-    sectionSpacing: '40',
-    paragraphSpacing: '16'
-  },
-  textAlignment: {
-    body: 'justify',
-    title: 'center',
-    headers: 'center',
-    chapterTitle: 'center'
-  },
-  pageLayout: {
-    columns: 1,
-    pageSize: 'A4',
-    orientation: 'portrait'
-  },
-};
 
 const extractBookInfo = (content: string, selectedBook?: any): BookInfo => {
   const sections = content.split('\n\n');
@@ -326,7 +204,7 @@ const extractBookInfo = (content: string, selectedBook?: any): BookInfo => {
 
   // Process additional data from selectedBook if available
   if (selectedBook) {
-    // Add any missing book metadata
+    // Add any missing book bookChapter
     if (!bookInfo.title) bookInfo.title = selectedBook.bookTitle;
     if (!bookInfo.author) bookInfo.author = selectedBook.genre; // or another appropriate field
     
@@ -486,247 +364,10 @@ const formatChapterContent = (content: string) => {
   return formattedContent;
 };
 
-const bookStyles = `
-  .table-of-contents {
-    margin: 4rem auto;
-    max-width: 800px;
-    padding: 3rem;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    position: relative;
-    overflow: hidden;
-  }
 
-  .table-of-contents::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 8px;
-    background: linear-gradient(90deg, #c6a477 0%, #deb887 100%);
-  }
-
-  .toc-header {
-    text-align: center;
-    font-size: 2.8rem;
-    color: #2c3e50;
-    margin-bottom: 3rem;
-    font-family: 'Playfair Display', serif;
-    position: relative;
-    padding-bottom: 1.5rem;
-  }
-
-  .toc-header::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 3px;
-    background: #deb887;
-  }
-
-  .toc-line {
-    display: flex;
-    align-items: baseline;
-    margin: 1rem 0;
-    padding: 0.5rem 0;
-    transition: all 0.3s ease;
-  }
-
-  .toc-line:hover {
-    background: rgba(222, 184, 135, 0.1);
-    padding-left: 1rem;
-    border-radius: 4px;
-  }
-
-  .toc-title {
-    flex: 1;
-    font-family: 'Merriweather', serif;
-    font-size: 1.1rem;
-    color: #34495e;
-    padding-right: 1rem;
-  }
-
-  .toc-dots {
-    flex: 0 1 auto;
-    margin: 0 0.5rem;
-    border-bottom: 2px dotted #bdc3c7;
-    min-width: 2rem;
-  }
-
-  .toc-page {
-    flex: 0 0 auto;
-    font-family: 'Lato', sans-serif;
-    font-size: 1rem;
-    color: #7f8c8d;
-    padding: 0.2rem 0.5rem;
-    background: #f8f9fa;
-    border-radius: 3px;
-    min-width: 2.5rem;
-    text-align: center;
-  }
-
-  .toc-chapter {
-    font-weight: 700;
-    margin-top: 2rem;
-    color: #2c3e50;
-  }
-
-  .toc-chapter .toc-title {
-    font-size: 1.2rem;
-    color: #2c3e50;
-  }
-
-  .toc-chapter .toc-page {
-    background: #eee8d5;
-    color: #657b83;
-  }
-
-  .toc-section {
-    padding-left: 2rem;
-    color: #34495e;
-  }
-
-  .toc-section .toc-title {
-    font-size: 1rem;
-  }
-
-  @media (max-width: 768px) {
-    .table-of-contents {
-      padding: 2rem;
-      margin: 2rem 1rem;
-    }
-
-    .toc-header {
-      font-size: 2.2rem;
-      margin-bottom: 2rem;
-    }
-
-    .toc-line {
-      margin: 0.8rem 0;
-    }
-
-    .toc-title {
-      font-size: 1rem;
-    }
-
-    .toc-chapter .toc-title {
-      font-size: 1.1rem;
-    }
-
-    .toc-section {
-      padding-left: 1rem;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .table-of-contents {
-      padding: 1.5rem;
-    }
-
-    .toc-header {
-      font-size: 1.8rem;
-    }
-
-    .toc-title {
-      font-size: 0.9rem;
-    }
-
-    .toc-chapter .toc-title {
-      font-size: 1rem;
-    }
-
-    .toc-page {
-      font-size: 0.9rem;
-    }
-  }
-
-  // Professional Book Design Styles
-  .book-preview {
-    background: linear-gradient(to bottom, #fff 0%, #f8f9fa 100%);
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  }
-
-  .cover-page {
-    position: relative;
-    padding: 4rem 2rem;
-    background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-    text-align: center;
-  }
-
-  .book-title {
-    font-size: 3.5rem;
-    color: #2c3e50;
-    margin: 2rem 0;
-    font-family: 'Playfair Display', serif;
-    line-height: 1.2;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-  }
-
-  .author-name {
-    font-size: 1.8rem;
-    color: #34495e;
-    margin: 1rem 0;
-    font-family: 'Merriweather', serif;
-  }
-
-  .publisher-name {
-    font-size: 1.2rem;
-    color: #7f8c8d;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin: 1rem 0;
-    font-family: 'Lato', sans-serif;
-  }
-
-  .chapter {
-    margin: 4rem 0;
-    padding: 3rem;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  }
-
-  .chapter-title {
-    font-size: 2.5rem;
-    color: #2c3e50;
-    margin-bottom: 2rem;
-    font-family: 'Playfair Display', serif;
-    text-align: center;
-    position: relative;
-    padding-bottom: 1rem;
-  }
-
-  .chapter-title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 3px;
-    background: #deb887;
-  }
-
-  .chapter-content {
-    font-size: 1.1rem;
-    line-height: 1.8;
-    color: #34495e;
-    font-family: 'Merriweather', serif;
-  }
-`;
 
 const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverImageUrl?: string,selectedBook?:any) => {
   const bookInfo = extractBookInfo(content);
-  
   return `
     <div class="book-preview">
       <style>
@@ -1176,19 +817,35 @@ const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverIma
         </div>
       ` : ''}
 
-      ${bookInfo.tableOfContents.length > 0 ? `
+      ${selectedBook.bookChapter.length > 0 ? `
         <div class="table-of-contents">
           <h2 class="toc-header">Table of Contents</h2>
-          ${bookInfo.tableOfContents.map((item, index) => {
-            const isChapter = item.title.toLowerCase().includes('chapter');
-            return `
-              <div class="toc-line ${isChapter ? 'toc-chapter' : 'toc-section'}">
-                <span class="toc-title">${item.title}</span>
-                <span class="toc-dots"></span>
-                ${item.page ? `<span class="toc-page">${item.page}</span>` : ''}
-              </div>
-            `;
-          }).join('')}
+         ${selectedBook.bookChapter.map((item: { chapterInfo: string; page: any; }, index: any) => {
+  // Use a regular expression to extract the chapter title from chapterInfo
+ const chapterRegex = /Chapter \d+: (.+?)(?=\n)/g;
+const matches = [...item.chapterInfo.matchAll(chapterRegex)];
+
+let chapterTitle = 'Untitled Chapter'; // Default title
+if (matches.length >= 2) {
+  chapterTitle = matches[1][0]; // Get the second occurrence
+} else if (matches.length === 1) {
+  chapterTitle = matches[0][0]; // Fallback to first if no second match exists
+}
+  // const chapterTitleMatch = item.chapterInfo?.match(/Chapter \d+: (.+?)(?=\n)/g);
+  // const chapterTitle = chapterTitleMatch ? chapterTitleMatch[1] : 'Untitled Chapter';  // Default to 'Untitled Chapter' if no match
+
+  // Check if it's a chapter based on the title
+  const isChapter = chapterTitle.toLowerCase().includes('chapter');
+
+  return `
+    <div class="toc-line ${isChapter ? 'toc-chapter' : 'toc-section'}">
+      <span class="toc-title">${chapterTitle}</span>
+      <span class="toc-dots"></span>
+      ${item.page ? `<span class="toc-page">${item.page}</span>` : ''}
+    </div>
+  `;
+}).join('')}
+
         </div>
       ` : ''}
 
@@ -1201,14 +858,17 @@ const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverIma
         </div>
       ` : ''}
 
-      ${bookInfo.chapters.map((chapter) => `
-        <div class="chapter">
-          <div class="chapter-number">Chapter ${chapter.number}</div>
-          <h2 class="chapter-title">${chapter.title}</h2>
-          <div class="chapter-content">
-            ${formatChapterContent(chapter.content)}
-          </div>
-        </div>
+      ${selectedBook.bookChapter.map((chapter: { chapterNo: any; chapterInfo: string;  }) => `
+       <div class="chapter">
+  <div class="chapter-number">
+   ${[...chapter.chapterInfo?.matchAll(/Chapter \d+: (.+?)(?=\n)/g) || []][0]?.[0] || 'Chapter Not Found'}
+ </div>
+ 
+  <div class="chapter-content">
+    ${formatChapterContent(chapter.chapterInfo)}
+  </div>
+</div>
+
       `).join('\n')}
 
       ${bookInfo.glossary.length > 0 ? `
@@ -1290,496 +950,6 @@ const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverIma
   `;
 };
 
-interface BookPDFProps {
-  selectedBook: any;
-  content: string;
-  coverImageUrl?: string;
-  backCoverImageUrl?: string;
-  bookStyles?: BookStyles;
-}
-
-const BookPDF: React.FC<BookPDFProps> = ({ 
-  selectedBook,
-  content, 
-  coverImageUrl,
-  backCoverImageUrl,
-  bookStyles = defaultBookStyles 
-}) => {
-  const bookInfo = extractBookInfo(content, selectedBook);
-
-  console.log("bookInfo",selectedBook)
-  const styles = StyleSheet.create({
-    page: {
-      flexDirection: 'column',
-      backgroundColor: '#FFFFFF',
-      padding: '60pt 72pt', // Professional book margins
-      fontFamily: 'Times-Roman'
-    },
-    coverPage: {
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '100%',
-      position: 'relative'
-    },
-    coverImage: {
-      width: '100%',
-      height: 'auto',
-      maxWidth: 450,
-      marginBottom: 40,
-      objectFit: 'contain'
-    },
-    title: {
-      fontSize: 42,
-      fontFamily: 'Times-Bold',
-      marginBottom: 24,
-      textAlign: 'center',
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-      color: '#1A202C'
-    },
-    author: {
-      fontSize: 28,
-      fontFamily: 'Times-Roman',
-      marginBottom: 16,
-      textAlign: 'center',
-      color: '#2D3748'
-    },
-    publisher: {
-      fontSize: 20,
-      fontFamily: 'Times-Roman',
-      marginBottom: 40,
-      textAlign: 'center',
-      color: '#4A5568'
-    },
-    tocPage: {
-      padding: '40pt',
-      position: 'relative'
-    },
-    tocTitle: {
-      fontSize: 24,
-      fontFamily: 'Times-Bold',
-      marginBottom: 30,
-      textAlign: 'center',
-      color: '#1A202C'
-    },
-    tocItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8
-    },
-    tocText: {
-      fontSize: 12,
-      fontFamily: 'Times-Roman',
-      color: '#2D3748',
-      flex: 1
-    },
-    tocDots: {
-      borderBottom: '1pt dotted #CBD5E0',
-      flex: 1,
-      marginHorizontal: 8
-    },
-    tocPageNumber: {
-      fontSize: 12,
-      fontFamily: 'Times-Roman',
-      color: '#718096'
-    },
-    chapterPage: {
-      padding: '0',
-      position: 'relative',
-      width: '100%',
-    },
-    chapterHeader: {
-      marginBottom: 48,
-      textAlign: 'center',
-    },
-    chapterNumber: {
-      fontSize: 20,
-      fontFamily: 'Times-Roman',
-      color: '#718096',
-      marginBottom: 12,
-      textTransform: 'uppercase',
-      letterSpacing: 2
-    },
-    chapterTitle: {
-      fontSize: 36,
-      fontFamily: 'Times-Bold',
-      color: '#1A202C',
-      marginBottom: 36
-    },
-    chapterContent: {
-      fontSize: 11, // Standard book font size
-      fontFamily: 'Times-Roman',
-      lineHeight: 1.6,
-      textAlign: 'justify',
-      marginBottom: 12,
-      columnGap: '24pt',
-    },
-    paragraph: {
-      textIndent: '18pt', // Professional paragraph indentation
-      marginBottom: '12pt',
-    },
-    bodyText: {
-      fontSize: 11,
-      lineHeight: 1.6,
-      textAlign: 'justify',
-      marginBottom: '12pt',
-    },
-    runningHeader: {
-      position: 'absolute',
-      top: 20,
-      left: 40,
-      right: 40,
-      textAlign: 'center',
-      fontSize: 10,
-      color: '#718096',
-      fontFamily: 'Times-Italic'
-    },
-    pageNumber: {
-      position: 'absolute',
-      bottom: 20,
-      left: 0,
-      right: 0,
-      textAlign: 'center',
-      fontSize: 11,
-      color: '#4A5568',
-      fontFamily: 'Times-Roman'
-    },
-    endOfPage: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 2,
-      backgroundColor: '#4A5568', // Grey color for the separator
-    },
-    backCoverPage: {
-      padding: '40pt',
-      position: 'relative',
-      height: '100%'
-    },
-    backCoverImage: {
-      width: '100%',
-      height: 400,
-      marginBottom: 30,
-      objectFit: 'cover'
-    },
-    backCoverContent: {
-      marginTop: 30
-    },
-    synopsis: {
-      fontSize: 14,
-      fontFamily: 'Times-Roman',
-      lineHeight: 1.6,
-      textAlign: 'justify',
-      marginBottom: 24,
-      color: '#2D3748'
-    },
-    authorBio: {
-      fontSize: 12,
-      fontFamily: 'Times-Italic',
-      lineHeight: 1.4,
-      textAlign: 'justify',
-      marginTop: 24,
-      color: '#4A5568',
-      borderTop: '1pt solid #E2E8F0',
-      paddingTop: 16
-    },
-    divider: {
-      borderBottom: '2pt solid #E2E8F0',
-      marginVertical: 24,
-      width: '30%',
-      alignSelf: 'center'
-    },
-    footer: {
-      position: 'absolute',
-      bottom: 40,
-      left: 40,
-      right: 40,
-      textAlign: 'center',
-      fontSize: 10,
-      color: '#718096',
-      borderTop: '1pt solid #E2E8F0',
-      paddingTop: 16
-    },
-    chapterImage: {
-      width: '100%',
-      marginVertical: 20,
-    },
-    imageCaption: {
-      fontSize: 10,
-      fontFamily: 'Times-Italic',
-      color: '#666',
-      textAlign: 'center',
-      marginTop: '8pt',
-    },
-    imageContainer: {
-      margin: '24pt 0',
-      breakInside: 'avoid',
-      position: 'relative',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    diagramContainer: {
-      margin: '20pt 0',
-      padding: '16pt',
-      backgroundColor: '#f8f9fa',
-      borderRadius: '4pt',
-      breakInside: 'avoid',
-      width: '100%',
-    },
-    diagramImage: {
-      width: '100%',
-      maxHeight: '500pt',
-      objectFit: 'contain',
-      marginVertical: '12pt',
-    },
-    diagramCaption: {
-      fontSize: 10,
-      fontFamily: 'Times-Italic',
-      color: '#4a5568',
-      textAlign: 'center',
-      marginTop: '8pt',
-      paddingTop: '4pt',
-      borderTop: '1pt solid #e2e8f0',
-    },
-    figureNumber: {
-      fontSize: 10,
-      fontFamily: 'Times-Bold',
-      color: '#2d3748',
-      marginBottom: '4pt',
-    },
-    figureHeader: {
-      marginBottom: 8,
-      borderBottom: '1pt solid #e2e8f0',
-      paddingBottom: 4,
-    },
-    imageWrapper: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginVertical: '12pt',
-      position: 'relative',
-    },
-    textLeft: {
-      textAlign: 'left',
-    },
-    textRight: {
-      textAlign: 'right',
-    },
-    textJustify: {
-      textAlign: 'justify',
-    },
-    singleColumn: {
-    },
-    doubleColumn: {
-      columnGap: '24pt',
-    },
-  });
-
-  // Update the renderChapterContent function
-  const renderChapterContent = (content: string) => {
-    let figureCount = 0;
-    const parts = content.split(/!\[(.*?)\]\((.*?)\)/);
-    
-    return parts.map((part, index) => {
-      if (index % 3 === 0) {
-        // Text content
-        return part.split('\n\n').map((paragraph, pIndex) => (
-          <View key={pIndex} style={styles.paragraph}>
-            <Text style={styles.bodyText}>{paragraph.trim()}</Text>
-          </View>
-        ));
-      } else if (index % 3 === 1) {
-        const altText = part;
-        const imageUrl = parts[index + 1];
-        
-        if (!imageUrl || imageUrl.includes('undefined')) {
-          return null;
-        }
-
-        figureCount++;
-        const isDiagram = isDiagramOrFlowchart(altText);
-        const dimensions = imageCache.getImageSize(imageUrl, altText);
-
-        // Convert SVG URL to PNG URL for diagrams/flowcharts
-        const processedImageUrl = imageUrl.endsWith('.svg') 
-          ? imageUrl.replace('.svg', '.png') // Assuming you'll implement SVG to PNG conversion on backend
-          : imageUrl;
-
-        return (
-          <View key={index} style={isDiagram ? styles.diagramContainer : styles.imageContainer}>
-            <View style={styles.figureHeader}>
-              <Text style={styles.figureNumber}>Figure {figureCount}</Text>
-            </View>
-            <View style={styles.imageWrapper}>
-              <Image
-                src={processedImageUrl}
-                style={{
-                  width: dimensions.width,
-                  height: dimensions.height,
-                }}
-              />
-            </View>
-            <Text style={styles.imageCaption}>{altText}</Text>
-          </View>
-        );
-      }
-      return null;
-    });
-  };
-console.log("bookInfo",bookInfo)
-
-  // Update the Table of Contents page to show correct page numbers
-  const calculatePageNumber = (chapterIndex: number) => {
-    // Add 4 to account for cover, copyright, and TOC pages
-    return chapterIndex + 4;
-  };
-
-  return (
-    <Document>
-      {/* Cover Page */}
-      <Page size="A4" style={styles.page} >
-        <View style={styles.coverPage}>
-          
-          {coverImageUrl && (
-            <Image src={coverImageUrl} style={styles.coverImage} />
-          )}
-          <Text style={styles.title}>{bookInfo.title}</Text>
-          <View style={styles.divider} />
-          <Text style={styles.author}>By {bookInfo.author}</Text>
-          <Text style={styles.publisher}>{bookInfo.publisher}</Text>
-        </View>
-      </Page>
-
-      {/* Copyright Page */}
-      <Page size="A4" style={styles.page}>
-        <View style={{ marginTop: 200 }}>
-          <Text style={[styles.chapterContent, { textAlign: 'center', marginBottom: 24 }]}>
-            Copyright © {new Date().getFullYear()} by {bookInfo.author}
-          </Text>
-          <Text style={[styles.chapterContent, { textAlign: 'center', marginBottom: 24 }]}>
-            All rights reserved. No part of this publication may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the publisher, except in the case of brief quotations embodied in critical reviews and certain other noncommercial uses permitted by copyright law.
-          </Text>
-          <Text style={[styles.chapterContent, { textAlign: 'center', marginBottom: 16 }]}>
-            Published by {bookInfo.publisher}
-          </Text>
-          <Text style={[styles.chapterContent, { textAlign: 'center' }]}>
-            First Edition: {new Date().getFullYear()}
-          </Text>
-        </View>
-      </Page>
-
-      {/* Table of Contents */}
-      <Page size="A4" style={styles.page}>
-        <View style={styles.tocPage}>
-          <Text style={styles.tocTitle}>Table of Contents</Text>
-          {bookInfo.chapters.map((chapter, index) => (
-            <View key={index} style={styles.tocItem}>
-              <Text style={styles.tocText}>
-                Chapter {chapter.number}: {chapter.title}
-              </Text>
-              <View style={styles.tocDots} />
-              <Text style={styles.tocPageNumber}>{calculatePageNumber(index)}</Text>
-            </View>
-          ))}
-        </View>
-      </Page>
-
-      {/* Chapters */}
-      {bookInfo.chapters.map((chapter, index) => (
-        <Page 
-          key={index} 
-          size="A4" 
-          style={styles.page}
-          wrap
-        >
-          <View style={styles.chapterPage}>
-            <Text style={styles.runningHeader}>
-              {bookInfo.title} • Chapter {chapter.number}
-            </Text>
-            
-            <View style={styles.chapterHeader}>
-              <Text style={styles.chapterNumber}>
-                Chapter {chapter.number}
-              </Text>
-              <Text style={styles.chapterTitle}>
-                {chapter.title}
-              </Text>
-            </View>
-
-            <View>
-              {renderChapterContent(chapter.content)}
-            </View>
-          </View>
-          
-          <Text
-            style={styles.pageNumber}
-            render={({ pageNumber }) => `${pageNumber}`}
-            fixed
-          />
-        </Page>
-      ))}
-
-      {/* Glossary */}
-      {bookInfo.glossary.length > 0 && (
-        <Page size="A4" style={styles.page}>
-          <View style={styles.chapterPage}>
-            <Text style={styles.tocTitle}>Glossary</Text>
-            {bookInfo.glossary.map((item, index) => (
-              <View key={index} style={{ marginBottom: 16 }}>
-                <Text style={[styles.chapterContent, { fontFamily: 'Times-Bold' }]}>
-                  {item.term}
-                </Text>
-                <Text style={styles.chapterContent}>
-                  {item.definition}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </Page>
-      )}
-
-      {/* Back Cover */}
-      <Page size="A4" style={styles.page}>
-      <View style={styles.coverPage}>
-          {backCoverImageUrl && (
-            <Image src={backCoverImageUrl} style={styles.backCoverImage} />
-          )}
-          
-          <View style={styles.backCoverContent}>
-            {bookInfo.backCover.synopsis && (
-              <Text style={styles.synopsis}>
-                {bookInfo.backCover.synopsis}
-              </Text>
-            )}
-            
-            {bookInfo.backCover.authorBio && (
-              <Text style={styles.authorBio}>
-                {selectedBook.authorBio}
-              </Text>
-            )}
-          </View>
-
-          <Text style={styles.footer}>
-            {bookInfo.publisher} • {new Date().getFullYear()}
-          </Text>
-        </View>
-      </Page>
-    </Document>
-  );
-};
-
-interface BookModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  htmlContent?: string;
-  coverImageUrl?: string;
-  backCoverImageUrl?: string;
-  selectedBook: any;
-}
-
 export default function BookModal({ 
   isOpen, 
   onClose, 
@@ -1788,7 +958,6 @@ export default function BookModal({
   backCoverImageUrl,
   selectedBook
 }: BookModalProps) {
-  console.log("title",selectedBook)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { addToast } = useToast(); // Use custom toast hook
   <ToastContainer />
@@ -1808,12 +977,11 @@ export default function BookModal({
 
     try {
       const pdfBlob = await pdf(
-        <BookPDF 
+        <PdfBook 
           selectedBook={selectedBook}
           content={htmlContent} 
           coverImageUrl={fullCoverImageUrl}
           backCoverImageUrl={fullBackCoverImageUrl}
-          bookStyles={defaultBookStyles}
         />
       ).toBlob();
       
@@ -1891,7 +1059,7 @@ export default function BookModal({
                 />
               </div>
             )}
-            {htmlContent && activeTab === 'pdf' && (
+            {/* {htmlContent && activeTab === 'pdf' && (
               <iframe
                 src={URL.createObjectURL(
                   new Blob([formatHTMLContent(htmlContent, fullCoverImageUrl, fullBackCoverImageUrl)], { type: 'text/html' })
@@ -1899,7 +1067,7 @@ export default function BookModal({
                 className="w-full h-[600px] border-0"
                 title="PDF Preview"
               />
-            )}
+            )} */}
           </div>
 
           {/* Modal Footer */}

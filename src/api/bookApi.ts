@@ -37,10 +37,11 @@ interface GenerateBookRequest {
 }
 interface CreateBookGenerateRequest {
  
-  minCharacters: number;
-  maxCharacters: number;
+  minWords: number;
+  maxWords: number;
   chapterNo:number;
-  bookGenerationId:number
+  bookGenerationId:number,
+  additionalInfo?:string
 }
 
 interface GenerateBookResponse {
@@ -75,7 +76,7 @@ export const bookApi = baseApi.injectEndpoints({
     }),
     createChapter: builder.mutation<GenerateBookResponse, CreateBookGenerateRequest>({
       query: (payload) => ({
-        url: '/book-generation/chapter/create',
+        url: '/book-chapter/chapter/create',
         method: 'POST',
         body: payload,
       }),

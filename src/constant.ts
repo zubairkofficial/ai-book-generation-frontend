@@ -12,3 +12,6 @@ export enum ToastType {
     message: string;
     type: ToastType; // Use the enum here
   };
+
+
+  

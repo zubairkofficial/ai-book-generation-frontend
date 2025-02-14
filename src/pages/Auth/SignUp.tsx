@@ -105,7 +105,7 @@ export default function SignUp() {
           <Label htmlFor="phoneNumber">Phone Number</Label>
           <Input
             id="phoneNumber"
-            placeholder="+92XXXXXXXXXX"
+            placeholder="+1XXXXXXXXXX"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
           />

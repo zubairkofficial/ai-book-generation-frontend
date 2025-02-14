@@ -25,7 +25,6 @@ import { RootState } from './store/store'; // Import RootState
 function App() {
   const dispatch = useDispatch();
   const { token } = useSelector((state: RootState) => state.auth);
-console.log(token)
   // Initialize authentication state from local storage when the app loads
   useEffect(() => {
     dispatch(initializeAuth());
@@ -39,7 +38,6 @@ console.log(token)
 
       if (decodedToken.exp < currentTime) {
         dispatch(logout()); // Dispatch logout action
-        console.log('Token has expired. Redirecting to login...');
       }
     }
   }, [token, dispatch]);

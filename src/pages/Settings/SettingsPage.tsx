@@ -13,6 +13,15 @@ import { useFetchApiKeysQuery, useUpdateApiKeysMutation } from '@/api/apiKeysApi
 import * as yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { motion } from 'framer-motion';
+import { 
+  UserCircle, 
+  Key, 
+  Shield,
+  ChevronRight,
+  Save,
+  AlertCircle
+} from 'lucide-react';
 
 // Add validation schemas
 const passwordSchema = yup.object({
@@ -255,164 +264,161 @@ useEffect(()=>{userRefetch()},[])
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gray-50 py-2 sm:py-8 px-2 sm:px-6 lg:px-8">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-4 sm:py-8 px-4 sm:px-6 lg:px-8"
+      >
         <div className="max-w-7xl mx-auto">
-          {/* Header - Improved mobile spacing */}
-          <div className="mb-4 sm:mb-8 px-2">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Settings</h1>
-            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600">
-              Manage your account settings and preferences
-            </p>
+          {/* Enhanced Header */}
+          <div className="mb-6 sm:mb-10">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                Account Settings
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">
+                Manage your profile, security, and API preferences
+              </p>
+            </motion.div>
           </div>
 
-          {/* Main Content */}
-          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow overflow-hidden">
+          {/* Main Content - Enhanced Card Design */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <Tabs defaultValue="profile" className="w-full">
-              {/* Tabs Navigation - Enhanced Mobile Design */}
-              <TabsList className="w-full border-b border-gray-200 bg-gray-50">
-                <div className="grid grid-cols-3 w-full">
+              {/* Enhanced Tab Navigation */}
+              <div className="border-b border-gray-200 bg-gray-50/80 backdrop-blur-sm sticky top-0 z-10">
+                <TabsList className="flex w-full max-w-3xl mx-auto px-4">
                   <TabsTrigger 
                     value="profile" 
-                    className="flex-1 py-2.5 sm:py-4 text-xs sm:text-sm font-medium 
-                      border-b-2 border-transparent
-                      text-gray-500 hover:text-gray-700 hover:border-gray-300
-                      data-[state=active]:border-amber-500 data-[state=active]:text-amber-600
-                      transition-all duration-200 ease-in-out
-                      focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-50"
+                    className="flex-1 py-4 px-3 group"
                   >
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="h-4 w-4 sm:h-5 sm:w-5" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      <span className="text-[10px] sm:text-xs whitespace-nowrap">Profile</span>
+                    <div className="flex items-center justify-center gap-2">
+                      <UserCircle className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
+                      <span className="hidden sm:inline">Profile</span>
                     </div>
                   </TabsTrigger>
 
                   <TabsTrigger 
                     value="password"
-                    className="flex-1 py-2.5 sm:py-4 text-xs sm:text-sm font-medium 
-                      border-b-2 border-transparent
-                      text-gray-500 hover:text-gray-700 hover:border-gray-300
-                      data-[state=active]:border-amber-500 data-[state=active]:text-amber-600
-                      transition-all duration-200 ease-in-out
-                      focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-50"
+                    className="flex-1 py-4 px-3 group"
                   >
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="h-4 w-4 sm:h-5 sm:w-5" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                      <span className="text-[10px] sm:text-xs whitespace-nowrap">Password</span>
+                    <div className="flex items-center justify-center gap-2">
+                      <Shield className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
+                      <span className="hidden sm:inline">Security</span>
                     </div>
                   </TabsTrigger>
 
                   {userInfo?.role === 'admin' && (
                     <TabsTrigger 
                       value="api-keys"
-                      className="flex-1 py-2.5 sm:py-4 text-xs sm:text-sm font-medium 
-                        border-b-2 border-transparent
-                        text-gray-500 hover:text-gray-700 hover:border-gray-300
-                        data-[state=active]:border-amber-500 data-[state=active]:text-amber-600
-                        transition-all duration-200 ease-in-out
-                        focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-50"
+                      className="flex-1 py-4 px-3 group"
                     >
-                      <div className="flex flex-col items-center justify-center gap-1">
-                        <svg 
-                          xmlns="http://www.w3.org/2000/svg" 
-                          className="h-4 w-4 sm:h-5 sm:w-5" 
-                          fill="none" 
-                          viewBox="0 0 24 24" 
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                        </svg>
-                        <span className="text-[10px] sm:text-xs whitespace-nowrap">API Keys</span>
+                      <div className="flex items-center justify-center gap-2">
+                        <Key className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
+                        <span className="hidden sm:inline">API Keys</span>
                       </div>
                     </TabsTrigger>
                   )}
-                </div>
-              </TabsList>
+                </TabsList>
+              </div>
 
-              {/* Tabs Content - Improved Mobile Layout */}
-              <div className="p-2 sm:p-4 md:p-6">
+              {/* Enhanced Tab Content */}
+              <div className="p-4 sm:p-6 lg:p-8">
                 <TabsContent value="profile">
-                  <div className="animate-in fade-in-50 duration-500">
-                    <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
-                      {/* Profile Section Header */}
-                      <div className="mb-4 sm:mb-6">
-                        <h2 className="text-base sm:text-lg font-semibold text-gray-900">Profile Information</h2>
-                        <p className="mt-1 text-xs sm:text-sm text-gray-600">
-                          Update your personal information
-                        </p>
-                      </div>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="max-w-2xl mx-auto space-y-8"
+                  >
+                    {/* Profile Form - Enhanced UI */}
+                    <form onSubmit={handleSubmitProfile(handleProfileSave)}>
+                      <div className="space-y-6">
+                        {/* Profile Picture Section */}
+                        <div className="flex items-center gap-4">
+                          <div className="h-20 w-20 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-2xl font-semibold text-amber-600">
+                            {userInfo?.name?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">Profile Picture</h3>
+                            <p className="text-sm text-gray-500">Update your profile photo</p>
+                          </div>
+                        </div>
 
-                      {/* Profile Form */}
-                      <form onSubmit={handleSubmitProfile(handleProfileSave)} className="space-y-4 sm:space-y-6">
-                        <div className="grid gap-4 sm:gap-6">
-                          {/* Name Input */}
-                          <div className="space-y-1.5">
-                            <Label 
-                              htmlFor="name" 
-                              className="text-xs sm:text-sm font-medium text-gray-700"
-                            >
+                        {/* Form Fields */}
+                        <div className="grid gap-6">
+                          {/* Name Input - Enhanced */}
+                          <div className="space-y-2">
+                            <Label htmlFor="name" className="text-sm font-medium text-gray-700">
                               Full Name
                             </Label>
-                            <Input
-                              {...registerProfile('name')}
-                              id="name"
-                              className="text-sm sm:text-base"
-                              placeholder="Enter your name"
-                            />
+                            <div className="relative">
+                              <Input
+                                {...registerProfile('name')}
+                                id="name"
+                                className="pl-10"
+                                placeholder="Enter your full name"
+                              />
+                              <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            </div>
                             {profileErrors.name && (
-                              <p className="text-xs text-red-500 mt-1">{profileErrors.name.message}</p>
+                              <motion.p 
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-sm text-red-500 flex items-center gap-1"
+                              >
+                                <AlertCircle className="h-4 w-4" />
+                                {profileErrors.name.message}
+                              </motion.p>
                             )}
                           </div>
 
-                          {/* Email Input */}
-                          <div className="space-y-1.5">
-                            <Label 
-                              htmlFor="email" 
-                              className="text-xs sm:text-sm font-medium text-gray-700"
-                            >
+                          {/* Email Input - Enhanced */}
+                          <div className="space-y-2">
+                            <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                               Email Address
                             </Label>
-                            <Input
-                              {...registerProfile('email')}
-                              id="email"
-                              type="email"
-                              className="text-sm sm:text-base bg-gray-50"
-                              disabled
-                            />
+                            <div className="relative">
+                              <Input
+                                {...registerProfile('email')}
+                                id="email"
+                                type="email"
+                                className="pl-10"
+                                placeholder="Enter your email"
+                              />
+                              <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            </div>
+                            {profileErrors.email && (
+                              <motion.p 
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-sm text-red-500 flex items-center gap-1"
+                              >
+                                <AlertCircle className="h-4 w-4" />
+                                {profileErrors.email.message}
+                              </motion.p>
+                            )}
                           </div>
                         </div>
 
-                        {/* Submit Button */}
+                        {/* Submit Button - Enhanced */}
                         <div className="flex justify-end pt-6 border-t border-gray-100">
                           <Button
                             type="submit"
-                            className="w-full sm:w-auto min-w-[120px] h-9 sm:h-10
-                              bg-amber-500 hover:bg-amber-600 text-white
-                              text-xs sm:text-sm font-medium
-                              transition-colors duration-200"
+                            className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6"
                             disabled={isLoading}
                           >
+                            <Save className="h-4 w-4" />
                             {isLoading ? 'Saving...' : 'Save Changes'}
                           </Button>
                         </div>
-                      </form>
-                    </div>
-                  </div>
+                      </div>
+                    </form>
+                  </motion.div>
                 </TabsContent>
 
                 <TabsContent value="password">
@@ -656,7 +662,7 @@ useEffect(()=>{userRefetch()},[])
             </Tabs>
           </div>
         </div>
-      </div>
+      </motion.div>
     </Layout>
   );
 };
