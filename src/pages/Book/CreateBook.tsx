@@ -19,6 +19,7 @@ import { ArrowLeft, ArrowRight, Loader2, Wand2 } from 'lucide-react';
 import { X } from 'lucide-react';
 import { AlertCircle } from 'lucide-react';
 import TableOfContents from './components/TableOfContents';
+import { countWords } from "@/common/wordsCount";
 
 // Add this enum for genres
 enum BookGenre {
@@ -334,10 +335,11 @@ const CreateBook = () => {
         addToast("Please check all fields and try again", ToastType.ERROR);
         return;
       }
-if(formData.bookInformation.length>800){
-  addToast("Idea core should not exceed 800 words", ToastType.ERROR);
-  return;
-}
+//    const wordCounts=   countWords(formData.bookInformation)
+// if(wordCounts>800){
+//   addToast("Idea core should not exceed 800 words", ToastType.ERROR);
+//   return;
+// }
       const payload: any = {
         ...formData,
         characters: formData.characters || "",

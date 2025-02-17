@@ -216,7 +216,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
     if (!content) return null;
 
     try {
-      const parts = content.split('![');
+      const parts = content.split(/###\s*/);
       
       return parts.map((part, index) => {
         if (index === 0) {
@@ -227,13 +227,13 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
           const [imageInfo, ...textParts] = part.split(']');
           if (!imageInfo) return null;
 
-          // Extract title and URL with a more flexible regex
-          const titleMatch = imageInfo.match(/"([^"]+)"/);
+          // Extract title and URL with improved regex patterns
+          const titleMatch = imageInfo.match(/###\s*"([^"]+)"|"([^"]+)"/);
           const urlMatch = textParts[0].match(/\((http[^)]+)\)/);
 
           if (!titleMatch || !urlMatch) return formatTextContent(part);
 
-          const title = titleMatch[1];
+          const title = (titleMatch[1] || titleMatch[2]).replace(/^###\s*/, ''); // Remove ### if present
           const imageUrl = urlMatch[1];
           
           // Get the remaining text after the URL
@@ -241,6 +241,9 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
 
           return (
             <React.Fragment key={index}>
+              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3 text-center">
+                {title}
+              </h3>
               <div className="my-6">
                 <img
                   src={formatImageUrl(imageUrl)}
@@ -252,9 +255,6 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                     e.currentTarget.className = 'rounded-lg shadow-lg w-full max-w-2xl mx-auto opacity-50';
                   }}
                 />
-                <p className="text-center text-sm text-gray-600 mt-2">
-                  {title}
-                </p>
               </div>
               {formatTextContent(remainingText)}
             </React.Fragment>
@@ -275,33 +275,36 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
     if (!text) return null;
 
     try {
-      // Format chapter title
-      const titleMatch = text.match(/\*\*(.*?)\*\*/);
-      if (titleMatch) {
-        const title = titleMatch[1];
-        const contentWithoutTitle = text.replace(/\*\*(.*?)\*\*/, '');
-        return (
-          <>
-            <h2 className="text-2xl font-bold text-amber-800 mb-6 border-b pb-2">
-              {title}
-            </h2>
-            <div className="prose prose-amber max-w-none">
-              <ReactMarkdown>
-                {contentWithoutTitle}
-              </ReactMarkdown>
-            </div>
-          </>
-        );
-      }
+      // Split text by ### markers
+      const parts = text.split(/###\s*/);
+      
+      return parts.map((part, index) => {
+        if (!part.trim()) return null;
 
-      // Regular paragraphs
-      return (
-        <div className="prose prose-amber max-w-none">
-          <ReactMarkdown>
-            {text}
-          </ReactMarkdown>
-        </div>
-      );
+        // Check if this part starts with a quoted title
+        const titleMatch = part.match(/^"([^"]+)"\s*([\s\S]*)/);
+        
+        if (titleMatch) {
+          const [_, title, content] = titleMatch;
+          return (
+            <React.Fragment key={index}>
+              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3 text-center">
+                {title}
+              </h3>
+              <div className="prose prose-amber max-w-none">
+                <ReactMarkdown>{content}</ReactMarkdown>
+              </div>
+            </React.Fragment>
+          );
+        }
+
+        // Regular text content
+        return (
+          <div key={index} className="prose prose-amber max-w-none">
+            <ReactMarkdown>{part}</ReactMarkdown>
+          </div>
+        );
+      }).filter(Boolean);
     } catch (error) {
       console.error('Error formatting text content:', error);
       return <p className="text-gray-700">{text}</p>;
