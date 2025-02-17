@@ -26,9 +26,9 @@ const signUpSchema = yup.object().shape({
     .string()
     .oneOf([yup.ref('password')], 'Passwords must match.')
     .required('Confirm Password is required.'),
-  phoneNumber: yup
-    .string()
-    .required('Phone number is required.'),
+  // phoneNumber: yup
+  //   .string()
+  //   .required('Phone number is required.'),
 });
 
 export default function SignUp() {
@@ -36,7 +36,7 @@ export default function SignUp() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  // const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -51,7 +51,7 @@ export default function SignUp() {
     try {
       // Validate the form data against the schema
       await signUpSchema.validate(
-        { name, email, password, confirmPassword, phoneNumber },
+        { name, email, password, confirmPassword },
         { abortEarly: false }
       );
       setErrors({}); // Clear any previous errors
@@ -59,7 +59,7 @@ export default function SignUp() {
       setIsLoading(true);
 
       // Call the sign-up API
-     const response= await signUp({ email, password, name, phoneNumber }).unwrap();
+     const response= await signUp({ email, password, name }).unwrap();
      if(response){ 
      navigate('/home'); // Redirect to home page
      addToast('Account created successfully!',ToastType.SUCCESS);
@@ -102,14 +102,14 @@ export default function SignUp() {
           {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
 
           {/* Phone Number Field */}
-          <Label htmlFor="phoneNumber">Phone Number</Label>
+          {/* <Label htmlFor="phoneNumber">Phone Number</Label>
           <Input
             id="phoneNumber"
             placeholder="+1XXXXXXXXXX"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
           />
-          {errors.phoneNumber && <p className="text-sm text-red-600">{errors.phoneNumber}</p>}
+          {errors.phoneNumber && <p className="text-sm text-red-600">{errors.phoneNumber}</p>} */}
 
           {/* Email Field */}
           <Label htmlFor="email">Email</Label>

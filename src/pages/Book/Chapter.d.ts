@@ -8,6 +8,7 @@ type ChapterConfig ={
   maxLength: string;
   additionalInfo?: string;
   imagePrompt?: string;
+  summary?: string;
   noOfImages?: number;
 }
 

@@ -54,7 +54,7 @@ interface GenerateOTPRequest {
 
 interface VerifyOTPRequest {
   email: string;
-  code: string;
+  otp: string;
 }
 
 interface GenerateBookRequest {
@@ -160,10 +160,10 @@ export const authApi = baseApi.injectEndpoints({
     }),
 
     verifyOTP: builder.mutation<void, VerifyOTPRequest>({
-      query: ({ email, code }) => ({
+      query: ({ email, otp }) => ({
         url: '/auth/verify-otp',
         method: 'POST',
-        body: { email, code },
+        body: { email, otp },
       }),
     }),
 

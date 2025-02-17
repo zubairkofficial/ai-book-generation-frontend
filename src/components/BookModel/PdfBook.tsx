@@ -1,6 +1,11 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet, pdf, Image, Font } from '@react-pdf/renderer';
 import { BASE_URl } from '@/constant';
+import remarkGfm from 'remark-gfm';
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import rehypeStringify from 'rehype-stringify';
 
 // Define interfaces for better type safety
 interface Chapter {
@@ -53,6 +58,32 @@ Font.register({
     { src: 'Helvetica' }
   ]
 });
+
+// Enhanced markdown cleaning function
+const cleanMarkdown = (text: string) => {
+  if (!text) return '';
+  return text
+    .replace(/#{1,6}\s/g, '') // Remove heading markers
+    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markers
+    .replace(/\*(.*?)\*/g, '$1') // Remove italic markers
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Clean links but keep text
+    .replace(/^\s*[-*+]\s+/gm, '• ') // Convert list markers to bullets
+    .replace(/^\s*\d+\.\s+/gm, '• ') // Convert numbered lists to bullets
+    .replace(/\n{3,}/g, '\n\n') // Normalize multiple newlines
+    .trim();
+};
+
+// Function to process markdown content
+const processMarkdown = async (content: string) => {
+  const processor = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkRehype)
+    .use(rehypeStringify);
+
+  const result = await processor.process(content);
+  return result.toString();
+};
 
 const PdfBook: React.FC<BookPDFProps> = ({ 
   selectedBook,
@@ -380,59 +411,105 @@ console.log("selectedBook============",selectedBook,content)
       position: 'relative',
       height: '100%'
     },
+    headingText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginTop: 20,
+      marginBottom: 12,
+      textAlign: 'left',
+      textIndent: 0, // Remove indentation for headings
+      color: '#000000'
+    },
+    heading: {
+      marginVertical: 12,
+    },
+    referenceSection: {
+      marginBottom: 24,
+    },
+    referenceHeader: {
+      fontSize: 14,
+      fontFamily: 'Times-Bold',
+      marginBottom: 12,
+      color: '#000000',
+    },
+    referenceSubHeader: {
+      fontSize: 12,
+      fontFamily: 'Times-Bold',
+      marginTop: 16,
+      marginBottom: 8,
+      color: '#1A202C',
+    },
+    referenceItem: {
+      marginLeft: 20,
+      marginBottom: 8,
+      flexDirection: 'row',
+    },
+    referenceBullet: {
+      width: 12,
+      fontSize: 12,
+      fontFamily: 'Times-Roman',
+    },
+    referenceText: {
+      flex: 1,
+      fontSize: 12,
+      fontFamily: 'Times-Roman',
+      lineHeight: 1.4,
+    },
+    referenceItalic: {
+      fontFamily: 'Times-Italic',
+    },
   });
 
-  // Update the renderChapterContent function to properly handle images
+  // Enhanced renderChapterContent function
   const renderChapterContent = (content: string) => {
+    const sections = content.split(/\n\n/);
     let figureCount = 0;
-    
-    // First, clean up the content by removing asterisks and extra whitespace
-    const cleanContent = content
-      .replace(/\*/g, '')
-      .trim();
 
-    // Split content by image markdown pattern
-    const parts = cleanContent.split(/(!\[(?:.*?)\]\((?:.*?)\))/);
-    
-    return parts.map((part, index) => {
-      // Check if this part is an image markdown
-      const imageMatch = part.match(/!\[(.*?)\]\((.*?)\)/);
-      
+    return sections.map((section, index) => {
+      // Handle images
+      const imageMatch = section.match(/!\[(.*?)\]\((.*?)\)/);
       if (imageMatch) {
         figureCount++;
         const [_, altText, imageUrl] = imageMatch;
-        
-        console.log("Processing image:", imageUrl); // Debug log
-        
-        // Clean up the image URL
-        const cleanImageUrl = imageUrl
-          .replace(/[\r\n]/g, '')
-          .trim();
-        console.log("cleanImageUrl",cleanImageUrl)
+        const fixedImageUrl = imageUrl.replace(/^.*?\/uploads\//, `${BASE_URl}/uploads/`);
+
         return (
           <View key={`figure-${figureCount}`} style={styles.imageContainer}>
             <View style={styles.figureHeader}>
               <Text style={styles.figureNumber}>Figure {figureCount}</Text>
             </View>
-            <Image
-                src={cleanImageUrl}
-              />
-            <View style={styles.imageWrapper}>
-             
-            </View>
-            {altText && (
-              <Text style={styles.imageCaption}>{altText}</Text>
-            )}
+            <Image src={fixedImageUrl} style={styles.chapterImage} />
+            {altText && <Text style={styles.imageCaption}>{altText}</Text>}
           </View>
         );
-      } else if (part.trim()) {
-        // Regular text content
-        return part.split('\n\n').map((paragraph, pIndex) => (
-          <View key={`p-${index}-${pIndex}`} style={styles.paragraph}>
-            <Text style={styles.bodyText}>{paragraph.trim()}</Text>
-          </View>
-        ));
       }
+
+      // Handle headings
+      if (section.match(/^#{1,6}\s/)) {
+        const level = (section.match(/^#{1,6}/) || [''])[0].length;
+        const text = section.replace(/^#{1,6}\s/, '');
+        
+        return (
+          <View key={`heading-${index}`} style={styles.heading}>
+            <Text style={[
+              styles.headingText,
+              { fontSize: 24 - (level * 2) }
+            ]}>
+              {text}
+            </Text>
+          </View>
+        );
+      }
+
+      // Handle regular paragraphs
+      if (section.trim()) {
+        return (
+          <View key={`p-${index}`} style={styles.paragraph}>
+            <Text style={styles.bodyText}>{cleanMarkdown(section)}</Text>
+          </View>
+        );
+      }
+
       return null;
     }).filter(Boolean);
   };
@@ -444,7 +521,32 @@ console.log("bookInfo",bookInfo)
     return chapterIndex + 4;
   };
 
- 
+  // Add this helper function to process reference content
+  const processReferenceContent = (content: string) => {
+    const sections: { [key: string]: string[] } = {};
+    let currentSection = '';
+    
+    content.split('\n').forEach(line => {
+      const trimmedLine = line.trim();
+      
+      // Check for section headers (e.g., "1. Books:")
+      const sectionMatch = trimmedLine.match(/^\d+\.\s+\*\*(.*?):\s*\*\*/);
+      if (sectionMatch) {
+        currentSection = sectionMatch[1];
+        sections[currentSection] = [];
+      } 
+      // Check for items starting with dash
+      else if (trimmedLine.startsWith('-') && currentSection) {
+        // Process the reference item
+        const itemText = trimmedLine.substring(1).trim()
+          // Handle italic text
+          .replace(/\*(.*?)\*/g, '§$1§');
+        sections[currentSection].push(itemText);
+      }
+    });
+    
+    return sections;
+  };
 
   return (
     <Document>
@@ -490,19 +592,30 @@ console.log("bookInfo",bookInfo)
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { marginBottom: 30 }]}>Preface</Text>
           {preface ? (
-            preface.split('\n\n').map((para, index) => {
-              const trimmedPara = para.trim();
-              if (!trimmedPara) return null;
+            preface.split('\n\n').map((para, pIndex) => {
+              // Split the paragraph into parts, preserving bold text
+              const parts = para.split(/(\*\*.*?\*\*)/g);
               
               return (
-                <View key={index} style={[styles.paragraph, { marginBottom: 20 }]}>
+                <View key={pIndex} style={[styles.paragraph, { marginBottom: 12 }]}>
                   <Text style={[styles.bodyText, { 
                     lineHeight: 1.6,
                     textAlign: 'justify',
                     fontSize: 12,
                     fontFamily: 'Times-Roman'
                   }]}>
-                    {trimmedPara}
+                    {parts.map((part, partIndex) => {
+                      if (part.startsWith('**') && part.endsWith('**')) {
+                        // Bold text
+                        return (
+                          <Text key={partIndex} style={{ fontFamily: 'Times-Bold' }}>
+                            {part.slice(2, -2)}
+                          </Text>
+                        );
+                      }
+                      // Regular text
+                      return part;
+                    })}
                   </Text>
                 </View>
               );
@@ -531,52 +644,81 @@ console.log("bookInfo",bookInfo)
       </Page>
 
       {/* Chapters */}
-      {selectedBook.bookChapter?.map((chapter: any, index: number) => (
-        <Page key={index} size="A4" style={styles.page}>
-          <View style={styles.chapterPage}>
-            <View style={styles.chapterHeader}>
-              <Text style={styles.chapterNumber}>
-                Chapter {chapter.chapterNo}
-              </Text>
-              <Text style={styles.chapterTitle}>
-                {chapter.chapterInfo
-                  .replace(/\*/g, '')
-                  .match(/Chapter \d+: (.+?)(?=\n)/)?.[0] 
-                  || `Chapter ${chapter.chapterNo}`}
-              </Text>
+      {selectedBook.bookChapter?.map((chapter: any, index: number) => {
+        const chapterTitle = cleanMarkdown(
+          chapter.chapterInfo.split('\n')[0]
+        );
+        
+        const chapterContent = chapter.chapterInfo
+          .split('\n')
+          .slice(1)
+          .join('\n');
+
+        return (
+          <Page key={index} size="A4" style={styles.page}>
+            <View style={styles.chapterPage}>
+              <View style={styles.chapterHeader}>
+                <Text style={styles.chapterNumber}>
+                  Chapter {chapter.chapterNo}
+                </Text>
+                <Text style={styles.chapterTitle}>
+                  {chapterTitle}
+                </Text>
+              </View>
+              
+              <View style={styles.chapterContent}>
+                {renderChapterContent(chapterContent)}
+              </View>
             </View>
             
-            <View style={styles.chapterContent}>
-              {renderChapterContent(chapter.chapterInfo)}
-            </View>
-          </View>
-          
-          <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
-        </Page>
-      ))}
+            <Text 
+              style={styles.pageNumber} 
+              render={({ pageNumber }) => `${pageNumber}`} 
+              fixed 
+            />
+          </Page>
+        );
+      })}
 
       
      
 
-      {/* References - Exactly matching Glossary */}
+      {/* References */}
       <Page size="A4" style={styles.page}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>References</Text>
           {references ? (
-            references.split('\n').map((item, index) => {
-              // Use the exact same splitting logic as Glossary
-              const [term, ...definitionParts] = item.split(':');
-              const definition = definitionParts.join(':').trim();
+            <View>
+              <Text style={styles.referenceHeader}>
+                Bibliography for "{bookInfo.bookTitle}"
+              </Text>
               
-              if (!term || !definition) return null;
-              
-              return (
-                <View key={index} style={[styles.glossaryItem, { marginBottom: 12 }]}>
-                  <Text style={{ fontWeight: 'bold', fontFamily: 'Times-Roman' }}>{term.trim()}: </Text>
-                  <Text style={{ fontFamily: 'Times-Roman' }}>{definition}</Text>
+              {Object.entries(processReferenceContent(references)).map(([section, items], sectionIndex) => (
+                <View key={sectionIndex} style={styles.referenceSection}>
+                  <Text style={styles.referenceSubHeader}>
+                    {`${sectionIndex + 1}. ${section}`}
+                  </Text>
+                  
+                  {items.map((item, itemIndex) => (
+                    <View key={itemIndex} style={styles.referenceItem}>
+                      <Text style={styles.referenceBullet}>•</Text>
+                      <Text style={styles.referenceText}>
+                        {item.split('§').map((part, partIndex) => {
+                          // Toggle between regular and italic text
+                          return partIndex % 2 === 0 ? (
+                            part
+                          ) : (
+                            <Text key={partIndex} style={styles.referenceItalic}>
+                              {part}
+                            </Text>
+                          );
+                        })}
+                      </Text>
+                    </View>
+                  ))}
                 </View>
-              );
-            }).filter(Boolean)
+              ))}
+            </View>
           ) : (
             <Text style={styles.bodyText}>No references available.</Text>
           )}
@@ -618,7 +760,7 @@ console.log("bookInfo",bookInfo)
               First Edition: {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </Text>
             <Text style={[styles.bodyText, { textAlign: 'center', fontSize: 10, marginTop: 20 }]}>
-              Printed in India
+              Printed in Us
             </Text>
           </View>
         </View>

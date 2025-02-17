@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {  pdf, Font } from '@react-pdf/renderer';
 import { Loader2, X } from 'lucide-react';
 import { saveAs } from 'file-saver';
@@ -6,6 +6,9 @@ import { BASE_URl, ToastType } from '@/constant';
 import { useToast } from '@/context/ToastContext';
 import ToastContainer from '@/components/Toast/ToastContainer'; // Import custom ToastContainer
 import PdfBook from './PdfBook';
+import ReactMarkdown from 'react-markdown';
+import { cn } from "@/lib/utils";
+import { createRoot } from 'react-dom/client';
 
 // Register custom fonts
 Font.register({
@@ -364,10 +367,47 @@ const formatChapterContent = (content: string) => {
   return formattedContent;
 };
 
+const ChapterContent: React.FC<{ content: string }> = ({ content }) => {
+  return (
+    <div className={cn(
+      "prose prose-amber max-w-none",
+      "prose-headings:font-serif prose-headings:text-gray-900",
+      "prose-h1:text-3xl prose-h1:mb-4 prose-h1:font-bold",
+      "prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4",
+      "prose-h3:text-xl prose-h3:text-amber-700 prose-h3:mt-6 prose-h3:mb-4",
+      "prose-p:text-gray-700 prose-p:leading-relaxed",
+      "prose-strong:text-gray-900",
+      "prose-ul:list-disc prose-ul:pl-6",
+      "prose-li:text-gray-700 prose-li:my-1",
+      "prose-blockquote:border-l-4 prose-blockquote:border-amber-500 prose-blockquote:pl-4 prose-blockquote:italic"
+    )}>
+      <ReactMarkdown
+        components={{
+          img: ({ node, ...props }) => (
+            <figure className="my-8">
+              <img
+                {...props}
+                className="w-full rounded-lg shadow-lg"
+                loading="lazy"
+              />
+              {props.alt && (
+                <figcaption className="text-center mt-2 text-gray-600 italic">
+                  {props.alt}
+                </figcaption>
+              )}
+            </figure>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+};
 
-
-const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverImageUrl?: string,selectedBook?:any) => {
+const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverImageUrl?: string, selectedBook?: any) => {
   const bookInfo = extractBookInfo(content);
+  
   return `
     <div class="book-preview">
       <style>
@@ -820,56 +860,44 @@ const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverIma
       ${selectedBook.bookChapter.length > 0 ? `
         <div class="table-of-contents">
           <h2 class="toc-header">Table of Contents</h2>
-         ${selectedBook.bookChapter.map((item: { chapterInfo: string; page: any; }, index: any) => {
-  // Use a regular expression to extract the chapter title from chapterInfo
- const chapterRegex = /Chapter \d+: (.+?)(?=\n)/g;
-const matches = [...item.chapterInfo.matchAll(chapterRegex)];
-
-let chapterTitle = 'Untitled Chapter'; // Default title
-if (matches.length >= 2) {
-  chapterTitle = matches[1][0]; // Get the second occurrence
-} else if (matches.length === 1) {
-  chapterTitle = matches[0][0]; // Fallback to first if no second match exists
-}
-  // const chapterTitleMatch = item.chapterInfo?.match(/Chapter \d+: (.+?)(?=\n)/g);
-  // const chapterTitle = chapterTitleMatch ? chapterTitleMatch[1] : 'Untitled Chapter';  // Default to 'Untitled Chapter' if no match
-
-  // Check if it's a chapter based on the title
-  const isChapter = chapterTitle.toLowerCase().includes('chapter');
-
-  return `
-    <div class="toc-line ${isChapter ? 'toc-chapter' : 'toc-section'}">
-      <span class="toc-title">${chapterTitle}</span>
-      <span class="toc-dots"></span>
-      ${item.page ? `<span class="toc-page">${item.page}</span>` : ''}
-    </div>
-  `;
-}).join('')}
-
+          ${selectedBook.bookChapter.map((chapter: { chapterInfo: string; page: any; }, index: number) => {
+            const chapterRegex = /Chapter \d+: (.+?)(?=\n)/g;
+            const matches = [...chapter.chapterInfo.matchAll(chapterRegex)];
+            
+            let chapterTitle = 'Untitled Chapter';
+            if (matches.length >= 2) {
+              chapterTitle = matches[1][0];
+            } else if (matches.length === 1) {
+              chapterTitle = matches[0][0];
+            }
+            
+            const isChapter = chapterTitle.toLowerCase().includes('chapter');
+            
+            return `
+              <div class="toc-line ${isChapter ? 'toc-chapter' : 'toc-section'}">
+                <span class="toc-title">${chapterTitle}</span>
+                <span class="toc-dots"></span>
+                ${chapter.page ? `<span class="toc-page">${chapter.page}</span>` : ''}
+              </div>
+            `;
+          }).join('')}
         </div>
       ` : ''}
 
-      ${bookInfo.introduction ? `
-        <div class="book-section">
-          <h2 class="book-section-title">Introduction</h2>
-          <div class="introduction">
-            ${formatChapterContent(bookInfo.introduction)}
+      ${selectedBook.bookChapter.map((chapter: { chapterNo: any; chapterInfo: string; }) => {
+        const chapterTitle = [...chapter.chapterInfo?.matchAll(/Chapter \d+: (.+?)(?=\n)/g) || []][0]?.[0] || 'Chapter Not Found';
+        
+        return `
+          <div class="chapter">
+            <div class="chapter-number">
+              ${chapterTitle}
+            </div>
+            <div class="chapter-content">
+              <div id="chapter-${chapter.chapterNo}"></div>
+            </div>
           </div>
-        </div>
-      ` : ''}
-
-      ${selectedBook.bookChapter.map((chapter: { chapterNo: any; chapterInfo: string;  }) => `
-       <div class="chapter">
-  <div class="chapter-number">
-   ${[...chapter.chapterInfo?.matchAll(/Chapter \d+: (.+?)(?=\n)/g) || []][0]?.[0] || 'Chapter Not Found'}
- </div>
- 
-  <div class="chapter-content">
-    ${formatChapterContent(chapter.chapterInfo)}
-  </div>
-</div>
-
-      `).join('\n')}
+        `;
+      }).join('\n')}
 
       ${bookInfo.glossary.length > 0 ? `
         <div class="book-section">
@@ -1006,6 +1034,19 @@ export default function BookModal({
       onClose();
     }
   };
+
+  // Add useEffect to render markdown content after HTML is mounted
+  useEffect(() => {
+    if (selectedBook?.bookChapter) {
+      selectedBook.bookChapter.forEach((chapter: { chapterNo: any; chapterInfo: string; }) => {
+        const container = document.getElementById(`chapter-${chapter.chapterNo}`);
+        if (container) {
+          const root = createRoot(container);
+          root.render(<ChapterContent content={chapter.chapterInfo} />);
+        }
+      });
+    }
+  }, [selectedBook, htmlContent]);
 
   if (!isOpen) return null;
 

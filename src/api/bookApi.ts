@@ -41,7 +41,7 @@ interface CreateBookGenerateRequest {
   maxWords: number;
   chapterNo:number;
   bookGenerationId:number,
-  additionalInfo?:string
+  additionalInfo?:string,
 }
 
 interface GenerateBookResponse {

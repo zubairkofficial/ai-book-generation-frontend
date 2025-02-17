@@ -15,22 +15,93 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useCreateChapterMutation, useFetchBooksQuery } from "@/api/bookApi";
 import ChapterConfiguration from './ChapterConfiguration';
+import { ArrowLeft, ArrowRight, Loader2, Wand2 } from 'lucide-react';
+import { X } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import TableOfContents from './components/TableOfContents';
 
-// Define the Yup validation schema
+// Add this enum for genres
+enum BookGenre {
+  FICTION = "Fiction",
+  NON_FICTION = "Non-Fiction",
+  MYSTERY = "Mystery",
+  SCIENCE_FICTION = "Science Fiction",
+  FANTASY = "Fantasy",
+  ROMANCE = "Romance",
+  BUSINESS = "Business",
+  PROFESSIONAL = "Professional",
+  EDUCATION = "Education",
+  HEALTH = "Health",
+  HISTORY = "History",
+  LITERATURE = "Literature",
+  TRAVEL = "Travel",
+  TECHNOLOGY = "Technology",
+  SPORTS = "Sports",
+  SCIENCE = "Science",
+  POLITICS = "Politics",
+  PHILOSOPHY = "Philosophy",
+  RELIGION = "Religion",
+  ART = "Art",
+  MUSIC = "Music",
+  COMEDY = "Comedy"
+
+}
+
+// Add Language enum
+enum BookLanguage {
+  ENGLISH = "English",
+  SPANISH = "Spanish",
+  FRENCH = "French",
+  GERMAN = "German",
+  ITALIAN = "Italian",
+  PORTUGUESE = "Portuguese",
+  CHINESE = "Chinese",
+  JAPANESE = "Japanese",
+  KOREAN = "Korean",
+  HINDI = "Hindi"
+}
+
+// Add this enum for target audience
+enum TargetAudience {
+  ALL_AGES = "All Ages",
+  CHILDREN = "Children (Ages 5-12)",
+  TEENAGERS = "Teenagers (Ages 13-17)",
+  YOUNG_ADULTS = "Young Adults (Ages 18-25)",
+  ADULTS = "Adults (Ages 26-64)",
+
+}
+
+// Update the validation schema
 const bookSchema: any = yup.object().shape({
   bookTitle: yup.string().required("Book title is required"),
   authorName: yup.string().required("Author name is required"),
-  authorBio: yup.string().optional(),
+  authorBio: yup.string().nullable().transform((value) => value || ""),
   bookInformation: yup.string().required("Core idea is required"),
-  genre: yup.string().required("Genre is required"),
-  characters: yup.string().required("Characters are required"),
-  targetAudience: yup.string().required("Target audience is required"),
-  language: yup.string().required("Language is required"),
+  genre: yup.string().required("Genre is required").oneOf(Object.values(BookGenre)),
+  characters: yup.string().transform((value) => value || "").optional(),
+  targetAudience: yup.string().required("Target audience is required").oneOf(Object.values(TargetAudience)),
+  language: yup.string().required("Language is required").oneOf(Object.values(BookLanguage)),
   numberOfChapters: yup.number()
     .required("Number of chapters is required")
     .min(1, "Must have at least 1 chapter")
     .max(50, "Maximum 50 chapters allowed"),
 });
+
+// Add type for API error response
+interface ApiErrorResponse {
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  message: {
+    message: string;
+    errors?: Array<{
+      property: string;
+      constraints: {
+        [key: string]: string;
+      };
+    }>;
+  };
+}
 
 const CreateBook = () => {
   const [generateBook, { isLoading }] = useGenerateBookMutation();
@@ -48,11 +119,7 @@ const CreateBook = () => {
     language: "",
     numberOfChapters: "",
   });
-  const [bookContent, setBookContent] = useState<string | null>(null);
-  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [progress, setProgress] = useState<number>(0);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+ const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [advancedOptions, setAdvancedOptions] = useState<any>({
     coverImagePrompt: "",
@@ -109,11 +176,11 @@ const CreateBook = () => {
     1: {
       title: "Basic Information",
       fields: ["bookTitle", "authorName", "authorBio"],
-      description: "Enter the basic author and book information",
+      description: "Enter the basic author and core idea",
     },
     2: {
       title: "Book Details",
-      fields: ["bookInformation", "genre", "characters", "targetAudience", "language", "numberOfChapters"],
+      fields: ["bookInformation", ["genre", "language"], "characters", "targetAudience", "numberOfChapters"],
       description: "Enter the detailed information about your book",
     }
   };
@@ -125,12 +192,12 @@ const CreateBook = () => {
     authorBio: "A short biography of the author (optional)",
     
     // Book Details
-    bookInformation: "The main idea or concept of your book",
-    genre: "The category or style of your book",
-    characters: "Main characters that will appear in your story",
+    bookInformation: "The core idea or concept of book or thoughts and (max words: 800)",
+    genre: "Choose the category that best fits your book",
+    characters: "Main characters that will appear in your story (optional)",
     targetAudience: "Who is this book primarily written for?",
-    language: "The primary language of your book",
-    numberOfChapters: "How many chapters would you like in your book?",
+    language: "Choose the primary language for your book",
+    numberOfChapters: "How many chapters would you like in your book? (1-50)",
   };
 
   const handleChange = (
@@ -182,6 +249,7 @@ const CreateBook = () => {
   };
 
   const formatLabel = (key: string) => {
+    if (key === 'bookInformation') return 'Core Idea';
     return key
       .replace(/([A-Z])/g, " $1")
       .replace(/^./, (str) => str.toUpperCase());
@@ -190,18 +258,25 @@ const CreateBook = () => {
 
   const validateStep = async (step: number): Promise<boolean> => {
     const currentStepData = steps[step as keyof typeof steps];
-    const fieldsToValidate = currentStepData.fields.reduce((acc: any, field) => {
-      if (field !== "advancedOptions") {
-        acc[field] = (formData as any)[field];
+    const fieldsToValidate = currentStepData.fields.reduce((acc: any, field: any) => {
+      if (Array.isArray(field)) {
+        field.forEach(f => {
+          acc[f] = formData[f as keyof typeof formData] || "";
+        });
+      } else if (field !== "advancedOptions") {
+        acc[field] = formData[field as keyof typeof formData] || "";
       }
       return acc;
     }, {});
 
     try {
-      // Create a subset of the schema for the current step's fields
       const stepSchema = yup.object().shape(
-        currentStepData.fields.reduce((acc: any, field) => {
-          if (field !== "advancedOptions") {
+        currentStepData.fields.reduce((acc: any, field: any) => {
+          if (Array.isArray(field)) {
+            field.forEach(f => {
+              acc[f] = bookSchema.fields[f];
+            });
+          } else if (field !== "advancedOptions") {
             acc[field] = bookSchema.fields[field];
           }
           return acc;
@@ -209,9 +284,7 @@ const CreateBook = () => {
       );
 
       await stepSchema.validate(fieldsToValidate, { abortEarly: false });
-      
       setErrors({});
-
       return true;
     } catch (error) {
       if (error instanceof yup.ValidationError) {
@@ -245,6 +318,11 @@ const CreateBook = () => {
     e.stopPropagation();
   };
 
+  const [showTableOfContents, setShowTableOfContents] = useState(false);
+  const [tableOfContents, setTableOfContents] = useState<string>("");
+  const [showChapterConfig, setShowChapterConfig] = useState(false);
+  const [previousContent, setPreviousContent] = useState<string>("");
+
   const handleGenerateBook = async () => {
     try {
       // Validate the current form data
@@ -256,23 +334,59 @@ const CreateBook = () => {
         addToast("Please check all fields and try again", ToastType.ERROR);
         return;
       }
+if(formData.bookInformation.length>800){
+  addToast("Idea core should not exceed 800 words", ToastType.ERROR);
+  return;
+}
       const payload: any = {
         ...formData,
+        characters: formData.characters || "",
         advancedOptions: showAdvancedOptions ? advancedOptions : undefined,
       };
-      const response:any = await generateBook(payload).unwrap();
-      // Instead of generating the book immediately, show the chapter configuration
-    if(response){  setShowChapterConfig(true);
-      setPreviousContent(JSON.stringify(response?.data, null, 2)); // Pass form data as previous content
-}
+
+      const response: any = await generateBook(payload).unwrap();
+      if (response) {
+        if (response?.data?.additionalData?.tableOfContents) {
+          setTableOfContents(response.data.additionalData.tableOfContents);
+          setShowTableOfContents(true);
+        }
+        setPreviousContent(JSON.stringify(response?.data, null, 2));
+      }
     } catch (error: any) {
       console.error("Error:", error);
-      addToast(error.message || "An error occurred", ToastType.ERROR);
+      
+      // Handle API error response
+      if (error.data) {
+        const apiError = error.data as ApiErrorResponse;
+        
+        // Handle validation errors
+        if (apiError.message.errors) {
+          const newErrors: { [key: string]: string } = {};
+          
+          apiError.message.errors.forEach((err) => {
+            const errorMessage = Object.values(err.constraints)[0];
+            newErrors[err.property] = errorMessage;
+          });
+          
+          setErrors(newErrors);
+          addToast("Please fix the validation errors", ToastType.ERROR);
+        } else {
+          // Handle general error message
+          addToast(apiError.message.message || "An error occurred", ToastType.ERROR);
+        }
+      } else {
+        addToast("An unexpected error occurred", ToastType.ERROR);
+      }
     }
   };
 
-  const toggleModal = () => {
-    setIsModalOpen(!isModalOpen);
+  const handleCloseTableOfContents = () => {
+    setShowTableOfContents(false);
+  };
+
+  const handleProceedToChapterConfig = () => {
+    setShowTableOfContents(false);
+    setShowChapterConfig(true);
   };
 
   // Sanitize HTML content to prevent XSS attacks
@@ -286,31 +400,91 @@ const CreateBook = () => {
   };
 
   const renderField = (key: string) => {
-    if (key === 'bookInformation' || key === 'authorBio') {
+    const baseFieldClasses = "space-y-2 w-full";
+    const labelClasses = "text-base font-medium text-gray-700";
+    const inputClasses = cn(
+      "w-full rounded-lg border shadow-sm",
+      "focus:border-amber-500 focus:ring-amber-500",
+      errors[key] ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300"
+    );
+    const helperTextClasses = "text-sm text-gray-500 mt-1";
+    const errorClasses = "text-sm text-red-500 mt-1";
+    const requiredAsterisk = <span className="text-red-500 ml-1">*</span>;
+
+    // Function to check if field is required
+    const isRequired = (fieldName: string) => {
+      const optionalFields = ['authorBio', 'characters'];
+      return !optionalFields.includes(fieldName);
+    };
+
+    // Handle genre, language, and target audience dropdowns with consistent styling
+    if (key === 'genre' || key === 'language' || key === 'targetAudience') {
+      const options = key === 'genre' 
+        ? BookGenre 
+        : key === 'language' 
+          ? BookLanguage 
+          : TargetAudience;
+      const placeholder = `Select a ${formatLabel(key)}`;
+
       return (
-        <div key={key} className="space-y-2">
-          <Label htmlFor={key} className="text-base font-medium">
+        <div key={key} className={baseFieldClasses}>
+          <Label htmlFor={key} className={labelClasses}>
             {formatLabel(key)}
+            {isRequired(key) && requiredAsterisk}
+          </Label>
+          <Select
+            value={formData[key]}
+            onValueChange={(value) => 
+              handleChange({ target: { name: key, value } } as any)
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(options).map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className={helperTextClasses}>{fieldDescriptions[key]}</p>
+          {errors[key] && <p className={errorClasses}>{errors[key]}</p>}
+        </div>
+      );
+    }
+
+    // Handle textarea fields
+    if (key === 'bookInformation' || key === 'authorBio' || key === 'characters') {
+      return (
+        <div key={key} className={baseFieldClasses}>
+          <Label htmlFor={key} className={labelClasses}>
+            {formatLabel(key)}
+            {isRequired(key) && requiredAsterisk}
+            {!isRequired(key) && <span className="text-gray-500 text-sm ml-2">(Optional)</span>}
           </Label>
           <textarea
             id={key}
             name={key}
             placeholder={`Enter ${formatLabel(key)}`}
-            value={(formData as any)[key]}
+            value={formData[key]}
             onChange={handleChange}
-            className="w-full min-h-[100px] p-2 border rounded-md"
+            className={`${inputClasses} min-h-[100px] resize-y p-2 border border-gray-100`}
           />
-          <p className="text-sm text-gray-500">{fieldDescriptions[key]}</p>
-          {errors[key] && <p className="text-red-500 text-sm">{errors[key]}</p>}
+          <p className={helperTextClasses}>{fieldDescriptions[key]}</p>
+          {errors[key] && <p className={errorClasses}>{errors[key]}</p>}
         </div>
       );
     }
 
+    // Handle number input for chapters
     if (key === 'numberOfChapters') {
       return (
-        <div key={key} className="space-y-2">
-          <Label htmlFor={key} className="text-base font-medium">
+        <div key={key} className={baseFieldClasses}>
+          <Label htmlFor={key} className={labelClasses}>
             Number of Chapters
+            {isRequired(key) && requiredAsterisk}
           </Label>
           <Input
             id={key}
@@ -321,31 +495,32 @@ const CreateBook = () => {
             placeholder="Enter number of chapters"
             value={(formData as any)[key]}
             onChange={handleChange}
-            className="w-full"
+            className={inputClasses}
           />
-          <p className="text-sm text-gray-500">{fieldDescriptions[key]}</p>
-          {errors[key] && <p className="text-red-500 text-sm">{errors[key]}</p>}
+          <p className={helperTextClasses}>{fieldDescriptions[key]}</p>
+          {errors[key] && <p className={errorClasses}>{errors[key]}</p>}
         </div>
       );
     }
 
+    // Default input field
     return (
-      <div key={key} className="space-y-2">
-        <Label htmlFor={key} className="text-base font-medium">
+      <div key={key} className={baseFieldClasses}>
+        <Label htmlFor={key} className={labelClasses}>
           {formatLabel(key)}
+          {isRequired(key) && requiredAsterisk}
         </Label>
         <Input
           id={key}
           name={key}
-          type={key === "numberOfChapters" ? "number" : "text"}
+          type="text"
           placeholder={`Enter ${formatLabel(key)}`}
           value={(formData as any)[key]}
           onChange={handleChange}
-          className="w-full"
-          min={key === "numberOfChapters" ? 1 : undefined}
+          className={inputClasses}
         />
-        <p className="text-sm text-gray-500">{fieldDescriptions[key]}</p>
-        {errors[key] && <p className="text-red-500 text-sm">{errors[key]}</p>}
+        <p className={helperTextClasses}>{fieldDescriptions[key]}</p>
+        {errors[key] && <p className={errorClasses}>{errors[key]}</p>}
       </div>
     );
   };
@@ -610,95 +785,105 @@ const CreateBook = () => {
     </div>
   );
 
+  const renderApiErrors = () => {
+    if (Object.keys(errors).length === 0) return null;
+
+    return (
+      <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-xl animate-fadeIn">
+        <div className="flex items-start">
+          <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium text-red-800">
+              Please fix the following errors:
+            </p>
+            <ul className="mt-2 list-disc pl-5 space-y-1">
+              {Object.entries(errors).map(([field, error]) => (
+                <li key={field} className="text-red-600 text-sm">
+                  {formatLabel(field)}: {error}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderStepContent = (step: number) => {
     const currentStepData = steps[step as keyof typeof steps];
 
     return (
-      <div className="space-y-6">
-        <div className="text-center mb-8">
-          <h3 className="text-xl font-semibold">{currentStepData.title}</h3>
-          <p className="text-gray-600">{currentStepData.description}</p>
+      <div className="space-y-8">
+        <div className="text-center mb-10">
+          <h3 className="text-2xl font-semibold text-gray-900">
+            {currentStepData.title}
+          </h3>
+          <p className="mt-2 text-gray-600">
+            {currentStepData.description}
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
+            Fields marked with <span className="text-red-500">*</span> are required
+          </p>
         </div>
 
-        <div className="grid gap-6">
-          {currentStepData.fields.map((field) => {
-            if (field === "advancedOptions") {
+        {renderApiErrors()}
+
+        <div className="grid gap-8">
+          {currentStepData.fields.map((field, index) => {
+            if (Array.isArray(field)) {
               return (
-                <div key={field}>
-                  {renderAdvancedOptionsToggle()}
-                  {showAdvancedOptions && renderAdvancedOptions()}
+                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {field.map(subField => renderField(subField))}
                 </div>
               );
             }
-
             return renderField(field);
           })}
         </div>
 
-        <div className="flex justify-between mt-8">
+        <div className="flex justify-between items-center mt-12 pt-6 border-t">
           {step > 1 && (
             <Button
               type="button"
               variant="outline"
               onClick={handlePrevious}
-              className="px-6"
+              className="px-6 hover:bg-gray-50"
             >
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Previous
             </Button>
           )}
+          <div className="flex-1" />
           {step < Object.keys(steps).length ? (
             <Button
               type="button"
               onClick={handleNext}
-              className="ml-auto px-6 bg-amber-500 hover:bg-amber-600"
+              className="px-6 bg-amber-500 hover:bg-amber-600 text-white shadow-md hover:shadow-lg transition-all duration-200"
             >
               Next
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
             <Button
               type="button"
-              className="ml-auto px-6 bg-amber-500 hover:bg-amber-600"
-              disabled={isLoading}
               onClick={handleGenerateBook}
+              disabled={isLoading}
+              className="px-6 bg-amber-500 hover:bg-amber-600 text-white shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="flex items-center">
-                  <span className="animate-spin mr-2">⌛</span>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Generating...
                 </div>
               ) : (
-                "Generate Book"
+                <>
+                  Generate Book
+                  <Wand2 className="w-4 h-4 ml-2" />
+                </>
               )}
             </Button>
           )}
         </div>
-
-        {Object.keys(errors).length > 0 && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-600 font-medium mb-2">Please fix the following errors:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              {Object.entries(errors).map(([field, error]) => (
-                <li key={field} className="text-red-500">
-                  {error}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {progress > 0 && (
-          <div className="mt-4">
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-amber-500 h-2.5 rounded-full transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <p className="text-sm text-gray-600 mt-2 text-center">
-              {progress}% Complete
-            </p>
-          </div>
-        )}
       </div>
     );
   };
@@ -736,10 +921,6 @@ const CreateBook = () => {
     </div>
   );
 
-  const [showChapterConfig, setShowChapterConfig] = useState(false);
-  const [previousContent, setPreviousContent] = useState<string>('');
- 
-
   if (showChapterConfig) {
     return (
       <Layout>
@@ -752,48 +933,43 @@ const CreateBook = () => {
 
   return (
     <Layout>
-          <Card className="w-full max-w-5xl p-8 bg-white shadow-lg">
-            {renderProgress()}
+      <div className="min-h-screen bg-gradient-to-b from-amber-50/50 to-white">
+        <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          {/* Header Section */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl lg:text-5xl">
+              Create Your Book
+            </h1>
+            <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+              Follow the steps below to create your personalized book. Fill in the details carefully to generate the best possible content.
+            </p>
+          </div>
 
-            <form onSubmit={handleSubmit}>
-              {renderStepContent(currentStep)}
-            </form>
-          </Card>
-
-          {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-              <div className="bg-white w-full max-w-6xl max-h-[90vh] rounded-lg overflow-hidden flex flex-col">
-                <div className="p-6 border-b">
-                  <h2 className="text-2xl font-bold">Generated Book Content</h2>
-                </div>
-                <div className="overflow-y-auto flex-1 p-6">
-                  {coverImageUrl && (
-                    <div className="mb-6">
-                      <img
-                        src={coverImageUrl}
-                        alt="Book Cover"
-                        className="w-full max-w-md h-auto rounded-lg shadow-md"
-                      />
-                    </div>
-                  )}
-                  <div
-                    className="prose prose-lg max-w-none [&>h1]:text-3xl [&>h2]:text-2xl [&>h3]:text-xl [&>p]:my-4 [&>ul]:list-disc [&>ol]:list-decimal [&>li]:ml-4"
-                    dangerouslySetInnerHTML={{
-                      __html: sanitizeHTML(bookContent || ""),
-                    }}
-                  />
-                </div>
-                <div className="p-6 border-t text-right">
-                  <Button
-                    className="bg-red-500 hover:bg-red-600"
-                    onClick={toggleModal}
-                  >
-                    Close
-                  </Button>
-                </div>
+          {/* Main Content Card */}
+          <Card className="max-w-7xl mx-auto bg-white/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border-0">
+            <div className="p-6 sm:p-8 lg:p-10">
+              {/* Progress Bar */}
+              <div className="max-w-4xl mx-auto mb-12">
+                {renderProgress()}
               </div>
+
+              {/* Form Content */}
+              <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+                {renderStepContent(currentStep)}
+              </form>
             </div>
-          )}
+          </Card>
+        </div>
+      </div>
+
+      {/* Add Table of Contents Modal */}
+      {showTableOfContents && (
+        <TableOfContents
+          tableOfContents={tableOfContents}
+          onClose={handleCloseTableOfContents}
+          onProceed={handleProceedToChapterConfig}
+        />
+      )}
     </Layout>
   );
 };

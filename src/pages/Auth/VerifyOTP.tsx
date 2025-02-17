@@ -37,8 +37,8 @@ export default function VerifyOTP() {
       // Validate the OTP input
       await otpSchema.validate({ otp }, { abortEarly: false });
       setErrors({}); // Clear any previous errors
-
-      const response = await verifyOTP({ email, code: otp }).unwrap();
+console.log("otp",otp)
+      const response = await verifyOTP({ email,  otp }).unwrap();
       const { user, accessToken }: any = response;
 
       // Update Redux state

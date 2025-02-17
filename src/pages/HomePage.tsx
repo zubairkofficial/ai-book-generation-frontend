@@ -1,31 +1,60 @@
 import Layout from '@/components/layout/Layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpenCheck,  Edit, Activity } from 'lucide-react';
+import { BookOpenCheck,  Edit, Activity, User } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useGetAllStatsQuery } from '@/api/statsApi';
+import { useUserMeQuery } from '@/api/userApi';
+import { format, parseISO } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { useEffect } from 'react';
 
 const HomePage = () => {
-  // Sample analytics data
+  const {data:statsData,refetch:refetchStats}:any = useGetAllStatsQuery();
+  const { data:userData,refetch:refetchUser } = useUserMeQuery();
+
+  // Format date safely
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+      return format(parseISO(dateString), 'MMM dd, yyyy');
+    } catch (error) {
+      return 'Invalid Date';
+    }
+  };
+
+  // Analytics data with conditional rendering based on user role
   const analyticsData = [
+    userData?.role === 'admin' ? {
+      id: 2,
+      metric: 'Total Users',
+      value: statsData?.users ?? 0,
+      icon: <User className="h-6 w-6 text-amber-500" />,
+      isAdmin: true
+    } : {
+      id: 2,
+      metric: 'Welcome to AI Book Legacy',
+      value: userData?.name ?? 'Guest User',
+      subValue: userData?.email ?? 'No email provided',
+      role: userData?.role ?? 'user',
+      joinDate: userData?.createdAt,
+      verificationStatus: userData?.isEmailVerified ?? false,
+      icon: <User className="h-6 w-6 text-amber-500" />,
+      isAdmin: false
+    },
     {
       id: 1,
-      metric: 'Books Created',
-      value: 23,
+      metric: 'Total Books',
+      value: statsData?.books ?? 0,
       icon: <BookOpenCheck className="h-6 w-6 text-amber-500" />,
     },
-    {
-      id: 2,
-      metric: 'Active Projects',
-      value: 5,
-      icon: <Activity className="h-6 w-6 text-blue-500" />,
-    },
-    {
-      id: 3,
-      metric: 'Total Edits',
-      value: 128,
-      icon: <Edit className="h-6 w-6 text-green-500" />,
-    },
+    // Conditional second card based on user role
+   
   ];
+
+  console.log('analyticsData', analyticsData);
+
+ ;
 
   // Sample chart data
   const chartData = [
@@ -36,7 +65,10 @@ const HomePage = () => {
     { name: 'May', books: 9 },
     { name: 'Jun', books: 7 },
   ];
-
+useEffect(()=>{
+  refetchStats();
+  refetchUser();
+},[])
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-6">
@@ -47,16 +79,31 @@ const HomePage = () => {
         </div>
 
         {/* Analytics Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 mb-8">
           {analyticsData.map((item) => (
             <Card
               key={item.id}
               className="p-6 bg-white rounded-lg shadow hover:shadow-lg transition-shadow"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-xl font-semibold mb-2">{item.metric}</h2>
-                  <p className="text-2xl font-bold text-amber-500">{item.value}</p>
+                  {item.id === 1 || (item.id === 2 && 'isAdmin' in item && item.isAdmin) ? (
+                    // Total Books or Total Users display (for admin)
+                    <p className="text-2xl font-bold text-amber-500">{item.value}</p>
+                  ) : (
+                    // User information display (for non-admin)
+                    <div className="space-y-2">
+                     
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <span>Joined: {formatDate(item.joinDate)}</span>
+                        <span>•</span>
+                        <Badge variant={item.verificationStatus ? 'success' : 'warning'}>
+                          {item.verificationStatus ? 'Verified' : 'Unverified'}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="p-3 bg-gray-100 rounded-full">{item.icon}</div>
               </div>

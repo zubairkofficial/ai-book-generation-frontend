@@ -6,7 +6,6 @@ import { Loader2, Eye, Search, Filter, Plus, BookOpen } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { useFetchBooksQuery } from '@/api/bookApi';
 import BookModal from '@/components/BookModel/BookModel';
-import Header from '@/components/layout/Header';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { BASE_URl } from '@/constant';
@@ -123,7 +122,7 @@ export default function BookTable() {
               <p className="text-gray-600 max-w-md">
                 Start your journey by creating your first book or try a different search term.
               </p>
-              <Button className="bg-amber-500 hover:bg-amber-600 text-white">
+              <Button className="bg-amber-500 hover:bg-amber-600 text-white" onClick={()=>navigate("/books/add")}>
                 Create Your First Book
               </Button>
             </motion.div>
@@ -172,17 +171,19 @@ export default function BookTable() {
 
                     {/* Enhanced Book Info */}
                     <div className="p-4 space-y-2">
-                      <h3 className="font-semibold text-gray-900 line-clamp-1 group-hover:text-amber-600 transition-colors">
-                        {book.bookTitle}
-                      </h3>
+                    <h3 className="font-semibold text-gray-900 truncate group-hover:text-amber-600 transition-colors w-full">
+  {book.bookTitle}
+</h3>
+
                       <p className="text-sm text-gray-600 line-clamp-1">
                         {book.authorName || 'Unknown Author'}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {book.genre && (
-                          <span className="text-xs px-2 py-1 bg-amber-50 text-amber-600 rounded-full">
-                            {book.genre}
-                          </span>
+                          <span className="text-xs px-2 py-1 bg-amber-50 text-amber-600 rounded-full truncate w-full">
+                          {book.genre}
+                        </span>
+                        
                         )}
                       </div>
                     </div>
