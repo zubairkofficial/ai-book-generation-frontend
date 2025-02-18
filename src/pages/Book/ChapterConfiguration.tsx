@@ -42,7 +42,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
     maxLength: '1200',
     additionalInfo: '',
     imagePrompt: '',
-    noOfImages: 1,
+    noOfImages: 0,
     summary: ""
   });
 
@@ -56,11 +56,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
   }, [streamedContent, chapterImages]);
 
   const handleChange = (name: keyof ChapterConfig, value: string) => {
-    if (value.length > 1000) {
-      console.error(`Prompt must be 1000 characters or less. Your prompt length is ${value.length}`);
-      addToast(`Prompt must be 1000 characters or less. Your prompt length is ${value.length}`,ToastType.ERROR);
-      return;
-    }
+    
     setConfig(prev => ({ ...prev, [name]: value }));
   };
 
@@ -83,13 +79,13 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
             addToast("Number of characters must be provided.",ToastType.ERROR);
             return;
         }
-        if(Number(input.noOfImages)>3){
-          addToast("Maximum 3 Number of images generated.",ToastType.ERROR)
-       return
+        if(Number(input.noOfImages) > 3) {
+          addToast("Maximum 3 images can be generated.", ToastType.ERROR);
+          return;
         }
-        if(Number(input.noOfImages)&&Number(input.noOfImages)<1){
-          addToast("Number of images must be provided.",ToastType.ERROR)
-          return
+        if(Number(input.noOfImages) < 0) {
+          addToast("Number of images cannot be negative.", ToastType.ERROR);
+          return;
         }
         // Validation: Ensure minWords is not greater than maxWords
         if (minWords > maxWords) {
@@ -170,24 +166,43 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
     }
   };
 
-  // Function to get chapters up to current chapter
-  const getCurrentChapters = () => {
-    const allChapters = tableOfContents.split('\n');
-    return allChapters.slice(0, currentChapterNo).map((chapter: string) => {
-      // Remove the "- " prefix if it exists
-      return chapter.replace(/^- /, '');
-    });
-  };
-
-
   // Function to get current chapter title
   const getCurrentChapterTitle = () => {
-    const chapters = tableOfContents.split('\n');
+    const chapters = tableOfContents.split(/\n+/); // Split by one or more newlines
     if (currentChapterNo <= chapters.length) {
       const chapter = chapters[currentChapterNo - 1];
-      return chapter.replace(/^- /, ''); // Remove the "- " prefix if it exists
+      return chapter
+        .replace(/^Chapter \d+:\s*/, '') // Remove "Chapter X: "
+        .replace(/^"(.+)"$/, '$1') // Remove surrounding quotes if present
+        .replace(/\s+$/, '') // Remove trailing whitespace and newlines
+        .trim();
     }
     return '';
+  };
+
+  // Function to parse table of contents
+  const parseTableOfContents = () => {
+    return tableOfContents
+      .split(/\n+/) // Split by one or more newlines
+      .map((chapter: string) => {
+        return chapter
+          .replace(/^Chapter \d+:\s*/, '') // Remove "Chapter X: "
+          .replace(/^"(.+)"$/, '$1') // Remove surrounding quotes if present
+          .replace(/\s+$/, '') // Remove trailing whitespace
+          .trim();
+      })
+      .filter(Boolean); // Remove empty entries
+  };
+
+  // Update the progress calculation
+  const calculateProgress = () => {
+    const totalChapters = parseTableOfContents().length;
+    return (currentChapterNo / totalChapters) * 100;
+  };
+
+  // Update where chapter count is displayed
+  const getChapterCount = () => {
+    return parseTableOfContents().length;
   };
 
   // Function to format image URL with proper slash handling
@@ -379,16 +394,23 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                 </div>
 
                 <div>
-                  <Label htmlFor="noOfImages">Number of Images</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="noOfImages">Number of Images (Optional)</Label>
+                    <span className="text-xs text-gray-500">Max: 3</span>
+                  </div>
                   <Input
                     id="noOfImages"
                     type="number"
-                    min="1"
+                    min="0"
                     max="3"
                     value={config.noOfImages}
                     onChange={(e) => handleChange('noOfImages', e.target.value)}
                     className="mt-1"
+                    placeholder="0"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Leave as 0 for no images
+                  </p>
                 </div>
 
                 {/* <div>
@@ -468,11 +490,11 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                 <div className="h-2 bg-gray-200 rounded-full">
                   <div
                     className="h-2 bg-amber-500 rounded-full transition-all duration-500"
-                    style={{ width: `${(currentChapterNo / tableOfContents.split('\n').length) * 100}%` }}
+                    style={{ width: `${calculateProgress()}%` }}
                   />
                 </div>
                 <p className="text-sm text-gray-500 mt-2 text-center">
-                  {currentChapterNo} of {tableOfContents.split('\n').length} chapters
+                  Chapter {currentChapterNo} of {getChapterCount()}: {getCurrentChapterTitle()}
                 </p>
               </div>
 

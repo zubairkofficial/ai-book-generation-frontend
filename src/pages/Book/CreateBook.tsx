@@ -193,7 +193,7 @@ const CreateBook = () => {
     authorBio: "A short biography of the author (optional)",
     
     // Book Details
-    bookInformation: "The core idea or concept of book or thoughts and (max words: 800)",
+    bookInformation: "The core idea or concept of book or thoughts",
     genre: "Choose the category that best fits your book",
     characters: "Main characters that will appear in your story (optional)",
     targetAudience: "Who is this book primarily written for?",
