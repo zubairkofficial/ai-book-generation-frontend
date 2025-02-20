@@ -79,10 +79,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
             addToast("Number of characters must be provided.",ToastType.ERROR);
             return;
         }
-        if(Number(input.noOfImages) > 3) {
-          addToast("Maximum 3 images can be generated.", ToastType.ERROR);
-          return;
-        }
+      
         if(Number(input.noOfImages) < 0) {
           addToast("Number of images cannot be negative.", ToastType.ERROR);
           return;
@@ -153,7 +150,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
             ...prev,
           additionalInfo:"",
           imagePrompt:"",
-          noOfImages:1,
+          noOfImages:0,
           }))
       }
 
