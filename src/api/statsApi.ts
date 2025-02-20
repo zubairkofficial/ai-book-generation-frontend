@@ -6,8 +6,19 @@ interface Stat {
   value: number;
 }
 
+interface BookGraphData {
+  name: string;
+  books: number;
+}
+
 interface FetchStatsResponse {
   stats: Stat[];
+  users?: number;
+  books?: number;
+}
+
+interface FetchBookGraphResponse {
+  data: BookGraphData[];
 }
 
 export const statsApi = baseApi.injectEndpoints({
@@ -19,9 +30,16 @@ export const statsApi = baseApi.injectEndpoints({
         method: 'GET',
       }),
     }),
+    getBookGraph: builder.query<FetchBookGraphResponse, void>({
+      query: () => ({
+        url: '/stats/book-graph',
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
 export const {
   useGetAllStatsQuery, // Hook to fetch all stats
+  useGetBookGraphQuery,
 } = statsApi;

@@ -56,15 +56,22 @@ const HomePage = () => {
 
  ;
 
-  // Sample chart data
-  const chartData = [
-    { name: 'Jan', books: 4 },
-    { name: 'Feb', books: 6 },
-    { name: 'Mar', books: 8 },
-    { name: 'Apr', books: 5 },
-    { name: 'May', books: 9 },
-    { name: 'Jun', books: 7 },
+  // Update to use chartData from statsData
+  const chartData = statsData?.chartData || [
+    { name: 'Jan', books: 0 },
+    { name: 'Feb', books: 0 },
+    { name: 'Mar', books: 0 },
+    { name: 'Apr', books: 0 },
+    { name: 'May', books: 0 },
+    { name: 'Jun', books: 0 },
+    { name: 'Jul', books: 0 },
+    { name: 'Aug', books: 0 },
+    { name: 'Sep', books: 0 },
+    { name: 'Oct', books: 0 },
+    { name: 'Nov', books: 0 },
+    { name: 'Dec', books: 0 }
   ];
+
 useEffect(()=>{
   refetchStats();
   refetchUser();
