@@ -48,8 +48,23 @@ interface GenerateBookResponse {
   bookContent: string;
 }
 
+// Add new enum for book status
+export enum BookStatus {
+  ALL = 'all',
+  DRAFT = 'draft',
+  COMPLETE = 'complete'
+}
+
+// Add interface for delete response
+interface DeleteBookResponse {
+  success: boolean;
+  message: string;
+}
+
+// Modify FetchBooksResponse to include status
 interface FetchBooksResponse {
   books: Book[];
+  status?: BookStatus;
 }
 
 interface StreamChapterResponse {
@@ -59,10 +74,11 @@ interface StreamChapterResponse {
 export const bookApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Endpoint to fetch all books
-    fetchBooks: builder.query<FetchBooksResponse, void>({
-      query: () => ({
+    fetchBooks: builder.query<FetchBooksResponse, { status?: BookStatus }>({
+      query: ({ status = BookStatus.ALL }) => ({
         url: '/book-generation/all',
         method: 'GET',
+        params: { status }
       }),
     }),
 
@@ -97,6 +113,15 @@ export const bookApi = baseApi.injectEndpoints({
         method: 'GET',
       }),
     }),
+
+    // New endpoint to delete a book
+    deleteBook: builder.mutation<DeleteBookResponse, number>({
+      query: (bookId) => ({
+        url: `/book-generation/${bookId}`,
+        method: 'DELETE',
+      }),
+      // Invalidate the fetchBooks cache when a book is deleted
+    }),
   }),
 });
 
@@ -106,4 +131,5 @@ export const {
   useCreateChapterMutation, // Hook to generate a new book
   useSearchBookQuery, // Hook to search books
   useStreamChapterQuery,
+  useDeleteBookMutation, // New hook for delete functionality
 } = bookApi;

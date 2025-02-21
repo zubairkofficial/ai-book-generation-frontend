@@ -2,14 +2,16 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast, ToastContainer } from 'react-toastify';
 import { motion } from 'framer-motion';
-import { Loader2, Eye, Search, Filter, Plus, BookOpen } from 'lucide-react';
+import { Loader2, Eye, Search,  Plus, BookOpen, Trash2 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
-import { useFetchBooksQuery } from '@/api/bookApi';
+import { useFetchBooksQuery, useDeleteBookMutation, BookStatus } from '@/api/bookApi';
 import BookModal from '@/components/BookModel/BookModel';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { BASE_URl } from '@/constant';
 import { useNavigate } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface BookData {
   id: number;
@@ -29,9 +31,13 @@ interface BookData {
 
 export default function BookTable() {
   const navigate=useNavigate()
-  const { data:allBookData, isLoading, isError, error, refetch: refetchAllBooks }:any = useFetchBooksQuery();
+  const [selectedStatus, setSelectedStatus] = useState<BookStatus>(BookStatus.ALL);
+  const { data: allBookData, isLoading, isError, error, refetch: refetchAllBooks }:any = useFetchBooksQuery({ status: selectedStatus });
   const [selectedBook, setSelectedBook] = useState<BookData | null>(null);
   const [searchParams, setSearchParams] = useState<{ [key: string]: string }>({});
+  const [deleteBook] = useDeleteBookMutation();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState<number | null>(null);
 
   // const { data: searchData } = useSearchBookQuery({ userId: user.id, searchParams }); // Fetch books with the hook
   // console.log("searchData", searchData)
@@ -58,6 +64,29 @@ export default function BookTable() {
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchParams({ ...searchParams, query: e.target.value }); // Update searchParams with the query value
   }
+
+  const handleStatusChange = (value: BookStatus) => {
+    setSelectedStatus(value);
+  };
+
+  const handleDeleteBook = async (bookId: number) => {
+    setBookToDelete(bookId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (bookToDelete) {
+      try {
+        await deleteBook(bookToDelete).unwrap();
+        toast.success('Book deleted successfully');
+        refetchAllBooks()
+        setIsDeleteDialogOpen(false);
+        setBookToDelete(null);
+      } catch (error) {
+        toast.error('Failed to delete book');
+      }
+    }
+  };
 
   return (
     <Layout>
@@ -97,10 +126,16 @@ export default function BookTable() {
                   onChange={handleSearch}
                 />
               </div>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Filters
-              </Button>
+              <Select value={selectedStatus} onValueChange={handleStatusChange}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={BookStatus.ALL}>All Books</SelectItem>
+                  <SelectItem value={BookStatus.DRAFT}>Draft</SelectItem>
+                  <SelectItem value={BookStatus.COMPLETE}>Complete</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -187,6 +222,21 @@ export default function BookTable() {
                         )}
                       </div>
                     </div>
+
+                    {/* Add delete button */}
+                    <div className="absolute top-2 right-2">
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteBook(book.id);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </Card>
                 </motion.div>
               ))}
@@ -204,6 +254,17 @@ export default function BookTable() {
               selectedBook={selectedBook}
             />
           )}
+
+          <ConfirmDialog
+            isOpen={isDeleteDialogOpen}
+            onClose={() => {
+              setIsDeleteDialogOpen(false);
+              setBookToDelete(null);
+            }}
+            onConfirm={confirmDelete}
+            title="Delete Book"
+            description="Are you sure you want to delete this book? This action cannot be undone."
+          />
         </div>
       </motion.div>
     </Layout>
