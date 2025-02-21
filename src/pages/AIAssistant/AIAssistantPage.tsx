@@ -42,7 +42,7 @@ const AIAssistantPage = () => {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-4xl font-bold mb-12 text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
           AI Writing Assistant
         </h1>
         <div className=" grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -72,12 +72,12 @@ const AIAssistantPage = () => {
           ))}
         </div>
       </div>
-
       <ChatDialog 
         isOpen={!!selectedTool}
         title={selectedTool}
         onClose={() => setSelectedTool(null)}
       />
+    
     </Layout>
   );
 };

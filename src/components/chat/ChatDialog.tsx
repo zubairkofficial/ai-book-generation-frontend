@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import {  useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Send, ArrowRightIcon, BookIcon, CheckCircleIcon, ClipboardIcon, SparklesIcon } from 'lucide-react';
-
+import { Send,  Loader2 } from 'lucide-react';
+import { useGetAiAssistantResponseMutation } from '@/api/aiAssistantApi';
+import { ToastType } from '@/constant';
+import { useToast } from '@/context/ToastContext';
+import { ChatDialogProps } from './types/chat.types';
+import BookCoverContent from './components/BookCoverContent';
+import BookIdeaContent from './components/BookIdeaContent';
 // Enums from CreateBook.tsx
 enum BookGenre {
   FICTION = "Fiction",
@@ -96,9 +101,9 @@ const bookCoverQuestions = [
 
 const writingAssistantQuestions = [
   {
-    id: 'projectType',
-    question: "What type of writing assistance do you need?",
-    placeholder: "e.g., Story Development, Character Creation, Scene Writing",
+    id: 'writingGoal',
+    question: "What's your primary writing goal?",
+    placeholder: "e.g., Improve dialogue, Enhance descriptions, Build tension",
     required: true
   },
   {
@@ -110,23 +115,29 @@ const writingAssistantQuestions = [
     required: true
   },
   {
-    id: 'language',
-    question: "What language are you writing in?",
-    placeholder: "Select language",
+    id: 'targetAudience',
+    question: "Who is your target audience?",
+    placeholder: "Select target audience",
     type: 'select',
-    options: Object.values(BookLanguage),
+    options: Object.values(TargetAudience),
     required: true
   },
   {
-    id: 'writingStyle',
-    question: "What's your preferred writing style?",
-    placeholder: "e.g., Descriptive, Concise, Conversational",
+    id: 'currentChallenges',
+    question: "What writing challenges are you facing?",
+    placeholder: "e.g., Writer's block, Pacing issues, Character development",
     required: true
   },
   {
-    id: 'specificChallenges',
-    question: "What specific challenges would you like help with?",
-    placeholder: "e.g., Dialog writing, Plot development, Character arcs",
+    id: 'writingLevel',
+    question: "What's your writing experience level?",
+    placeholder: "e.g., Beginner, Intermediate, Advanced",
+    required: true
+  },
+  {
+    id: 'specificArea',
+    question: "Any specific area you want to focus on?",
+    placeholder: "e.g., Opening chapters, Climax scenes, Character arcs",
     required: true
   }
 ];
@@ -241,17 +252,50 @@ const bookIdeaQuestions = [
   }
 ];
 
-interface ChatDialogProps {
-  isOpen: boolean;
-  title: string | null;
-  onClose: () => void;
+// Add these interfaces and enum
+export enum AiAssistantType {
+  BOOK_IDEA = "book_idea",
+  BOOK_COVER_IMAGE = "book_cover_image",
+  WRITING_ASSISTANT = "writing_assistant",
+}
+
+interface AiAssistantResponse {
+  id: number;
+  information: {
+    genre: string;
+    targetAudience: string;
+    themeOrTopic: string;
+    specificElements: string;
+    description: string;
+  };
+  type: AiAssistantType;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    // ... other user fields
+  };
+  response: {
+    generatedText: string;
+    timestamp: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: null | string;
 }
 
 const ChatDialog = ({ isOpen, title, onClose }: ChatDialogProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [userInput, setUserInput] = useState('');
   const [responses, setResponses] = useState<Record<string, string>>({});
-console.log("reponses",responses)
+  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [getAiAssistantResponse] = useGetAiAssistantResponseMutation();
+  const { addToast } = useToast(); // Use custom toast hook
+  const [responseData, setResponseData] = useState<any>(null);
+
+  console.log("reponses",responses)
   // Select question set based on tool type
   const getQuestions = () => {
     switch (title) {
@@ -271,66 +315,171 @@ console.log("reponses",responses)
   const questions = getQuestions();
   const currentQuestion = questions[currentStep];
 
-  const handleNext = () => {
-    if (!userInput && currentQuestion.required) {
-      return; // Don't proceed if required field is empty
+  const handleNext = async () => {
+    if (!userInput && currentQuestion.required) return;
+
+    // Save current response
+    const allResponses = {
+      ...responses,
+      [currentQuestion.id]: userInput
+    };
+    setResponses(allResponses);
+    setUserInput('');
+
+    // If this is the last question, call the API
+    if (currentStep === questions.length - 1) {
+      try {
+        setIsLoading(true);
+        const assistantType = getAssistantType(title);
+        
+        const payload = {
+          type: assistantType,
+          ...(assistantType === AiAssistantType.BOOK_COVER_IMAGE 
+            ? { bookCoverInfo: allResponses }:assistantType === AiAssistantType.BOOK_IDEA?
+             { information: allResponses }:{bookWriteInfo: allResponses}
+          )
+        };
+
+        const response = await getAiAssistantResponse(payload).unwrap();
+        
+        if (response?.response?.generatedText) {
+          setGeneratedContent(response.response.generatedText);
+          // Store the full response data
+          setResponseData(response);
+          addToast('Successfully generated content!', ToastType.SUCCESS);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        addToast('Failed to generate content. Please try again.', ToastType.ERROR);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    setResponses(prev => ({
-      ...prev,
-      [currentQuestion.id]: userInput
-    }));
-    setUserInput('');
     setCurrentStep(prev => prev + 1);
   };
 
   const handleSubmit = async () => {
     try {
-      let endpoint;
-      switch (title) {
-        case 'Book Cover Design':
-          endpoint = '/api/generate-cover';
+      const assistantType = getAssistantType(title);
+      let payload;
+
+      switch (assistantType) {
+        case AiAssistantType.BOOK_COVER_IMAGE:
+          payload = {
+            type: assistantType,
+            bookCoverInfo: responses
+          };
           break;
-        case 'Writing Assistant':
-          endpoint = '/api/writing-assistant';
+        case AiAssistantType.WRITING_ASSISTANT:
+          payload = {
+            type: assistantType,
+            bookWriteInfo: responses
+          };
           break;
-        case 'Generate Book':
-          endpoint = '/api/generate-book';
-          break;
-        case 'Generate Book Ideas':
-          endpoint = '/api/generate-book-ideas';
+        case AiAssistantType.BOOK_IDEA:
+          payload = {
+            type: assistantType,
+            information: responses
+          };
           break;
         default:
-          throw new Error('Invalid tool selected');
+          payload = {
+            type: assistantType,
+            information: responses
+          };
       }
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(responses),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate book idea');
-      }
-
-      const data = await response.json();
-      // Handle the response data here
-      console.log('Generated book ideas:', data);
+      setIsLoading(true);
+      const response = await getAiAssistantResponse(payload).unwrap();
       
-      // You might want to show the results in a new dialog or update the UI
-      // This depends on how you want to display the generated ideas
+      if (response?.response?.generatedText) {
+        setGeneratedContent(response.response.generatedText);
+        addToast('Successfully generated content!', ToastType.SUCCESS);
+      } else {
+        throw new Error('No generated content received');
+      }
     } catch (error) {
       console.error('Error:', error);
-      // Handle error (show error message to user)
+      addToast('Failed to generate content. Please try again.', ToastType.ERROR);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+
+  const renderGeneratedContent = () => {
+    if (!generatedContent) {
+      return (
+        
+        <div className="text-center space-y-8 py-8">
+          <h3 className="text-3xl font-bold text-gray-900 mb-8">
+            Ready to Generate {title}!
+          </h3>
+          {responseData && (
+            <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-md border border-amber-100">
+              <h4 className="text-xl font-semibold text-amber-800 mb-6">
+                Your Preferences
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                {Object.entries(responseData.information || responseData.bookCoverInfo || {}).map(([key, value]) => (
+                  <div key={key} className="bg-amber-50/50 p-4 rounded-xl">
+                    <p className="flex flex-col">
+                      <span className="text-sm font-medium text-amber-700 mb-1">
+                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                      </span>
+                      <span className="text-gray-700">{value as string}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const assistantType = getAssistantType(title);
+
+    switch (assistantType) {
+      case AiAssistantType.BOOK_COVER_IMAGE:
+        return <BookCoverContent responseData={responseData} generatedContent={generatedContent} />;
+      case AiAssistantType.BOOK_IDEA:
+        return <BookIdeaContent responseData={responseData} generatedContent={generatedContent} />;
+      case AiAssistantType.WRITING_ASSISTANT:
+        return <BookIdeaContent responseData={responseData} generatedContent={generatedContent} />;
+      default:
+        return null;
     }
   };
 
+  // Update the title to type mapping
+  const getAssistantType = (title: string | null): AiAssistantType => {
+    switch (title) {
+      case 'Generate Book Ideas':
+        return AiAssistantType.BOOK_IDEA;
+      case 'Book Cover Design':
+        return AiAssistantType.BOOK_COVER_IMAGE;
+      case 'Writing Assistant':
+        return AiAssistantType.WRITING_ASSISTANT;
+      default:
+        return AiAssistantType.BOOK_IDEA;
+    }
+  };
+  const handleClose=()=>{
+    onClose();
+    setCurrentStep(0);
+    setResponseData(null);
+    setGeneratedContent(null);
+    setUserInput('');
+    setResponses({});
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[90vh] p-0 gap-0 bg-gradient-to-b from-white to-gray-50">
-        <DialogHeader className="px-6 py-4 border-b bg-white/80 backdrop-blur-sm">
-          <DialogTitle className="text-xl font-semibold text-gray-800">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className=" max-w-4xl max-h-96 overflow-auto p-0 gap-0 bg-gradient-to-b from-white to-gray-50">
+        <DialogHeader className="px-6 py-2 border-b bg-white/80 backdrop-blur-sm">
+          <DialogTitle className="p-4 text-xl font-semibold text-gray-800">
             {title}
           </DialogTitle>
         </DialogHeader>
@@ -375,31 +524,74 @@ console.log("reponses",responses)
             ) : (
               <div className="text-center space-y-6">
                 <h3 className="text-2xl font-semibold mb-4">Ready to Generate Book Ideas!</h3>
-                
-                {title === 'Generate Book Ideas' && (
-                  <div className="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-sm border">
-                    <h4 className="text-lg font-medium mb-4 text-gray-700">Your Preferences:</h4>
-                    <div className="text-left space-y-3">
-                      <p><span className="font-semibold">Genre:</span> {responses.genre}</p>
-                      <p><span className="font-semibold">Target Audience:</span> {responses.targetAudience}</p>
-                      <p><span className="font-semibold">Theme/Topic:</span> {responses.themeOrTopic}</p>
-                      <p><span className="font-semibold">Desired Elements:</span> {responses.specificElements}</p>
-                      {responses.description && (
-                        <p><span className="font-semibold">Additional Description:</span> {responses.description}</p>
-                      )}
-                    </div>
-                  </div>
+
+                {title === 'Writing Assistant' && (
+                <>
+ {generatedContent ? (
+                      renderGeneratedContent()
+                    ) : (
+                      <Button
+                        onClick={handleSubmit}
+                        className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 rounded-full
+                          flex items-center gap-2 mx-auto shadow-lg shadow-amber-500/20 
+                          transition-all duration-200 hover:scale-[1.02]"
+                      >
+                        Generate Ideas
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    )}
+                    </>
+                )}
+                {title === 'Book Cover Design' && (
+                <>
+ {generatedContent ? (
+                      renderGeneratedContent()
+                    ) : (
+                      <Button
+                        onClick={handleSubmit}
+                        className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 rounded-full
+                          flex items-center gap-2 mx-auto shadow-lg shadow-amber-500/20 
+                          transition-all duration-200 hover:scale-[1.02]"
+                      >
+                        Generate Ideas
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    )}
+                    </>
                 )}
                 
-                <Button
-                  onClick={handleSubmit}
-                  className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 rounded-full
-                    flex items-center gap-2 mx-auto shadow-lg shadow-amber-500/20 
-                    transition-all duration-200 hover:scale-[1.02]"
-                >
-                  Generate Ideas
-                  <Send className="w-4 h-4" />
-                </Button>
+                {title === 'Generate Book Ideas' && (
+                  <>
+                    <div className="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-sm border">
+                      <h4 className="text-lg font-medium mb-4 text-gray-700">
+                        Your Preferences:
+                      </h4>
+                      <div className="text-left space-y-3">
+                        <p><span className="font-semibold">Genre:</span> {responses.genre}</p>
+                        <p><span className="font-semibold">Target Audience:</span> {responses.targetAudience}</p>
+                        <p><span className="font-semibold">Theme/Topic:</span> {responses.themeOrTopic}</p>
+                        <p><span className="font-semibold">Desired Elements:</span> {responses.specificElements}</p>
+                        {responses.description && (
+                          <p><span className="font-semibold">Additional Description:</span> {responses.description}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {generatedContent ? (
+                      renderGeneratedContent()
+                    ) : (
+                      <Button
+                        onClick={handleSubmit}
+                        className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-3 rounded-full
+                          flex items-center gap-2 mx-auto shadow-lg shadow-amber-500/20 
+                          transition-all duration-200 hover:scale-[1.02]"
+                      >
+                        Generate Ideas
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -413,13 +605,22 @@ console.log("reponses",responses)
               </span>
               <Button
                 onClick={handleNext}
-                disabled={!userInput && currentQuestion.required}
+                disabled={(!userInput && currentQuestion.required) || isLoading}
                 className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-6 py-2 
                   flex items-center gap-2 shadow-lg shadow-amber-500/20 
                   transition-all duration-200 hover:scale-[1.02]"
               >
-                {currentStep === questions.length - 1 ? 'Finish' : 'Next'}
-                <Send className="w-4 h-4" />
+                {isLoading ? (
+                  <>
+                    Generating...
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </>
+                ) : (
+                  <>
+                    {currentStep === questions.length - 1 ? 'Finish' : 'Next'}
+                    <Send className="w-4 h-4" />
+                  </>
+                )}
               </Button>
             </div>
           </div>
