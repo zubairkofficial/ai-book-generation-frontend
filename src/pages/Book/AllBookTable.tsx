@@ -4,7 +4,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import { motion } from 'framer-motion';
 import { Loader2, Eye, Search,  Plus, BookOpen, Trash2 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
-import { useFetchBooksQuery, useDeleteBookMutation, BookStatus } from '@/api/bookApi';
+import { useFetchBooksQuery, useDeleteBookMutation, BookStatus, useFetchBooksByTypeQuery } from '@/api/bookApi';
 import BookModal from '@/components/BookModel/BookModel';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -32,7 +32,8 @@ interface BookData {
 export default function BookTable() {
   const navigate=useNavigate()
   const [selectedStatus, setSelectedStatus] = useState<BookStatus>(BookStatus.ALL);
-  const { data: allBookData, isLoading, isError, error, refetch: refetchAllBooks }:any = useFetchBooksQuery({ status: selectedStatus });
+  const { data: allBookData, isLoading, isError, error, refetch: refetchAllBooks }:any = useFetchBooksQuery({});
+  const { data: filterBookData }:any = useFetchBooksByTypeQuery({ status: selectedStatus });
   const [selectedBook, setSelectedBook] = useState<BookData | null>(null);
   const [searchParams, setSearchParams] = useState<{ [key: string]: string }>({});
   const [deleteBook] = useDeleteBookMutation();
@@ -46,8 +47,10 @@ export default function BookTable() {
     toast.error(error?.data?.message || 'An error occurred');
   }
   useEffect(() => {
-    refetchAllBooks()
-  }, [])
+    if (selectedStatus === BookStatus.ALL) {
+      refetchAllBooks();
+    }
+  }, [selectedStatus]);
 
   // Pagination logic
 
@@ -145,7 +148,7 @@ export default function BookTable() {
               <Loader2 className="animate-spin text-amber-500" size={40} />
               <p className="text-gray-600">Loading your books...</p>
             </div>
-          ) : allBookData?.data?.length === 0 ? (
+          ) : (selectedStatus === BookStatus.ALL ? allBookData?.data : filterBookData?.data)?.length === 0 ? (
             
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -168,7 +171,7 @@ export default function BookTable() {
               animate={{ opacity: 1 }}
               className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
             >
-              {allBookData?.data?.map((book: BookData) => (
+              {(selectedStatus === BookStatus.ALL ? allBookData?.data : filterBookData?.data)?.map((book: BookData) => (
                 <motion.div
                   key={book.id}
                   whileHover={{ y: -5 }}

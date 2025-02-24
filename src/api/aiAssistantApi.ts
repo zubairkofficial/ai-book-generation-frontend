@@ -63,6 +63,24 @@ interface BookCoverInfo {
   additionalElements: string;
 }
 
+// Add these interfaces at the top with the other interfaces
+interface AiAssistantMessage {
+  message: string;
+  aiAssistantId: number;
+}
+
+interface AiAssistantChatResponse {
+  id: number;
+  message: string;
+  aiAssistantId: number;
+  response: {
+    generatedText: string;
+    timestamp: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const aiAssistantApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAiAssistantResponse: builder.mutation<AiAssistantResponse, AiAssistantRequest>({
@@ -72,9 +90,18 @@ export const aiAssistantApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+    // Add new chat endpoint
+    getAiAssistantChat: builder.mutation<AiAssistantChatResponse, AiAssistantMessage>({
+      query: (payload) => ({
+        url: '/ai-assistant/chat',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
   }),
 });
 
 export const {
   useGetAiAssistantResponseMutation,
+  useGetAiAssistantChatMutation,
 } = aiAssistantApi; 

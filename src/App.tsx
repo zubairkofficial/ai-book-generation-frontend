@@ -21,6 +21,7 @@ import CreateBook from './pages/Book/CreateBook';
 import HomePage from './pages/HomePage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import { RootState } from './store/store'; // Import RootState
+import ResponsePage from '@/pages/ResponsePage/ResponsePage';
 
 function App() {
   const dispatch = useDispatch();
@@ -81,7 +82,11 @@ function App() {
             <Route path="/ai-assistant" element={<AIAssistantPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/response" element={<ResponsePage />} />
+         
           </Route>
+
+          {/* Response Page */}
 
           {/* 404 Not Found Page (Optional) */}
           <Route path="*" element={<div>404 Not Found</div>} />

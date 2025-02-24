@@ -75,10 +75,15 @@ export const bookApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Endpoint to fetch all books
     fetchBooks: builder.query<FetchBooksResponse, { status?: BookStatus }>({
-      query: ({ status = BookStatus.ALL }) => ({
+      query: () => ({
         url: '/book-generation/all',
         method: 'GET',
-        params: { status }
+      }),
+    }),
+    fetchBooksByType: builder.query<FetchBooksResponse, { status?: BookStatus }>({
+      query: ({ status = BookStatus.DRAFT }) => ({
+        url: `/book-generation/${status}`,
+        method: 'GET',
       }),
     }),
 
@@ -127,6 +132,7 @@ export const bookApi = baseApi.injectEndpoints({
 
 export const {
   useFetchBooksQuery, // Hook to fetch all books
+  useFetchBooksByTypeQuery, // Hook to fetch all books
   useGenerateBookMutation, // Hook to generate a new book
   useCreateChapterMutation, // Hook to generate a new book
   useSearchBookQuery, // Hook to search books

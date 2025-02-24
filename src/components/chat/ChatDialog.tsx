@@ -8,6 +8,7 @@ import { useToast } from '@/context/ToastContext';
 import { ChatDialogProps } from './types/chat.types';
 import BookCoverContent from './components/BookCoverContent';
 import BookIdeaContent from './components/BookIdeaContent';
+import { useNavigate } from 'react-router-dom';
 // Enums from CreateBook.tsx
 enum BookGenre {
   FICTION = "Fiction",
@@ -294,6 +295,7 @@ const ChatDialog = ({ isOpen, title, onClose }: ChatDialogProps) => {
   const [getAiAssistantResponse] = useGetAiAssistantResponseMutation();
   const { addToast } = useToast(); // Use custom toast hook
   const [responseData, setResponseData] = useState<any>(null);
+  const navigate = useNavigate();
 
   console.log("reponses",responses)
   // Select question set based on tool type
@@ -317,16 +319,12 @@ const ChatDialog = ({ isOpen, title, onClose }: ChatDialogProps) => {
 
   const handleNext = async () => {
     if (!userInput && currentQuestion.required) return;
-
-    // Save current response
     const allResponses = {
       ...responses,
       [currentQuestion.id]: userInput
     };
     setResponses(allResponses);
     setUserInput('');
-
-    // If this is the last question, call the API
     if (currentStep === questions.length - 1) {
       try {
         setIsLoading(true);
@@ -335,18 +333,24 @@ const ChatDialog = ({ isOpen, title, onClose }: ChatDialogProps) => {
         const payload = {
           type: assistantType,
           ...(assistantType === AiAssistantType.BOOK_COVER_IMAGE 
-            ? { bookCoverInfo: allResponses }:assistantType === AiAssistantType.BOOK_IDEA?
-             { information: allResponses }:{bookWriteInfo: allResponses}
+            ? { bookCoverInfo: allResponses }
+            : assistantType === AiAssistantType.BOOK_IDEA
+            ? { information: allResponses }
+            : { bookWriteInfo: allResponses }
           )
         };
-
+        
         const response = await getAiAssistantResponse(payload).unwrap();
         
         if (response?.response?.generatedText) {
-          setGeneratedContent(response.response.generatedText);
-          // Store the full response data
-          setResponseData(response);
-          addToast('Successfully generated content!', ToastType.SUCCESS);
+          handleClose();
+          navigate('/response', {
+            state: {
+              responses: allResponses,
+              generatedContent: response.response.generatedText,
+              aiAssistantId: response.id
+            }
+          });
         }
       } catch (error) {
         console.error('Error:', error);
@@ -355,7 +359,6 @@ const ChatDialog = ({ isOpen, title, onClose }: ChatDialogProps) => {
         setIsLoading(false);
       }
     }
-
     setCurrentStep(prev => prev + 1);
   };
 
@@ -395,6 +398,7 @@ const ChatDialog = ({ isOpen, title, onClose }: ChatDialogProps) => {
       
       if (response?.response?.generatedText) {
         setGeneratedContent(response.response.generatedText);
+     
         addToast('Successfully generated content!', ToastType.SUCCESS);
       } else {
         throw new Error('No generated content received');

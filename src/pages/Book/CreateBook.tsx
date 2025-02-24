@@ -16,10 +16,8 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useCreateChapterMutation, useFetchBooksQuery } from "@/api/bookApi";
 import ChapterConfiguration from './ChapterConfiguration';
 import { ArrowLeft, ArrowRight, Loader2, Wand2 } from 'lucide-react';
-import { X } from 'lucide-react';
 import { AlertCircle } from 'lucide-react';
 import TableOfContents from './components/TableOfContents';
-import { countWords } from "@/common/wordsCount";
 
 // Add this enum for genres
 enum BookGenre {
@@ -106,7 +104,7 @@ interface ApiErrorResponse {
 
 const CreateBook = () => {
   const [generateBook, { isLoading }] = useGenerateBookMutation();
- const { refetch:refectAllBooks } = useFetchBooksQuery(); // Fetch books with the hook
+ const { refetch:refectAllBooks } = useFetchBooksQuery({}); // Fetch books with the hook
  const [createBookChapter] = useCreateChapterMutation(); // Fetch books with the hook
  
   const [formData, setFormData] = useState({
