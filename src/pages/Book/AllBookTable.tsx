@@ -8,10 +8,11 @@ import { useFetchBooksQuery, useDeleteBookMutation, BookStatus, useFetchBooksByT
 import BookModal from '@/components/BookModel/BookModel';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { BASE_URl } from '@/constant';
+import { BASE_URl, ToastType } from '@/constant';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/context/ToastContext';
 
 interface BookData {
   id: number;
@@ -31,6 +32,7 @@ interface BookData {
 
 export default function BookTable() {
   const navigate=useNavigate()
+  const {addToast}=useToast()
   const [selectedStatus, setSelectedStatus] = useState<BookStatus>(BookStatus.ALL);
   const { data: allBookData, isLoading, isError, error, refetch: refetchAllBooks }:any = useFetchBooksQuery({});
   const { data: filterBookData }:any = useFetchBooksByTypeQuery({ status: selectedStatus });
@@ -44,7 +46,7 @@ export default function BookTable() {
   // console.log("searchData", searchData)
   // Handle the error case
   if (isError) {
-    toast.error(error?.data?.message || 'An error occurred');
+    addToast(error?.data?.message || 'An error occurred',ToastType.ERROR);
   }
   useEffect(() => {
     if (selectedStatus === BookStatus.ALL) {
@@ -81,12 +83,12 @@ export default function BookTable() {
     if (bookToDelete) {
       try {
         await deleteBook(bookToDelete).unwrap();
-        toast.success('Book deleted successfully');
+        addToast('Book deleted successfully',ToastType.SUCCESS);
         refetchAllBooks()
         setIsDeleteDialogOpen(false);
         setBookToDelete(null);
-      } catch (error) {
-        toast.error('Failed to delete book');
+      } catch (error:any) {
+        addToast(error?.message,ToastType.ERROR);
       }
     }
   };

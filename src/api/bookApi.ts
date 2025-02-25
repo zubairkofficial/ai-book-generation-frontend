@@ -43,6 +43,11 @@ interface CreateBookGenerateRequest {
   bookGenerationId:number,
   additionalInfo?:string,
 }
+export interface UpdateBookGenerateRequest {
+  chapterNo: number;
+  bookGenerationId: number;
+  updateContent: string;
+}
 
 interface GenerateBookResponse {
   bookContent: string;
@@ -71,6 +76,16 @@ interface StreamChapterResponse {
   data: string;
 }
 
+// Update the mutation return type
+interface UpdateChapterResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    content: string;
+    // Add other expected response fields
+  };
+}
+
 export const bookApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Endpoint to fetch all books
@@ -95,10 +110,19 @@ export const bookApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+    
     createChapter: builder.mutation<GenerateBookResponse, CreateBookGenerateRequest>({
       query: (payload) => ({
         url: '/book-chapter/chapter/create',
         method: 'POST',
+        body: payload,
+      }),
+    }),
+
+    updateChapter: builder.mutation<UpdateChapterResponse, UpdateBookGenerateRequest>({
+      query: (payload) => ({
+        url: '/book-chapter/update-chapter',
+        method: 'PUT',
         body: payload,
       }),
     }),
@@ -135,6 +159,7 @@ export const {
   useFetchBooksByTypeQuery, // Hook to fetch all books
   useGenerateBookMutation, // Hook to generate a new book
   useCreateChapterMutation, // Hook to generate a new book
+  useUpdateChapterMutation, // Hook to generate a new book
   useSearchBookQuery, // Hook to search books
   useStreamChapterQuery,
   useDeleteBookMutation, // New hook for delete functionality
