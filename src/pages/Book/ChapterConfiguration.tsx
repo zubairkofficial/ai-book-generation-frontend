@@ -131,11 +131,15 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
       setStreamedContent(prev => prev + content);
     
   };
-  const handleRegenerateStreamedContent = (content: string, index?: number) => {
-    console.log("regenerate",regeneratedContent)
-      setRegeneratedContent(prev => prev + content);
-   
+  const handleRegenerateStreamedContent = (content: string) => {
+    setRegeneratedContent(prev => {
+      // Append new content to existing content
+      return prev + content;
+    });
   };
+
+  // Add a ref to track seen content
+  const seenContentRef = useRef(new Set<string>());
 
   const handleChapterGeneration = async (input: ChapterConfig) => {
     try {
@@ -405,12 +409,12 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
 
   const handleRegenerateParagraph = async (index: number, instruction: string) => {
     try {
-      // setIsGenerating(true);
-      setRegeneratedContent(''); // Clear previous content
+      // Clear previous content when starting new generation
+      setRegeneratedContent('');
+      setIsGenerating(true);
       
       const actualIndex = selectedContent?.index || index;
       
-      // Create payload first
       const payload = {
         minWords: +config.minLength,
         maxWords: +config.maxLength,
@@ -424,62 +428,46 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
         instruction: instruction,
       };
 
-      // Set up EventSource before making the API call
       const eventSource = new EventSource(`${BASE_URl}/book-chapter/chapter-stream`);
       
-      eventSource.onopen = () => {
-        console.log("EventSource connection opened"); // Debug log
-      };
+      let accumulatedContent = ''; // Track accumulated content
+
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log("data==========",data)
+          console.log("Streaming data:", data);
+          
           if (data.text) {
-            handleRegenerateStreamedContent(data.text, actualIndex);
+            // Add new text to existing content
+            handleRegenerateStreamedContent(data.text);
           } else if (data.type === 'image') {
-            setChapterImages(prev => [...prev, {
-              title: data.title,
-              url: data.url
-            }]);
+            setChapterImages(prev => {
+              const exists = prev.some(img => img.url === data.url);
+              if (!exists) {
+                return [...prev, { title: data.title, url: data.url }];
+              }
+              return prev;
+            });
           }
         } catch (error) {
-          // If parsing fails, treat it as raw text
-          handleRegenerateStreamedContent(event.data, actualIndex);
+          // Handle raw text
+          accumulatedContent = event.data;
+          handleRegenerateStreamedContent(accumulatedContent);
         }
       };
-      // eventSource.onmessage = (event) => {
-      //   try {
-      //     const data = JSON.parse(event.data);
-      //     if (data.text) {
-      //       handleStreamedContent(data.text, actualIndex);
-      //     } else if (data.type === 'image') {
-      //       setChapterImages(prev => [...prev, {
-      //         title: data.title,
-      //         url: data.url
-      //       }]);
-      //     }
-      //   } catch (error) {
-      //     // If parsing fails, treat it as raw text
-      //     handleStreamedContent(event.data, actualIndex);
-      //   }
-      // };
 
-      // eventSource.onerror = (error) => {
-      //   console.error('Stream error:', error);
-      //   eventSource.close();
-      //   setIsGenerating(false);
-      // };
+      eventSource.onerror = (error) => {
+        console.error('Stream error:', error);
+        setIsGenerating(false);
+        eventSource.close();
+      };
 
-      // Make the API call after setting up EventSource
       const res:any = await createBookChapter(payload).unwrap();
       
       if (res.statusCode === 200) {
         setShowInsertOption(true);
-        // Don't close EventSource immediately to ensure we get all streamed content
-      } else {
-        // eventSource.close();
         setIsGenerating(false);
-        console.error('API call failed:', res);
+        eventSource.close(); // Close the event source after successful completion
       }
 
     } catch (error) {
@@ -559,12 +547,19 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
       
       // Reset states after insertion
       setShowInsertOption(false);
-      setRegeneratedContent('');
       setSelectedContent(null);
       setShowEditPanel(false);
       setRegeneratedContent('');
     }
   };
+
+  // Add cleanup when component unmounts or when canceling
+  useEffect(() => {
+    return () => {
+      // Clear regenerated content when component unmounts
+      setRegeneratedContent('');
+    };
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -616,19 +611,19 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                       <div>
                         <Label>Regenerated Content</Label>
                         <div className="mt-1 p-3 bg-amber-50 rounded-lg overflow-y-auto h-[150px]">
-                          {
-                           regeneratedContent ? (
+                          {regeneratedContent ? (
                             <div className="prose prose-amber max-w-none">
-                              {regeneratedContent.split('\n').map((line, index) => (
-                                <p key={index} className="mb-2">
-                                  {line}
-                                 
-                                </p>
-                              ))}
+                              <ReactMarkdown>
+                                {regeneratedContent}
+                              </ReactMarkdown>
+                              <span className="animate-pulse">|</span>
                             </div>
                           ) : (
                             <div className="flex items-center justify-center h-full text-gray-500">
-                              Waiting for content...
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Generating content...</span>
+                              </div>
                             </div>
                           )}
                         </div>
