@@ -8,7 +8,7 @@ import { UpdateBookGenerateRequest, useCreateChapterMutation, useUpdateChapterMu
 import { useToast } from '@/context/ToastContext';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, BookOpen, Settings, Image as ImageIcon, RotateCw, Edit, Loader2 } from 'lucide-react';
+import { ArrowRight, BookOpen, Settings, RotateCw, Edit, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import { ChapterConfigurationProps, ChapterConfig } from './types/chapter.types';
@@ -80,7 +80,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
     fontSize: 'text-base'
   });
 
-  const [showInsertOption, setShowInsertOption] = useState(true);
+  const [showInsertOption, setShowInsertOption] = useState(false);
   const [regeneratedContent, setRegeneratedContent] = useState('');
   // Auto-scroll effect
   useEffect(() => {
@@ -139,7 +139,6 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
   };
 
   // Add a ref to track seen content
-  const seenContentRef = useRef(new Set<string>());
 
   const handleChapterGeneration = async (input: ChapterConfig) => {
     try {
@@ -523,33 +522,60 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
     }
   };
 
-  const handleInsertContent = () => {
+  const handleInsertContent = async () => {
     if (selectedContent && regeneratedContent) {
-      setStreamedContent(prev => {
-        // Split content into paragraphs
-        const paragraphs = prev.split('\n');
-        let currentIndex = 0;
-        let found = false;
+      try {
+        setIsGenerating(true);        
+        // Update local content first
+        const updatedContent = (() => {
+          const paragraphs = streamedContent.split('\n');
+          let found = false;
+          
+          const updatedParagraphs = paragraphs.map(paragraph => {
+            if (!found && paragraph.includes(selectedContent.text)) {
+              found = true;
+              return paragraph.replace(selectedContent.text, regeneratedContent);
+            }
+            return paragraph;
+          });
+          
+          return updatedParagraphs.join('\n');
+        })();
+
+        // Prepare and send API update
+        const bookId = typeof bookData.id === 'string' ? parseInt(bookData.id, 10) : bookData.id;
         
-        // Find and replace the selected text
-        const updatedParagraphs = paragraphs.map(paragraph => {
-          if (!found && paragraph.includes(selectedContent.text)) {
-            found = true;
-            return paragraph.replace(selectedContent.text, regeneratedContent);
-          }
-          currentIndex++;
-          return paragraph;
-        });
+        if (isNaN(bookId)) {
+          throw new Error('Invalid book ID');
+        }
+
+        const updatePayload: UpdateBookGenerateRequest = {
+          chapterNo: currentChapterNo,
+          bookGenerationId: bookId,
+          updateContent: updatedContent
+        };
+
+        const response = await updateBookChapter(updatePayload).unwrap();
         
-        // Join paragraphs back together
-        return updatedParagraphs.join('\n');
-      });
-      
-      // Reset states after insertion
-      setShowInsertOption(false);
-      setSelectedContent(null);
-      setShowEditPanel(false);
-      setRegeneratedContent('');
+        if (response.statusCode === 200) {
+          // Update local state after successful API call
+          setStreamedContent(updatedContent);
+          addToast("Content updated successfully", ToastType.SUCCESS);
+        } else {
+          throw new Error(response.message || 'Failed to update content');
+        }
+
+      } catch (error: any) {
+        console.error('Update Error:', error);
+        addToast(error.message || "Failed to update content", ToastType.ERROR);
+      } finally {
+        // Reset states after operation
+        setIsGenerating(false);
+        setShowInsertOption(false);
+        setSelectedContent(null);
+        setShowEditPanel(false);
+        setRegeneratedContent('');
+      }
     }
   };
 
@@ -558,6 +584,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
     return () => {
       // Clear regenerated content when component unmounts
       setRegeneratedContent('');
+
     };
   }, []);
 
@@ -855,8 +882,8 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                             />
                           </div>
                           
-                          <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 mt-4">
-                            <div className="flex justify-end items-center gap-3 max-w-7xl mx-auto">
+                          <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-2 mt-4">
+                            <div className="flex justify-end items-center gap-3 max-w-2xl mx-auto">
                               <Button
                                 variant="outline"
                                 size="lg"
