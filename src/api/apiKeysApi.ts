@@ -3,13 +3,17 @@ import { baseApi } from './baseApi';
 interface ApiKeysResponse {
   openai_key: string;
   dalle_key: string;
+  fal_ai: string;
   model: string;
+  id: number;
 }
 
 export interface UpdateApiKeysRequest {
   model: string;
   openai_key?: string;
   dalle_key?: string;
+  fal_ai?: string;
+  id: number;
 }
 
 export const apiKeysApi = baseApi.injectEndpoints({

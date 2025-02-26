@@ -41,40 +41,33 @@ const passwordSchema = yup.object({
 });
 
 const apiKeysSchema = yup.object({
-  openaiKey: yup.string()
-    .test('is-empty-or-valid', 'Invalid OpenAI API key format', function(value) {
-      // Allow empty string (no changes to existing key)
-      if (!value) return true;
-      // Validate format if value is provided - allows for longer keys with special characters
-      return /^sk-[a-zA-Z0-9_-]+$/i.test(value);
-    })
-    .transform((value) => value || null)
+  id: yup.string()
     .nullable()
-    .test('prefix', 'API key must start with "sk-"', (value) => {
+    .transform((value) => value || null),
+  openaiKey: yup.string()
+    .nullable()
+    .transform((value) => value || null)
+    .test('is-empty-or-valid', 'Invalid OpenAI API key format', function(value) {
       if (!value) return true;
-      return value.startsWith('sk-');
-    })
-    .test('min-length', 'API key must be at least 51 characters', (value) => {
-      if (!value) return true;
-      return value.length >= 51;
+      return /^sk-[a-zA-Z0-9_-]+$/i.test(value);
     }),
   dalleKey: yup.string()
+    .nullable()
+    .transform((value) => value || null)
     .test('is-empty-or-valid', 'Invalid DALL-E API key format', function(value) {
       if (!value) return true;
       return /^sk-[a-zA-Z0-9_-]+$/i.test(value);
-    })
-    .transform((value) => value || null)
+    }),
+  falKey: yup.string()
     .nullable()
-    .test('prefix', 'API key must start with "sk-"', (value) => {
+    .transform((value) => value || null)
+    .test('is-empty-or-valid', 'Invalid Fal AI key format', function(value) {
       if (!value) return true;
-      return value.startsWith('sk-');
-    })
-    .test('min-length', 'API key must be at least 51 characters', (value) => {
-      if (!value) return true;
-      return value.length >= 51;
+      return /^fal_[a-zA-Z0-9_-]+$/i.test(value);
     }),
   llmModel: yup.string()
-    .required('Please select a model'),
+    .nullable()
+    .transform((value) => value || null),
 });
 
 // Add validation schema for profile
@@ -105,17 +98,21 @@ interface PasswordFormData {
 }
 
 interface ApiKeysFormData {
+  id?: string | null;
   openaiKey?: string | null;
   dalleKey?: string | null;
-  llmModel?: string;
+  falKey?: string | null;
+  llmModel?: string | null;
 }
 
 
 // Add interface for API keys payload
 interface UpdateApiKeysPayload {
-  model: string;
+  id?: string;
+  model?: string;
   openai_key?: string;
   dalle_key?: string;
+  fal_key?: string;
 }
 
 const SettingsPage = () => {
@@ -145,8 +142,10 @@ const SettingsPage = () => {
   const { register: registerApiKeys, handleSubmit: handleSubmitApiKeys, formState: { errors: apiKeyErrors }, reset: resetApiKeys } = useForm({
     resolver: yupResolver(apiKeysSchema),
     defaultValues: {
+      id: '',
       openaiKey: '',
       dalleKey: '',
+      falKey: '',
       llmModel: ''
     }
   });
@@ -167,6 +166,19 @@ const SettingsPage = () => {
       setValue('email', userInfo.email);
     }
   }, [userInfo, setValue]);
+
+  // Add useEffect to set the ID when apiKeyInfo is available
+  useEffect(() => {
+    if (apiKeyInfo) {
+      resetApiKeys({
+        id: apiKeyInfo.id || '',
+        openaiKey: '',
+        dalleKey: '',
+        falKey: '',
+        llmModel: apiKeyInfo.model || ''
+      });
+    }
+  }, [apiKeyInfo, resetApiKeys]);
 
   // Function to validate OpenAI key in real-time
   const validateOpenAIKey = (value: string) => {
@@ -230,32 +242,22 @@ useEffect(()=>{userRefetch()},[])
   // Update API keys handler with better error handling
   const handleApiKeysSave = async (data: ApiKeysFormData) => {
     try {
-      // Validate key formats before submitting
-      if (data.openaiKey) {
-        try {
-          await apiKeysSchema.validateAt('openaiKey', { openaiKey: data.openaiKey });
-        } catch (error) {
-          throw new Error('Invalid OpenAI API key format');
-        }
-      }
-      
-      if (data.dalleKey) {
-        try {
-          await apiKeysSchema.validateAt('dalleKey', { dalleKey: data.dalleKey });
-        } catch (error) {
-          throw new Error('Invalid DALL-E API key format');
-        }
-      }
-
-      // Create payload with correct types
       const payload: UpdateApiKeysPayload = {
-        model: data.llmModel??'gpt-3.5-turbo',
+        id: apiKeyInfo?.id || data.id, // Always include ID if it exists in apiKeyInfo
+        ...(data.llmModel && { model: data.llmModel }),
         ...(data.openaiKey && { openai_key: data.openaiKey }),
         ...(data.dalleKey && { dalle_key: data.dalleKey }),
+        ...(data.falKey && { fal_key: data.falKey }),
       };
 
       await updateApiKeys(payload).unwrap();
-      resetApiKeys();
+      resetApiKeys({
+        id: apiKeyInfo?.id || '',
+        openaiKey: '',
+        dalleKey: '',
+        falKey: '',
+        llmModel: apiKeyInfo?.model || ''
+      });
       addToast('API keys updated successfully!', ToastType.SUCCESS);
     } catch (error: any) {
       addToast(`Failed to update API keys: ${error.message}`, ToastType.ERROR);
@@ -502,6 +504,7 @@ useEffect(()=>{userRefetch()},[])
                           <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <h3 className="text-sm font-medium text-gray-700 mb-4">Current API Keys</h3>
                             <div className="grid gap-4">
+                             
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-600">OpenAI API Key:</span>
                                 <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
@@ -519,6 +522,14 @@ useEffect(()=>{userRefetch()},[])
                                 </code>
                               </div>
                               <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Fal AI Key:</span>
+                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                                  {apiKeyInfo.fal_key ? 
+                                    `${apiKeyInfo.fal_key.substring(0, 4)}...${apiKeyInfo.fal_key.slice(-4)}` : 
+                                    'Not set'}
+                                </code>
+                              </div>
+                              <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-600">LLM Model:</span>
                                 <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
                                   {apiKeyInfo.model || 'Not set'}
@@ -531,7 +542,8 @@ useEffect(()=>{userRefetch()},[])
                         {/* Update API Keys Form */}
                         <form onSubmit={handleSubmitApiKeys(handleApiKeysSave)} className="space-y-6">
                           <div className="grid gap-6">
-                            {/* OpenAI API Key Input */}
+                           
+
                             <div className="space-y-2">
                               <Label htmlFor="openaiKey">New OpenAI API Key</Label>
                               <div className="relative">
@@ -615,6 +627,44 @@ useEffect(()=>{userRefetch()},[])
                               )}
                               <p className="text-xs text-gray-500 mt-1">
                                 Format: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (51 characters)
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="falKey">New Fal AI Key</Label>
+                              <div className="relative">
+                                <Input
+                                  {...registerApiKeys('falKey')}
+                                  type="password"
+                                  id="falKey"
+                                  placeholder="fal_..."
+                                  className={`w-full pr-20 ${apiKeyErrors.falKey ? 'border-red-500' : ''}`}
+                                />
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                  {apiKeyErrors.falKey && (
+                                    <svg 
+                                      className="h-5 w-5 text-red-500" 
+                                      fill="none" 
+                                      viewBox="0 0 24 24" 
+                                      stroke="currentColor"
+                                    >
+                                      <path 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round" 
+                                        strokeWidth={2} 
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                                      />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              {apiKeyErrors.falKey && (
+                                <p className="text-sm text-red-500 mt-1">
+                                  {apiKeyErrors.falKey.message}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-500 mt-1">
+                                Format: fal_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (Starts with 'fal_')
                               </p>
                             </div>
 

@@ -82,7 +82,6 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
 
   const [showInsertOption, setShowInsertOption] = useState(true);
   const [regeneratedContent, setRegeneratedContent] = useState('');
-console.log("regeneratedContent",regeneratedContent)
   // Auto-scroll effect
   useEffect(() => {
     if (streamContainerRef.current) {
@@ -133,7 +132,7 @@ console.log("regeneratedContent",regeneratedContent)
     
   };
   const handleRegenerateStreamedContent = (content: string, index?: number) => {
-    
+    console.log("regenerate",regeneratedContent)
       setRegeneratedContent(prev => prev + content);
    
   };
@@ -406,7 +405,7 @@ console.log("regeneratedContent",regeneratedContent)
 
   const handleRegenerateParagraph = async (index: number, instruction: string) => {
     try {
-      setIsGenerating(true);
+      // setIsGenerating(true);
       setRegeneratedContent(''); // Clear previous content
       
       const actualIndex = selectedContent?.index || index;
@@ -432,9 +431,9 @@ console.log("regeneratedContent",regeneratedContent)
         console.log("EventSource connection opened"); // Debug log
       };
       eventSource.onmessage = (event) => {
-        console.log("Received event:", event.data); // Debug log
         try {
           const data = JSON.parse(event.data);
+          console.log("data==========",data)
           if (data.text) {
             handleRegenerateStreamedContent(data.text, actualIndex);
           } else if (data.type === 'image') {
@@ -539,22 +538,23 @@ console.log("regeneratedContent",regeneratedContent)
   const handleInsertContent = () => {
     if (selectedContent && regeneratedContent) {
       setStreamedContent(prev => {
-        const parts = prev.split(/###\s*/);
-        const actualIndex = selectedContent.index;
+        // Split content into paragraphs
+        const paragraphs = prev.split('\n');
+        let currentIndex = 0;
+        let found = false;
         
-        if (actualIndex >= 0 && actualIndex < parts.length) {
-          const targetPart = parts[actualIndex];
-          const startIndex = targetPart.indexOf(selectedContent.text);
-          
-          if (startIndex !== -1) {
-            parts[actualIndex] = 
-              targetPart.substring(0, startIndex) + 
-              targetPart.substring(startIndex + selectedContent.text.length);
-            
-            return parts.join('\n### ');
+        // Find and replace the selected text
+        const updatedParagraphs = paragraphs.map(paragraph => {
+          if (!found && paragraph.includes(selectedContent.text)) {
+            found = true;
+            return paragraph.replace(selectedContent.text, regeneratedContent);
           }
-        }
-        return prev;
+          currentIndex++;
+          return paragraph;
+        });
+        
+        // Join paragraphs back together
+        return updatedParagraphs.join('\n');
       });
       
       // Reset states after insertion
@@ -562,6 +562,7 @@ console.log("regeneratedContent",regeneratedContent)
       setRegeneratedContent('');
       setSelectedContent(null);
       setShowEditPanel(false);
+      setRegeneratedContent('');
     }
   };
 
