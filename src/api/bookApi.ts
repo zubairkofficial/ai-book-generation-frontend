@@ -86,6 +86,31 @@ interface UpdateChapterResponse {
   };
 }
 
+// Add new interfaces for style updates
+interface TextStyle {
+  bold: boolean;
+  italic: boolean;
+  align: 'left' | 'center' | 'right';
+  fontSize: string;
+  fontFamily: string;
+  color: string;
+  lineHeight: string;
+  letterSpacing: string;
+}
+
+interface UpdateStyleRequest {
+  bookId: number;
+  pageType: string;
+  chapterNo?: number;
+  style: TextStyle;
+}
+
+interface UpdateImageRequest {
+  bookId: number;
+  imageType: 'cover' | 'backCover';
+  image: File;
+}
+
 export const bookApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Endpoint to fetch all books
@@ -151,6 +176,39 @@ export const bookApi = baseApi.injectEndpoints({
       }),
       // Invalidate the fetchBooks cache when a book is deleted
     }),
+
+    // Add new endpoint to fetch a book by ID
+    fetchBookById: builder.query<any, number>({
+      query: (bookId) => ({
+        url: `/book-generation/${bookId}`,
+        method: 'GET',
+      }),
+    }),
+
+    // Add new endpoint for style updates
+    updateStyle: builder.mutation<any, UpdateStyleRequest>({
+      query: (payload) => ({
+        url: '/book-generation/update-style',
+        method: 'PUT',
+        body: payload,
+      }),
+    }),
+
+    // Add new endpoint for image updates
+    updateImage: builder.mutation<any, UpdateImageRequest>({
+      query: (payload) => {
+        const formData = new FormData();
+        formData.append('bookId', payload.bookId.toString());
+        formData.append('imageType', payload.imageType);
+        formData.append('image', payload.image);
+
+        return {
+          url: '/book-generation/update-image',
+          method: 'PUT',
+          body: formData,
+        };
+      },
+    }),
   }),
 });
 
@@ -163,4 +221,7 @@ export const {
   useSearchBookQuery, // Hook to search books
   useStreamChapterQuery,
   useDeleteBookMutation, // New hook for delete functionality
+  useFetchBookByIdQuery, // Add this export
+  useUpdateStyleMutation,
+  useUpdateImageMutation,
 } = bookApi;

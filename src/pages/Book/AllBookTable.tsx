@@ -56,15 +56,9 @@ export default function BookTable() {
 
   // Pagination logic
 
-  // Open modal with book details
-  const openModal = (book: BookData) => {
-    setSelectedBook(book);
-  };
 
-  // Close modal
-  const closeModal = () => {
-    setSelectedBook(null);
-  };
+
+
 
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchParams({ ...searchParams, query: e.target.value }); // Update searchParams with the query value
@@ -181,7 +175,7 @@ export default function BookTable() {
                 >
                   <Card 
                     className="group cursor-pointer hover:shadow-lg transition-all duration-200 overflow-hidden bg-white"
-                    onClick={() => openModal(book)}
+                    onClick={() => navigate(`/book-modal?id=${book.id}`)}
                   >
                     {/* Enhanced Book Cover */}
                     <div className="aspect-[3/4] relative overflow-hidden bg-gray-100">
@@ -199,7 +193,7 @@ export default function BookTable() {
                             className="bg-white hover:bg-gray-50 shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              openModal(book);
+                              navigate(`/book-modal?id=${book.id}`);
                             }}
                           >
                             <Eye className="w-4 h-4 mr-1" />
@@ -248,19 +242,8 @@ export default function BookTable() {
             </motion.div>
           )}
 
-          {/* Book Modal */}
-          {selectedBook && (
-            <BookModal
-              isOpen={!!selectedBook}
-              onClose={closeModal}
-              htmlContent={selectedBook.additionalData?.fullContent}
-              coverImageUrl={selectedBook.additionalData?.coverImageUrl}
-              backCoverImageUrl={selectedBook.additionalData?.backCoverImageUrl}
-              selectedBook={selectedBook}
-            />
-          )}
-
-          <ConfirmDialog
+         
+               <ConfirmDialog
             isOpen={isDeleteDialogOpen}
             onClose={() => {
               setIsDeleteDialogOpen(false);

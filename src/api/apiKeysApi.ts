@@ -9,7 +9,7 @@ interface ApiKeysResponse {
 }
 
 export interface UpdateApiKeysRequest {
-  model: string;
+  model?: string;
   openai_key?: string;
   dalle_key?: string;
   fal_ai?: string;

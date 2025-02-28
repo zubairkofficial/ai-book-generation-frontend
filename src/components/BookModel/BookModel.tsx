@@ -1,1143 +1,1044 @@
-import { useState, useEffect } from 'react';
-import {  pdf, Font } from '@react-pdf/renderer';
-import { Loader2, X } from 'lucide-react';
-import { saveAs } from 'file-saver';
-import { BASE_URl, ToastType } from '@/constant';
-import { useToast } from '@/context/ToastContext';
-import ToastContainer from '@/components/Toast/ToastContainer'; // Import custom ToastContainer
-import PdfBook from './PdfBook';
+import { useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import { cn } from "@/lib/utils";
-import { createRoot } from 'react-dom/client';
+import remarkGfm from 'remark-gfm';
+import { 
+  Loader2, Edit2, Image,  Bold, Italic, 
+  AlignLeft, AlignCenter, AlignRight,
+  BookOpen, List, Heart, BookmarkIcon, Users
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useFetchBookByIdQuery, useUpdateChapterMutation, useUpdateStyleMutation, useUpdateImageMutation } from '@/api/bookApi';
+import { BASE_URl } from '@/constant';
+import debounce from 'lodash/debounce';
 
-// Register custom fonts
-Font.register({
-  family: 'Merriweather',
-  src: 'https://fonts.gstatic.com/s/merriweather/v30/u-4n0qyriQwlOrhSvowK_l52_wFZWMf6.ttf',
-});
+// Types
+interface TextStyle {
+  bold: boolean;
+  italic: boolean;
+  align: 'left' | 'center' | 'right';
+  fontSize: string;
+  fontFamily: string;
+  color: string;
+  lineHeight: string;
+  letterSpacing: string;
+}
 
-Font.register({
-  family: 'Lato',
-  src: 'https://fonts.gstatic.com/s/lato/v24/S6u9w4BMUTPHh7USSwiPHA.ttf',
-});
+interface PageContent {
+  id: string;
+  icon: JSX.Element;
+  label: string;
+}
 
+const PAGES: PageContent[] = [
+  { id: 'cover', icon: <BookOpen className="w-4 h-4" />, label: 'Cover' },
+  { id: 'dedication', icon: <Heart className="w-4 h-4" />, label: 'Dedication' },
+  { id: 'preface', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Preface' },
+  { id: 'toc', icon: <List className="w-4 h-4" />, label: 'Contents' },
+  { id: 'glossary', icon: <Users className="w-4 h-4" />, label: 'Glossary' },
+  { id: 'index', icon: <List className="w-4 h-4" />, label: 'Index' },
+  { id: 'references', icon: <BookmarkIcon className="w-4 h-4" />, label: 'References' },
+  { id: 'backCover', icon: <BookOpen className="w-4 h-4" />, label: 'Back Cover' },
+];
 
-
-const extractBookInfo = (content: string, selectedBook?: any): BookInfo => {
-  const sections = content.split('\n\n');
-  
-  const bookInfo: BookInfo = {
-    title: selectedBook?.bookTitle || '',
-    author: selectedBook?.author || '',
-    publisher: 'Cyberify',
-    coverDesign: '',
-    dedication: '',
-    preface: {
-      coverage: '',
-      curriculum: '',
-      prerequisites: '',
-      goals: '',
-      acknowledgements: ''
-    },
-    tableOfContents: [],
-    introduction: '',
-    chapters: [],
-    glossary: [],
-    index: [],
-    references: {
-      main: [],
-      inspirations: []
-    },
-    authorProfile: '',
-    backCover: {
-      synopsis: '',
-      authorBio: ''
-    }
+export interface Book {
+  id: number;
+  bookTitle: string;
+  authorName: string;
+  genre: string;
+  numberOfChapters: number;
+  additionalData: {
+    fullContent: string;
+    coverImageUrl: string;
+    backCoverImageUrl: string;
+    tableOfContents: string;
   };
+  bookChapter: Array<{
+    id: number;
+    chapterNo: number;
+    chapterInfo: string;
+  }>;
+}
 
-  let currentChapter: any = null;
-  let isCollectingChapterContent = false;
-  let isPrefaceSection = false;
-  let processedChapters = new Set(); // Add this to track processed chapters
+export interface BookModelProps {
+  book: Book;
+}
 
-  sections.forEach(section => {
-    const cleanSection = section.trim();
-    const authorMatch = cleanSection.match(/\[Author:\s*"([^"]+)"\]/);
-    if (authorMatch) {
-      bookInfo.author = authorMatch[1];
-    }
-    
-    // Publisher extraction
-    const publisherMatch = cleanSection.match(/\[Publisher:\s*([^\]]+)\]/);
-    if (publisherMatch) {
-      bookInfo.publisher = publisherMatch[1].trim();
-    }
-    if (cleanSection.includes('[Your Title:')) {
-      bookInfo.title = cleanSection.match(/\[Your Title: "(.+?)"\]/)?.[1] || '';
-    } else if (cleanSection.includes('Design Elements:')) {
-      bookInfo.coverDesign = cleanSection;
-    } else if (cleanSection.startsWith('Dedication')) {
-      bookInfo.dedication = cleanSection.replace('Dedication', '').trim();
-    } else if (cleanSection.startsWith('Preface') || isPrefaceSection) {
-      isPrefaceSection = true;
-      
-      if (cleanSection.includes('Overview:')) {
-        bookInfo.preface.coverage = cleanSection.split('Overview:')[1].trim();
-      } else if (cleanSection.includes('Use in Curriculum:') || cleanSection.includes('Use in the Curriculum:')) {
-        const curriculumContent = cleanSection.split(/Use in (?:the )?Curriculum:/)[1].trim();
-        bookInfo.preface.curriculum = curriculumContent;
-      } else if (cleanSection.includes('Prerequisites:')) {
-        bookInfo.preface.prerequisites = cleanSection.split('Prerequisites:')[1].trim();
-      } else if (cleanSection.includes('Goals:')) {
-        bookInfo.preface.goals = cleanSection.split('Goals:')[1].trim();
-      } else if (cleanSection.includes('Acknowledgments:') || cleanSection.includes('Acknowledgements:')) {
-        const ackContent = cleanSection.split(/Acknowledge?ments:/)[1].trim();
-        bookInfo.preface.acknowledgements = ackContent;
-        isPrefaceSection = false;
-      }
-    } else if (cleanSection.startsWith('Table of Contents') || cleanSection.startsWith('Contents')) {
-      const lines = cleanSection.split('\n').slice(1);
-      bookInfo.tableOfContents = lines
-        .filter(line => line.trim())
-        .map(line => {
-          // Handle different formats of chapter titles and page numbers
-          const match = line.match(/^(.*?)(?:\.{2,}|\s{2,}|-)?\s*(\d+)?$/);
-          if (match) {
-            return {
-              title: match[1].trim(),
-              page: match[2] ? match[2].trim() : ''
-            };
-          }
-          return {
-            title: line.trim(),
-            page: ''
-          };
-        })
-        .filter(item => item.title && !item.title.toLowerCase().includes('page'));
-    } else if (cleanSection.startsWith('Introduction')) {
-      bookInfo.introduction = cleanSection.replace('Introduction', '').trim();
-    } else if (cleanSection.startsWith('Chapter')) {
-      const chapterMatch = cleanSection.match(/Chapter (\d+):\s*(.+)/);
-      if (chapterMatch) {
-        const chapterNumber = parseInt(chapterMatch[1]);
-        const chapterTitle = chapterMatch[2].trim();
-        const chapterKey = `${chapterNumber}-${chapterTitle}`;
+// Add these font options
+const FONT_OPTIONS = [
+  { label: 'Times New Roman', value: 'Times New Roman' },
+  { label: 'Arial', value: 'Arial' },
+  { label: 'Georgia', value: 'Georgia' },
+  { label: 'Palatino', value: 'Palatino' },
+  { label: 'Garamond', value: 'Garamond' },
+  { label: 'Bookman', value: 'Bookman' },
+  { label: 'Baskerville', value: 'Baskerville' }
+];
 
-        // Only process this chapter if we haven't seen it before
-        if (!processedChapters.has(chapterKey)) {
-          processedChapters.add(chapterKey);
-          
-          // If we were collecting content for a previous chapter, save it
-          if (currentChapter) {
-            bookInfo.chapters.push(currentChapter);
-          }
+const FONT_SIZES = [
+  '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'
+];
 
-          // Start a new chapter
-          currentChapter = {
-            number: chapterNumber,
-            title: chapterTitle,
-            content: ''
-          };
-          isCollectingChapterContent = true;
-        }
-      }
-    } else if (cleanSection.startsWith('Glossary')) {
-      const lines = cleanSection.split('\n').slice(1);
-      lines.forEach(line => {
-        const match = line.match(/(\d+)\.\s*([^-]+)-\s*(.+)/);
-        if (match) {
-          bookInfo.glossary.push({
-            term: match[2].trim(),
-            definition: match[3].trim()
-          });
-        }
-      });
-    } else if (cleanSection.startsWith('Index')) {
-      const lines = cleanSection.split('\n').slice(1);
-      lines.forEach(line => {
-        const match = line.match(/\d+\.\s*([^-]+)-\s*Page\s*(\d+)/);
-        if (match) {
-          bookInfo.index.push({
-            title: match[1].trim(),
-            page: match[2].trim()
-          });
-        }
-      });
-    } else if (cleanSection.startsWith('References')) {
-      let isInspirations = false;
-      const lines = cleanSection.split('\n');
-      
-      lines.forEach(line => {
-        if (line.includes('Inspirations:')) {
-          isInspirations = true;
-        } else if (line.startsWith('- ')) {
-          const reference = line.replace('- ', '').trim();
-          if (isInspirations) {
-            bookInfo.references.inspirations.push(reference);
-          } else {
-            bookInfo.references.main.push(reference);
-          }
-        }
-      });
-    } else if (cleanSection.startsWith('Back Cover')) {
-      const parts = cleanSection.split('\n\n');
-      if (parts.length >= 2) {
-        bookInfo.backCover.synopsis = parts[1].trim();
-        if (parts.length >= 3) {
-          bookInfo.backCover.authorBio = parts[2].trim();
-        }
-      }
-    }
+// Add a helper function to convert HTML to Markdown
+const htmlToMarkdown = (html: string): string => {
+  // Replace heading tags with markdown
+  let markdown = html
+    .replace(/<h1[^>]*>(.*?)<\/h1>/g, '# $1\n')
+    .replace(/<h2[^>]*>(.*?)<\/h2>/g, '## $1\n')
+    .replace(/<h3[^>]*>(.*?)<\/h3>/g, '### $1\n')
+    .replace(/<h4[^>]*>(.*?)<\/h4>/g, '#### $1\n')
+    .replace(/<h5[^>]*>(.*?)<\/h5>/g, '##### $1\n')
+    .replace(/<h6[^>]*>(.*?)<\/h6>/g, '###### $1\n');
 
-    // Append content to current chapter if it's not empty
-    if (isCollectingChapterContent && currentChapter) {
-      if (cleanSection) {
-        currentChapter.content += (currentChapter.content ? '\n\n' : '') + cleanSection;
-      }
-    }
+  // Replace bold and italic
+  markdown = markdown
+    .replace(/<strong[^>]*>(.*?)<\/strong>/g, '**$1**')
+    .replace(/<em[^>]*>(.*?)<\/em>/g, '*$1*');
+
+  return markdown;
+};
+
+// Add proper type definitions
+const BookModel = () => {
+  const [searchParams] = useSearchParams();
+  const bookId = Number(searchParams.get('id') || 0);
+  
+  // State
+  const [currentPage, setCurrentPage] = useState<string>('cover');
+  const [editMode, setEditMode] = useState(false);
+  const [textStyle, setTextStyle] = useState<TextStyle>({
+    bold: false,
+    italic: false,
+    align: 'left',
+    fontSize: '16px',
+    fontFamily: 'Times New Roman',
+    color: '#000000',
+    lineHeight: '1.6',
+    letterSpacing: 'normal'
   });
+  const [hasChanges, setHasChanges] = useState(false);
+  const [pendingContent, setPendingContent] = useState<string>('');
+  const [pendingStyle, setPendingStyle] = useState<TextStyle | null>(null);
 
-  // Don't forget to add the last chapter
-  if (currentChapter && !processedChapters.has(`${currentChapter.number}-${currentChapter.title}`)) {
-    bookInfo.chapters.push(currentChapter);
-  }
+  // API Hooks
+  const { data: book, isLoading } = useFetchBookByIdQuery(bookId, {
+    skip: !bookId,
+  });
+  const [updateChapter] = useUpdateChapterMutation();
+  const [updateStyle] = useUpdateStyleMutation();
+  const [updateImage] = useUpdateImageMutation();
 
-  // Sort chapters by number
-  bookInfo.chapters.sort((a, b) => a.number - b.number);
+  // Create a debounced version of the style update
+  const debouncedStyleUpdate = useCallback(
+    debounce((newStyle: TextStyle) => {
+      if (!bookId) return;
 
-  // Process additional data from selectedBook if available
-  if (selectedBook) {
-    // Add any missing book bookChapter
-    if (!bookInfo.title) bookInfo.title = selectedBook.bookTitle;
-    if (!bookInfo.author) bookInfo.author = selectedBook.genre; // or another appropriate field
-    
-    // Add chapter information if not already present
-    if (bookInfo.chapters.length === 0 && selectedBook.additionalData?.fullContent) {
-      const chapterContent = selectedBook.additionalData.fullContent;
-      bookInfo.chapters = [{
-        number: 1,
-        title: selectedBook.bookTitle,
-        content: chapterContent
-      }];
-    }
-
-    // Add any styling preferences
-    if (selectedBook.additionalData?.styling) {
-      // This can be used to customize the PDF styling
-      // You might want to pass this through to the BookPDF component
-    }
-  }
-
-  return bookInfo;
-};
-
-// Add this helper function near the top of the file, after the imports
-const isDiagramOrFlowchart = (text: string): boolean => {
-  const diagramKeywords = [
-    'diagram',
-    'flowchart',
-    'chart',
-    'graph',
-    'architecture',
-    'flow',
-    'process',
-    'sequence',
-    'workflow',
-    'system',
-    'structure'
-  ];
-  return diagramKeywords.some(keyword => 
-    text.toLowerCase().includes(keyword)
+      updateStyle({
+        bookId,
+        pageType: currentPage,
+        chapterNo: currentPage.startsWith('chapter-') 
+          ? parseInt(currentPage.split('-')[1]) 
+          : undefined,
+        style: newStyle
+      }).unwrap()
+        .catch(error => console.error('Failed to update style:', error));
+    }, 1000), // Wait 1 second after last change before making API call
+    [bookId, currentPage]
   );
-};
 
-export const IMAGE_SIZES = {
-  STANDARD: {
-    width: 300,
-    height: 225,
-  },
-  PORTRAIT: {
-    width: 225,
-    height: 300,
-  },
-  LANDSCAPE: {
-    width: 400,
-    height: 225,
-  },
-  DIAGRAM: {
-    width: 500,
-    height: 350,
-  },
-  FLOWCHART: {
-    width: 550,
-    height: 400,
-  },
-  ARCHITECTURE: {
-    width: 600,
-    height: 450,
-  },
-  SEQUENCE: {
-    width: 500,
-    height: 400,
-  },
-} as const;
+  // Handle text formatting
+  const handleFormat = (format: 'h1' | 'h2' | 'h3' | 'bold' | 'italic') => {
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return;
 
-const getImageSize = (imageUrl: string, altText: string) => {
-  // Check if it's a diagram/flowchart
-  if (isDiagramOrFlowchart(altText)) {
-    const text = altText.toLowerCase();
-    if (text.includes('flowchart')) {
-      return IMAGE_SIZES.FLOWCHART;
-    } else if (text.includes('architecture')) {
-      return IMAGE_SIZES.ARCHITECTURE;
-    } else if (text.includes('sequence')) {
-      return IMAGE_SIZES.SEQUENCE;
-    } else {
-      return IMAGE_SIZES.DIAGRAM;
+    const range = selection.getRangeAt(0);
+    const selectedText = range.toString();
+    if (!selectedText) return;
+
+    let markdownFormat = '';
+    switch (format) {
+      case 'h1':
+        markdownFormat = `# ${selectedText}`;
+        break;
+      case 'h2':
+        markdownFormat = `## ${selectedText}`;
+        break;
+      case 'h3':
+        markdownFormat = `### ${selectedText}`;
+        break;
+      case 'bold':
+        markdownFormat = `**${selectedText}**`;
+        break;
+      case 'italic':
+        markdownFormat = `*${selectedText}*`;
+        break;
     }
-  }
 
-  // For regular images, randomly select a size
-  const regularSizes = [
-    IMAGE_SIZES.STANDARD,
-    IMAGE_SIZES.PORTRAIT,
-    IMAGE_SIZES.LANDSCAPE
-  ];
-  
-  const randomIndex = Math.floor(Math.random() * regularSizes.length);
-  return regularSizes[randomIndex];
-};
+    // Replace selected text with markdown
+    const newText = document.createTextNode(markdownFormat);
+    range.deleteContents();
+    range.insertNode(newText);
 
-export const createImageCache = () => {
-  const cache = new Map<string, typeof IMAGE_SIZES[keyof typeof IMAGE_SIZES]>();
-  
-  return {
-    getImageSize: (imageUrl: string, altText: string = '') => {
-      if (!cache.has(imageUrl)) {
-        cache.set(imageUrl, getImageSize(imageUrl, altText));
-      }
-      return cache.get(imageUrl)!;
-    },
-    clearCache: () => cache.clear(),
+    // Update the content state but don't trigger API call yet
+    const container = range.commonAncestorContainer.parentElement;
+    if (container) {
+      setTextStyle(prevStyle => ({ ...prevStyle, [format]: markdownFormat }));
+    }
   };
-};
 
-export const imageCache = createImageCache();
+  // Debounced content update
+  const debouncedContentUpdate = useCallback(
+    debounce((content: string, pageType?: string) => {
+      if (!bookId) return;
 
+      // Convert HTML to Markdown before saving
+      const markdownContent = htmlToMarkdown(content);
 
-
-const formatChapterContent = (content: string) => {
-  if (!content) return '';
-  
-  // Clean LangChain response data
-  content = content.replace(
-    /\{"lc":\d+,"type":"constructor","id":\["langchain_core"[^}]+\}/g, 
-    ''
+      updateChapter({
+        chapterNo: pageType && !isNaN(Number(pageType)) ? Number(pageType) : -1,
+        bookGenerationId: bookId,
+        updateContent: markdownContent
+      }).unwrap()
+        .catch(error => console.error('Failed to update content:', error));
+    }, 1000),
+    [bookId]
   );
 
-  // Split content into paragraphs and images
-  const parts = content.split(/!\[(.*?)\]\((.*?)\)/);
-  let formattedContent = '';
-  
-  for (let i = 0; i < parts.length; i++) {
-    if (i % 3 === 0) {
-      // Text content
-      formattedContent += parts[i].split('\n\n')
-        .filter(p => p.trim())
-        .map(p => `<p>${p.trim()}</p>`)
-        .join('\n');
-    } else if (i % 3 === 1) {
-      // Image
-      const altText = parts[i];
-      const imageUrl = parts[i + 1];
-      
-      if (imageUrl && !imageUrl.includes('undefined')) {
-        formattedContent += `
-          <figure class="image-figure">
-            <div class="image-container">
-              <img src="${imageUrl}" alt="${altText}" loading="lazy" />
-            </div>
-            <figcaption>${altText}</figcaption>
-          </figure>
-        `;
-      }
-    }
-  }
-  
-  return formattedContent;
-};
-
-const ChapterContent: React.FC<{ content: string }> = ({ content }) => {
-  return (
-    <div className={cn(
-      "prose prose-amber max-w-none",
-      "prose-headings:font-serif prose-headings:text-gray-900",
-      "prose-h1:text-3xl prose-h1:mb-4 prose-h1:font-bold",
-      "prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4",
-      "prose-h3:text-xl prose-h3:text-amber-700 prose-h3:mt-6 prose-h3:mb-4",
-      "prose-p:text-gray-700 prose-p:leading-relaxed",
-      "prose-strong:text-gray-900",
-      "prose-ul:list-disc prose-ul:pl-6",
-      "prose-li:text-gray-700 prose-li:my-1",
-      "prose-blockquote:border-l-4 prose-blockquote:border-amber-500 prose-blockquote:pl-4 prose-blockquote:italic"
-    )}>
-      <ReactMarkdown
-        components={{
-          img: ({ node, ...props }) => (
-            <figure className="my-8">
-              <img
-                {...props}
-                className="w-full rounded-lg shadow-lg"
-                loading="lazy"
-              />
-              {props.alt && (
-                <figcaption className="text-center mt-2 text-gray-600 italic">
-                  {props.alt}
-                </figcaption>
-              )}
-            </figure>
-          ),
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
-};
-
-const formatHTMLContent = (content: string, coverImageUrl?: string, backCoverImageUrl?: string, selectedBook?: any) => {
-  const bookInfo = extractBookInfo(content);
-  
-  return `
-    <div class="book-preview">
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Lato:wght@400;700&family=Playfair+Display:wght@400;700&display=swap');
-
-        .book-preview {
-          font-family: 'Merriweather', serif;
-          line-height: 1.6;
-          color: #2D3748;
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 2rem;
-          background-color: #FFFFFF;
-        }
-
-        .cover-page {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 90vh;
-          text-align: center;
-          margin-bottom: 4rem;
-          padding: 2rem;
-          background-color: #F7FAFC;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .cover-page::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.2) 100%);
-          z-index: 1;
-          pointer-events: none;
-        }
-
-        .cover-image {
-          width: 100%;
-          max-width: 500px;
-          height: auto;
-          margin-bottom: 2rem;
-          border-radius: 4px;
-          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-        }
-
-        .book-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 3rem;
-          font-weight: 700;
-          color: #1A202C;
-          text-transform: uppercase;
-          letter-spacing: 2px;
-          margin: 2rem 0 1rem;
-          line-height: 1.2;
-          position: relative;
-          z-index: 2;
-        }
-
-        .author-name {
-          font-family: 'Lato', sans-serif;
-          font-size: 1.4rem;
-          color: #4A5568;
-          margin-bottom: 1rem;
-          font-weight: 400;
-          letter-spacing: 1px;
-        }
-
-        .publisher-name {
-          font-family: 'Lato', sans-serif;
-          font-size: 1.1rem;
-          color: #718096;
-          margin-bottom: 2rem;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-
-        .cover-design {
-          font-family: 'Lato', sans-serif;
-          font-size: 0.9rem;
-          color: #718096;
-          text-align: left;
-          margin-top: 2rem;
-          padding: 1.5rem;
-          background-color: rgba(255, 255, 255, 0.9);
-          border-radius: 4px;
-          max-width: 600px;
-        }
-
-        .dedication {
-          font-style: italic;
-          text-align: center;
-          margin: 4rem auto;
-          max-width: 600px;
-          color: #4A5568;
-          font-size: 1.2rem;
-          line-height: 1.8;
-          padding: 3rem;
-          background-color: #F7FAFC;
-          border-radius: 8px;
-          position: relative;
-        }
-
-        .dedication::before,
-        .dedication::after {
-          content: '"';
-          font-family: 'Playfair Display', serif;
-          font-size: 4rem;
-          color: #CBD5E0;
-          position: absolute;
-        }
-
-        .dedication::before {
-          top: 1rem;
-          left: 1rem;
-        }
-
-        .dedication::after {
-          bottom: 1rem;
-          right: 1rem;
-          transform: rotate(180deg);
-        }
-
-        .preface {
-          margin: 4rem 0;
-          padding: 3rem;
-          background-color: #F7FAFC;
-          border-radius: 8px;
-          font-size: 1.1rem;
-        }
-
-        .preface-section {
-          margin-bottom: 2.5rem;
-        }
-
-        .preface-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 1.8rem;
-          color: #1A202C;
-          margin-bottom: 1.5rem;
-          text-align: center;
-        }
-
-        .preface-subtitle {
-          font-family: 'Lato', sans-serif;
-          font-size: 1.2rem;
-          font-weight: 700;
-          color: #2D3748;
-          margin-bottom: 1rem;
-        }
-
-        .chapter {
-          margin: 4rem 0;
-          padding: 3rem;
-          background-color: #FFFFFF;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .chapter-number {
-          font-family: 'Times-Roman', serif;
-          font-size: 1.4rem;
-          color: #718096;
-          text-transform: uppercase;
-          letter-spacing: 2px;
-          text-align: center;
-          margin-bottom: 1rem;
-        }
-
-        .chapter-title {
-          font-family: 'Times-Roman', serif;
-          font-size: 2.5rem;
-          font-weight: bold;
-          color: #1A202C;
-          text-align: center;
-          margin-bottom: 3rem;
-          letter-spacing: 0.5px;
-          line-height: 1.3;
-        }
-
-        .chapter-content {
-          position: relative;
-          overflow: hidden;
-        }
-
-        figure {
-          break-inside: avoid;
-          transition: transform 0.3s ease;
-          position: relative;
-          margin-bottom: 3rem;
-        }
-
-        .image-container {
-          position: relative;
-          overflow: hidden;
-          border-radius: 12px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-          transition: transform 0.3s ease;
-        }
-
-        .image-container:hover {
-          transform: scale(1.02);
-        }
-
-        .image-container img {
-          width: 100%;
-          height: auto;
-          display: block;
-          transition: filter 0.3s ease;
-        }
-
-        .image-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-        }
-
-        .image-container:hover .image-overlay {
-          opacity: 1;
-        }
-
-        .zoom-icon {
-          color: white;
-          font-size: 2rem;
-          transform: scale(0.8);
-          transition: transform 0.3s ease;
-        }
-
-        .image-container:hover .zoom-icon {
-          transform: scale(1);
-        }
-
-        figcaption {
-          font-family: 'Lato', sans-serif;
-          font-size: 0.95rem;
-          color: #4A5568;
-          margin-top: 1rem;
-          text-align: center;
-          font-style: italic;
-          line-height: 1.4;
-          padding: 0.5rem;
-          background: #F7FAFC;
-          border-radius: 6px;
-        }
-
-        .image-start {
-          margin-top: 0;
-        }
-
-        .image-middle {
-          margin: 3rem auto;
-        }
-
-        .image-end {
-          margin-bottom: 0;
-        }
-
-        /* Random decorative elements */
-        figure::before {
-          content: '';
-          position: absolute;
-          width: 100px;
-          height: 100px;
-          background: linear-gradient(45deg, #FED7D7, #FED7E2);
-          border-radius: 50%;
-          opacity: 0.1;
-          z-index: -1;
-          transform: translate(-30%, -30%);
-        }
-
-        figure:nth-child(even)::before {
-          right: 0;
-          transform: translate(30%, -30%);
-          background: linear-gradient(45deg, #C6F6D5, #B2F5EA);
-        }
-
-        /* Responsive styles */
-        @media (max-width: 1024px) {
-          figure {
-            width: 85% !important;
-            margin: 2rem auto !important;
-            float: none !important;
-          }
-        }
-
-        @media (max-width: 768px) {
-          figure {
-            width: 100% !important;
-          }
-
-          .image-container {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          }
-        }
-
-        /* Print styles */
-        @media print {
-          figure {
-            break-inside: avoid;
-            page-break-inside: avoid;
-            width: 85% !important;
-            margin: 2rem auto !important;
-            float: none !important;
-          }
-
-          .image-overlay {
-            display: none;
-          }
-
-          figure::before {
-            display: none;
-          }
-        }
-      </style>
-
-      <!-- Modal for image preview -->
-      <div id="imageModal" class="modal">
-        <span class="modal-close">&times;</span>
-        <img class="modal-content" id="modalImage">
-        <div id="modalCaption"></div>
-      </div>
-
-      <style>
-        .modal {
-          display: none;
-          position: fixed;
-          z-index: 1000;
-          padding-top: 50px;
-          left: 0;
-          top: 0;
-          width: 100%;
-          height: 100%;
-          background-color: rgba(0, 0, 0, 0.9);
-        }
-
-        .modal-content {
-          margin: auto;
-          display: block;
-          max-width: 90%;
-          max-height: 80vh;
-          object-fit: contain;
-        }
-
-        .modal-close {
-          position: absolute;
-          right: 35px;
-          top: 15px;
-          color: #f1f1f1;
-          font-size: 40px;
-          font-weight: bold;
-          cursor: pointer;
-        }
-
-        #modalCaption {
-          margin: auto;
-          display: block;
-          width: 80%;
-          text-align: center;
-          color: #ccc;
-          padding: 10px 0;
-          height: 150px;
-        }
-      </style>
-
-      <script>
-        // Add click handlers for images
-        document.addEventListener('DOMContentLoaded', function() {
-          const modal = document.getElementById('imageModal');
-          const modalImg = document.getElementById('modalImage');
-          const modalCaption = document.getElementById('modalCaption');
-          const closeBtn = document.getElementsByClassName('modal-close')[0];
-
-          document.querySelectorAll('.image-container img').forEach(img => {
-            img.onclick = function() {
-              modal.style.display = 'block';
-              modalImg.src = this.src;
-              modalCaption.innerHTML = this.alt;
-            }
-          });
-
-          closeBtn.onclick = function() {
-            modal.style.display = 'none';
-          }
-
-          window.onclick = function(event) {
-            if (event.target == modal) {
-              modal.style.display = 'none';
-            }
-          }
-        });
-      </script>
-
-      <div class="book-section">
-        <div class="cover-page">
-          ${coverImageUrl ? `<img src="${coverImageUrl}" alt="Book Cover" class="cover-image">` : ''}
-          <h1 class="book-title">${bookInfo.title}</h1>
-          <div class="author-name">By ${bookInfo.author}</div>
-          <div class="publisher-name">${bookInfo.publisher}</div>
-        </div>
-
-        ${bookInfo.coverDesign ? `
-          <div class="cover-design">
-            ${bookInfo.coverDesign.split('\n')
-              .filter(line => line.trim().length > 0)
-              .map(line => line.startsWith('-') ? 
-                `<div class="cover-design-item">${line.replace('-', '').trim()}</div>` : 
-                `<div class="cover-design-text">${line}</div>`
-              ).join('')}
-          </div>
-        ` : ''}
-      </div>
-
-      ${bookInfo.dedication ? `
-        <div class="book-section">
-          <h2 class="book-section-title">Dedication</h2>
-          <div class="dedication">
-            ${bookInfo.dedication}
-          </div>
-        </div>
-      ` : ''}
-
-      ${Object.values(bookInfo.preface).some(value => value) ? `
-        <div class="book-section">
-          <h2 class="book-section-title">Preface</h2>
-          <div class="preface">
-            ${Object.entries(bookInfo.preface).map(([key, value]) => value ? `
-              <div class="preface-section">
-                <h3 class="preface-subtitle">${key.charAt(0).toUpperCase() + key.slice(1)}</h3>
-                ${formatChapterContent(value)}
-              </div>
-            ` : '').join('')}
-          </div>
-        </div>
-      ` : ''}
-
-      ${selectedBook.bookChapter.length > 0 ? `
-        <div class="table-of-contents">
-          <h2 class="toc-header">Table of Contents</h2>
-          ${selectedBook.bookChapter.map((chapter: { chapterInfo: string; page: any; }, index: number) => {
-            const chapterRegex = /Chapter \d+: (.+?)(?=\n)/g;
-            const matches = [...chapter.chapterInfo.matchAll(chapterRegex)];
-            
-            let chapterTitle = 'Untitled Chapter';
-            if (matches.length >= 2) {
-              chapterTitle = matches[1][0];
-            } else if (matches.length === 1) {
-              chapterTitle = matches[0][0];
-            }
-            
-            const isChapter = chapterTitle.toLowerCase().includes('chapter');
-            
-            return `
-              <div class="toc-line ${isChapter ? 'toc-chapter' : 'toc-section'}">
-                <span class="toc-title">${chapterTitle}</span>
-                <span class="toc-dots"></span>
-                ${chapter.page ? `<span class="toc-page">${chapter.page}</span>` : ''}
-              </div>
-            `;
-          }).join('')}
-        </div>
-      ` : ''}
-
-      ${selectedBook.bookChapter.map((chapter: { chapterNo: any; chapterInfo: string; }) => {
-        const chapterTitle = [...chapter.chapterInfo?.matchAll(/Chapter \d+: (.+?)(?=\n)/g) || []][0]?.[0] || 'Chapter Not Found';
-        
-        return `
-          <div class="chapter">
-            <div class="chapter-number">
-              ${chapterTitle}
-            </div>
-            <div class="chapter-content">
-              <div id="chapter-${chapter.chapterNo}"></div>
-            </div>
-          </div>
-        `;
-      }).join('\n')}
-
-      ${bookInfo.glossary.length > 0 ? `
-        <div class="book-section">
-          <h2 class="book-section-title">Glossary</h2>
-          <div class="glossary">
-            ${bookInfo.glossary.map(item => `
-              <div class="glossary-item">
-                <div class="glossary-term">${item.term}</div>
-                <div class="glossary-definition">${item.definition}</div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      ` : ''}
-
-      ${bookInfo.index.length > 0 ? `
-        <div class="book-section">
-          <h2 class="book-section-title">Index</h2>
-          <div class="index-grid">
-            ${bookInfo.index.map(item => `
-              <div class="index-item">
-                <span class="index-title">${item.title}</span>
-                <span class="index-page">Page ${item.page}</span>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      ` : ''}
-
-      ${bookInfo.references.main.length > 0 || bookInfo.references.inspirations.length > 0 ? `
-        <div class="book-section">
-          <h2 class="book-section-title">References</h2>
-          ${bookInfo.references.main.length > 0 ? `
-            <div class="references-section">
-              ${bookInfo.references.main.map(ref => `
-                <div class="reference-item">${ref}</div>
-              `).join('')}
-            </div>
-          ` : ''}
-          ${bookInfo.references.inspirations.length > 0 ? `
-            <h3 class="references-title">Inspirations</h3>
-            <div class="references-section">
-              ${bookInfo.references.inspirations.map(ref => `
-                <div class="reference-item">${ref}</div>
-              `).join('')}
-            </div>
-          ` : ''}
-        </div>
-      ` : ''}
-      <div class="book-section">
-        <div class="book-section back-cover">
-
-  ${backCoverImageUrl ? `<img src="${backCoverImageUrl}" alt="Book Cover" class="cover-image">` : ''}
-        </div>
-        </div>
-      ${bookInfo.backCover.synopsis || bookInfo.backCover.authorBio ? `
-        <div class="book-section back-cover">
-          ${backCoverImageUrl ? `<img src="${backCoverImageUrl}" alt="Back Cover" class="back-cover-image">` : ''}
-          <div class="back-cover-content">
-            ${bookInfo.backCover.synopsis ? `
-              <div class="synopsis">
-                ${formatChapterContent(bookInfo.backCover.synopsis)}
-              </div>
-            ` : ''}
-            ${bookInfo.backCover.authorBio ? `
-              <div class="author-bio">
-                ${formatChapterContent(bookInfo.backCover.authorBio)}
-              </div>
-            ` : ''}
-          </div>
-          <div class="book-meta">
-            <p>A ${bookInfo.publisher} Publication</p>
-            <p>Cover design by ${bookInfo.publisher} Design Team</p>
-          </div>
-        </div>
-      ` : ''}
-    </div>
-  `;
-};
-
-export default function BookModal({ 
-  isOpen, 
-  onClose, 
-  htmlContent, 
-  coverImageUrl,
-  backCoverImageUrl,
-  selectedBook
-}: BookModalProps) {
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const { addToast } = useToast(); // Use custom toast hook
-  <ToastContainer />
-  const [activeTab, setActiveTab] = useState<'preview' | 'pdf'>('preview');
-
-  // Process the image URLs for preview
-  const fullCoverImageUrl = coverImageUrl ? `${BASE_URl}/uploads/${coverImageUrl.replace(/\\/g, '/')}` : undefined;
-  const fullBackCoverImageUrl = backCoverImageUrl ? `${BASE_URl}/uploads/${backCoverImageUrl.replace(/\\/g, '/')}` : undefined;
-
-  const handleDownloadPdf = async () => {
-    if (!htmlContent) {
-      addToast('No content available',ToastType.ERROR);
-      return;
-    }
-
-    setIsGeneratingPdf(true);
+  // Handle style update
+  const handleStyleUpdate = async (newStyle: TextStyle) => {
+    if (!bookId) return;
 
     try {
-      const pdfBlob = await pdf(
-        <PdfBook 
-          selectedBook={selectedBook}
-          content={htmlContent} 
-          coverImageUrl={fullCoverImageUrl}
-          backCoverImageUrl={fullBackCoverImageUrl}
-        />
-      ).toBlob();
+      await updateStyle({
+        bookId,
+        pageType: currentPage,
+        chapterNo: currentPage.startsWith('chapter-') 
+          ? parseInt(currentPage.split('-')[1]) 
+          : undefined,
+        style: newStyle
+      }).unwrap();
       
-      // Use selectedBook.bookTitle for the filename
-      const fileName = selectedBook?.bookTitle ? 
-        `${selectedBook.bookTitle.toLowerCase().replace(/\s+/g, '-')}.pdf` : 
-        'book.pdf';
-      
-      saveAs(pdfBlob, fileName);
-      addToast('PDF generated successfully!',ToastType.SUCCESS);
+      // Update local state
+      setTextStyle(newStyle);
     } catch (error) {
-      console.error('PDF generation failed:', error);
-      addToast('Failed to generate PDF',ToastType.ERROR);
-    } finally {
-      setIsGeneratingPdf(false);
+      console.error('Failed to update style:', error);
     }
   };
 
-  // Close modal when clicking outside
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
+  // Handle image update
+  const handleImageUpdate = async (file: File, type: 'cover' | 'backCover') => {
+    if (!bookId) return;
+
+    try {
+      await updateImage({
+        bookId,
+        imageType: type,
+        image: file
+      }).unwrap();
+    } catch (error) {
+      console.error('Failed to update image:', error);
     }
   };
 
-  // Add useEffect to render markdown content after HTML is mounted
-  useEffect(() => {
-    if (selectedBook?.bookChapter) {
-      selectedBook.bookChapter.forEach((chapter: { chapterNo: any; chapterInfo: string; }) => {
-        const container = document.getElementById(`chapter-${chapter.chapterNo}`);
-        if (container) {
-          const root = createRoot(container);
-          root.render(<ChapterContent content={chapter.chapterInfo} />);
-        }
-      });
-    }
-  }, [selectedBook, htmlContent]);
+  // Handle content update
+  const handleContentUpdate = async (content: string, pageType?: string) => {
+    if (!bookId) return;
 
-  if (!isOpen) return null;
+    try {
+      // Add logic to handle different page types
+      switch (pageType) {
+        case 'cover':
+          // Update cover content
+          break;
+        case 'dedication':
+          // Update dedication content
+          break;
+        case 'preface':
+          // Update preface content
+          break;
+        // ... handle other page types
+        default:
+          // Handle chapter updates
+          if (typeof pageType === 'number') {
+            await updateChapter({
+              chapterNo: pageType,
+              bookGenerationId: bookId,
+              updateContent: content
+            }).unwrap();
+          }
+      }
+    } catch (error) {
+      console.error('Failed to update content:', error);
+    }
+  };
+
+  // Handle update button click
+  const handleUpdate = async () => {
+    if (!bookId || !hasChanges) return;
+    try {
+      // Handle content update
+      if (pendingContent) {
+        await updateChapter({
+          chapterNo: currentPage.startsWith('chapter-') 
+            ? parseInt(currentPage.split('-')[1]) 
+            : -1,
+          bookGenerationId: bookId,
+          updateContent: pendingContent
+        }).unwrap();
+      }
+
+      // Handle style update
+      if (pendingStyle) {
+        await updateStyle({
+          bookId,
+          pageType: currentPage,
+          style: pendingStyle
+        }).unwrap();
+      }
+
+      // Reset states
+      setPendingContent('');
+      setPendingStyle(null);
+      setHasChanges(false);
+    } catch (error) {
+      console.error('Failed to update:', error);
+    }
+  };
+
+  // Render markdown content
+  const renderMarkdown = (content: string) => (
+    <ReactMarkdown 
+      remarkPlugins={[remarkGfm]}
+      className="prose max-w-none"
+      components={{
+        h1: ({node, ...props}) => <h1 className="text-3xl font-bold mb-4" {...props} />,
+        h2: ({node, ...props}) => <h2 className="text-2xl font-bold mb-3" {...props} />,
+        p: ({node, ...props}) => <p className="mb-4" {...props} />,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+
+  // Add these styles at the top of your file
+  const navStyles = {
+    desktop: `
+      hidden md:flex md:flex-col
+      fixed left-4 top-1/2 transform -translate-y-1/2 
+      bg-white/95 backdrop-blur-sm rounded-xl 
+      shadow-lg border border-gray-100
+      p-3 space-y-1.5 transition-all duration-300
+      hover:shadow-xl
+    `,
+    mobile: `
+      md:hidden fixed bottom-0 left-0 right-0 
+      bg-white/95 backdrop-blur-sm
+      shadow-[0_-4px_10px_rgba(0,0,0,0.05)]
+      border-t border-gray-100
+      px-2 py-1.5 z-50
+    `,
+    button: {
+      base: `
+        w-full transition-all duration-200
+        hover:bg-amber-50 hover:text-amber-700
+        focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1
+        rounded-lg
+      `,
+      active: `
+        bg-amber-100 text-amber-900
+        shadow-inner
+      `,
+      inactive: `
+        text-gray-600
+      `
+    }
+  };
+
+  // Navigation component
+  const NavigationButtons = () => (
+    <>
+      {/* Desktop Navigation */}
+      <div className={navStyles.desktop}>
+        <div className="mb-4 px-2">
+          <div className="h-1 w-8 bg-amber-500 rounded-full mb-1" />
+          <div className="h-1 w-6 bg-amber-300 rounded-full" />
+        </div>
+        
+        {PAGES.map(page => (
+          <Button
+            key={page.id}
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentPage(page.id)}
+            className={`
+              ${navStyles.button.base}
+              ${currentPage === page.id ? navStyles.button.active : navStyles.button.inactive}
+              group
+            `}
+            title={page.label}
+          >
+            <div className="flex items-center gap-3 px-2 py-1">
+              <div className={`
+                ${currentPage === page.id ? 'text-amber-700' : 'text-gray-500'}
+                group-hover:text-amber-600 transition-colors
+              `}>
+                {page.icon}
+              </div>
+              <span className={`
+                hidden lg:block text-sm font-medium
+                transition-all duration-200
+                ${currentPage === page.id ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-0'}
+                group-hover:translate-x-0 group-hover:opacity-100
+              `}>
+                {page.label}
+              </span>
+            </div>
+          </Button>
+        ))}
+        
+        <div className="mt-4 px-2">
+          <div className="h-1 w-6 bg-amber-300 rounded-full mb-1" />
+          <div className="h-1 w-8 bg-amber-500 rounded-full" />
+        </div>
+      </div>
+
+      {/* Mobile Navigation */}
+      <div className={navStyles.mobile}>
+        <div className="flex justify-around items-center">
+          {PAGES.map(page => (
+            <Button
+              key={page.id}
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentPage(page.id)}
+              className={`
+                px-3 py-2 rounded-lg transition-all
+                ${currentPage === page.id ? 'bg-amber-100 text-amber-900' : 'text-gray-600'}
+              `}
+              title={page.label}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <div className={`
+                  ${currentPage === page.id ? 'text-amber-700' : 'text-gray-500'}
+                `}>
+                  {page.icon}
+                </div>
+                <span className="text-[10px] font-medium">
+                  {page.label.split(' ')[0]}
+                </span>
+              </div>
+            </Button>
+          ))}
+        </div>
+        
+        {/* Mobile Progress Indicator */}
+        <div className="absolute -top-1 left-0 right-0 h-1 bg-gray-100">
+          <div 
+            className="h-full bg-amber-500 rounded-full transition-all duration-300"
+            style={{ 
+              width: `${((PAGES.findIndex(p => p.id === currentPage) + 1) / PAGES.length) * 100}%` 
+            }}
+          />
+        </div>
+      </div>
+    </>
+  );
+
+  // Update the editing tools component
+  const renderEditingTools = () => (
+    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-4 flex flex-wrap gap-4 items-center max-w-3xl">
+      {/* Heading Controls */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('h1')}
+          title="Heading 1"
+        >
+          H1
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('h2')}
+          title="Heading 2"
+        >
+          H2
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('h3')}
+          title="Heading 3"
+        >
+          H3
+        </Button>
+      </div>
+
+      {/* Text Style Controls */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('bold')}
+          className={textStyle.bold ? 'bg-amber-100' : ''}
+        >
+          <Bold className={`w-4 h-4 ${textStyle.bold ? 'text-amber-600' : ''}`} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('italic')}
+          className={textStyle.italic ? 'bg-amber-100' : ''}
+        >
+          <Italic className={`w-4 h-4 ${textStyle.italic ? 'text-amber-600' : ''}`} />
+        </Button>
+      </div>
+
+      {/* Alignment Controls */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            const newStyle:TextStyle = { ...textStyle, align: 'left' };
+            handleStyleUpdate(newStyle);
+          }}
+          className={textStyle.align === 'left' ? 'bg-amber-100' : ''}
+        >
+          <AlignLeft className={`w-4 h-4 ${textStyle.align === 'left' ? 'text-amber-600' : ''}`} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            const newStyle:TextStyle = { ...textStyle, align: 'center' };
+            handleStyleUpdate(newStyle);
+          }}
+          className={textStyle.align === 'center' ? 'bg-amber-100' : ''}
+        >
+          <AlignCenter className={`w-4 h-4 ${textStyle.align === 'center' ? 'text-amber-600' : ''}`} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            const newStyle:TextStyle = { ...textStyle, align: 'right' };
+            handleStyleUpdate(newStyle);
+          }}
+          className={textStyle.align === 'right' ? 'bg-amber-100' : ''}
+        >
+          <AlignRight className={`w-4 h-4 ${textStyle.align === 'right' ? 'text-amber-600' : ''}`} />
+        </Button>
+      </div>
+
+      {/* Font Family Selector */}
+      <select
+        value={textStyle.fontFamily}
+        onChange={(e) => {
+          const newStyle:TextStyle = { ...textStyle, fontFamily: e.target.value };
+          handleStyleUpdate(newStyle);
+        }}
+        className="px-2 py-1 border rounded-md text-sm"
+      >
+        {FONT_OPTIONS.map(font => (
+          <option key={font.value} value={font.value}>{font.label}</option>
+        ))}
+      </select>
+
+      {/* Font Size Selector */}
+      <select
+        value={textStyle.fontSize}
+        onChange={(e) => {
+          const newStyle:TextStyle = { ...textStyle, fontSize: e.target.value };
+          handleStyleUpdate(newStyle);
+        }}
+        className="px-2 py-1 border rounded-md text-sm w-20"
+      >
+        {FONT_SIZES.map(size => (
+          <option key={size} value={size}>{size}</option>
+        ))}
+      </select>
+
+      {/* Color Picker */}
+      <input
+        type="color"
+        value={textStyle.color}
+        onChange={(e) => {
+          const newStyle:TextStyle = { ...textStyle, color: e.target.value };
+          handleStyleUpdate(newStyle);
+        }}
+        className="w-8 h-8 rounded cursor-pointer"
+      />
+
+      {/* Line Height Control */}
+      <select
+        value={textStyle.lineHeight}
+        onChange={(e) => {
+          const newStyle:TextStyle = { ...textStyle, lineHeight: e.target.value };
+          handleStyleUpdate(newStyle);
+        }}
+        className="px-2 py-1 border rounded-md text-sm w-24"
+      >
+        <option value="1.2">Compact</option>
+        <option value="1.6">Normal</option>
+        <option value="2.0">Relaxed</option>
+      </select>
+
+      {/* Letter Spacing Control */}
+      <select
+        value={textStyle.letterSpacing}
+        onChange={(e) => {
+          const newStyle:TextStyle = { ...textStyle, letterSpacing: e.target.value };
+          handleStyleUpdate(newStyle);
+        }}
+        className="px-2 py-1 border rounded-md text-sm w-24"
+      >
+        <option value="-.05em">Tight</option>
+        <option value="normal">Normal</option>
+        <option value=".05em">Spaced</option>
+      </select>
+    </div>
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-      onClick={handleBackdropClick}
-    >
-      <div className="container mx-auto h-full p-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-          {/* Modal Header */}
-          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-2xl font-semibold text-gray-800">Book Preview</h2>
-              <div className="flex rounded-lg border border-gray-200">
-                <button
-                  onClick={() => setActiveTab('preview')}
-                  className={`px-4 py-2 text-sm font-medium ${
-                    activeTab === 'preview'
-                      ? 'bg-amber-600 text-white'
-                      : 'text-gray-600 hover:text-gray-800'
-                  } rounded-l-lg`}
-                >
-                  HTML Preview
-                </button>
-                <button
-                  onClick={() => setActiveTab('pdf')}
-                  className={`px-4 py-2 text-sm font-medium ${
-                    activeTab === 'pdf'
-                      ? 'bg-amber-600 text-white'
-                      : 'text-gray-600 hover:text-gray-800'
-                  } rounded-r-lg`}
-                >
-                  PDF Preview
-                </button>
-              </div>
-            </div>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-              <X className="h-6 w-6" />
-            </button>
-          </div>
+    <div className="min-h-screen bg-gray-100">
+      <NavigationButtons />
 
-          {/* Modal Content */}
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-            {htmlContent && activeTab === 'preview' && (
-              <div className="prose prose-lg max-w-none">
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: formatHTMLContent(htmlContent, fullCoverImageUrl, fullBackCoverImageUrl,selectedBook)
-                  }}
-                />
-              </div>
+      {/* Edit Mode Toggle */}
+      <div className="fixed right-4 top-4">
+        <Button
+          variant={editMode ? "default" : "outline"}
+          onClick={() => setEditMode(!editMode)}
+        >
+          <Edit2 className="w-4 h-4 mr-2" />
+          {editMode ? 'Editing' : 'Edit'}
+        </Button>
+      </div>
+
+      {/* Book Content */}
+      <div className="container mx-auto p-8">
+        <div className="bg-white rounded-xl shadow-xl max-w-4xl mx-auto min-h-[800px] p-8">
+          <div
+            className="prose max-w-none"
+            style={{
+              fontWeight: textStyle.bold ? 'bold' : 'normal',
+              fontStyle: textStyle.italic ? 'italic' : 'normal',
+              textAlign: textStyle.align,
+              fontSize: textStyle.fontSize,
+              fontFamily: textStyle.fontFamily,
+              color: textStyle.color,
+              lineHeight: textStyle.lineHeight,
+              letterSpacing: textStyle.letterSpacing
+            }}
+          >
+            {renderCurrentPageContent(
+              currentPage, 
+              book.data, 
+              editMode, 
+              handleContentUpdate,
+              setCurrentPage,
+              handleImageUpdate
             )}
-            {/* {htmlContent && activeTab === 'pdf' && (
-              <iframe
-                src={URL.createObjectURL(
-                  new Blob([formatHTMLContent(htmlContent, fullCoverImageUrl, fullBackCoverImageUrl)], { type: 'text/html' })
-                )}
-                className="w-full h-[600px] border-0"
-                title="PDF Preview"
-              />
-            )} */}
-          </div>
-
-          {/* Modal Footer */}
-          <div className="border-t border-gray-200 p-6 bg-gray-50">
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Close
-              </button>
-              <button
-                onClick={handleDownloadPdf}
-                disabled={isGeneratingPdf}
-                className="inline-flex items-center px-6 py-2.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
-              >
-                {isGeneratingPdf ? (
-                  <>
-                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                    Generating PDF...
-                  </>
-                ) : (
-                  'Download PDF'
-                )}
-              </button>
-            </div>
           </div>
         </div>
       </div>
+
+      {editMode && renderEditingTools()}
     </div>
   );
+};
+
+// Helper function to render current page content
+const renderCurrentPageContent = (
+  currentPage: string, 
+  bookData: any, 
+  editMode: boolean,
+  onUpdate: (content: string, pageType?: string) => void,
+  onPageChange: (page: string) => void,
+  onImageUpdate: (file: File, type: 'cover' | 'backCover') => void
+): JSX.Element => {
+  const renderMarkdown = (content: string) => (
+    <ReactMarkdown 
+      remarkPlugins={[remarkGfm]}
+      className="prose max-w-none"
+      components={{
+        h1: ({node, ...props}) => <h1 className="text-3xl font-bold mb-6 text-gray-900" {...props} />,
+        h2: ({node, ...props}) => <h2 className="text-2xl font-bold mb-4 text-gray-800" {...props} />,
+        p: ({node, ...props}) => <p className="mb-6 text-gray-700 leading-relaxed" {...props} />,
+        strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+        em: ({node, ...props}) => <em className="italic text-gray-800" {...props} />
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+
+  const handleContentChange = async (content: string, pageType?: string) => {
+    // if (!bookId) return;
+
+    try {
+      switch (pageType) {
+        case 'cover':
+        case 'dedication':
+        case 'preface':
+        case 'glossary':
+        case 'references':
+        case 'backCover':
+        case 'index':
+          await onUpdate(content, pageType);
+          break;
+        default:
+          if (pageType && !isNaN(Number(pageType))) {
+            await onUpdate(content, pageType);
+          }
+      }
+    } catch (error) {
+      console.error('Failed to update content:', error);
+    }
+  };
+
+  switch (currentPage) {
+    case 'cover':
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[800px] text-center space-y-8 relative">
+          <div className="relative w-full max-w-2xl">
+            <ImageUpload
+              currentImage={bookData.additionalData.coverImageUrl}
+              onImageUpdate={(file) => onImageUpdate(file, 'cover')}
+              label={bookData.bookTitle}
+              isEditing={editMode}
+            />
+          </div>
+          <div 
+            className="space-y-6 max-w-2xl bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-lg"
+            contentEditable={editMode}
+            onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
+          >
+            <h1 className="text-4xl font-bold text-gray-900 leading-tight">
+              {bookData.bookTitle}
+            </h1>
+            
+            <div className="space-y-2">
+              <p className="text-2xl text-gray-700">by</p>
+              <p className="text-3xl font-semibold text-gray-800">{bookData.authorName}</p>
+            </div>
+
+            {/* Additional Book Information */}
+            <div className="grid grid-cols-2 gap-4 text-left mt-8 text-gray-600">
+              <div>
+                <p className="font-semibold">Publisher</p>
+                <p>{bookData.authorName || "AiBookPublisher"}</p>
+              </div>
+              <div>
+                <p className="font-semibold">Language</p>
+                <p>{bookData.language || "English"}</p>
+              </div>
+              <div>
+                <p className="font-semibold">Genre</p>
+                <p>{bookData.genre}</p>
+              </div>
+              <div>
+                <p className="font-semibold">Chapters</p>
+                <p>{bookData.numberOfChapters}</p>
+              </div>
+            </div>
+
+            {/* Core Idea / Book Description */}
+            <div className="mt-8 text-left">
+              <p className="font-semibold text-gray-700">About this book:</p>
+              <p className="text-gray-600 mt-2 leading-relaxed">
+                {bookData.ideaCore}
+              </p>
+            </div>
+
+            {/* Author Bio if available */}
+            {bookData.authorBio && (
+              <div className="mt-8 text-left">
+                <p className="font-semibold text-gray-700">About the Author:</p>
+                <p className="text-gray-600 mt-2">
+                  {bookData.authorBio}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Copyright Notice */}
+          <div className="text-sm text-gray-500 mt-4">
+            © {new Date().getFullYear()} {bookData.authorName}. All rights reserved.
+          </div>
+        </div>
+      );
+
+    case 'dedication':
+      return (
+        <div className="min-h-[800px] flex flex-col items-center justify-center px-8 py-12">
+          <div className="max-w-2xl w-full bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg">
+            <h1 className="text-3xl font-serif text-center mb-8 text-gray-900">Dedication</h1>
+            <ContentEditor
+              content={bookData.additionalData.fullContent
+                .split('Dedication\n')[1]
+                .split('\n\n')[0]}
+              onChange={(content) => handleContentChange(content, 'dedication')}
+              isEditing={editMode}
+            />
+          </div>
+        </div>
+      );
+
+    case 'preface':
+      const prefaceContent = bookData.additionalData.fullContent
+        .split('Preface\n')[1]
+        ?.split('Glossary')[0] || '';
+
+      return (
+        <div className="min-h-[800px] px-8 py-12">
+          <div 
+            className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg"
+            contentEditable={editMode}
+            onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
+          >
+            <h1 className="text-4xl  text-center mb-12 text-gray-900">Preface</h1>
+            
+            <div className="space-y-8">
+              {/* Overview Section */}
+              <section>
+                <h2 className="text-2xl font-bold mb-4 text-gray-800">Overview</h2>
+                <div className="prose max-w-none text-gray-700">
+                  {renderMarkdown(
+                    prefaceContent.includes('**Overview**') 
+                      ? prefaceContent.split('**Overview**')[1].split('**Use')[0]
+                      : ''
+                  )}
+                </div>
+              </section>
+
+              {/* Use in Curriculum Section */}
+              <section>
+                <h2 className="text-2xl font-bold mb-4 text-gray-800">Use in Curriculum</h2>
+                <div className="prose max-w-none text-gray-700">
+                  {renderMarkdown(
+                    prefaceContent.includes('**Use in Curriculum**')
+                      ? prefaceContent.split('**Use in Curriculum**')[1].split('**Goals**')[0]
+                      : ''
+                  )}
+                </div>
+              </section>
+
+              {/* Goals Section */}
+              <section>
+                <h2 className="text-2xl font-bold mb-4 text-gray-800">Goals</h2>
+                <div className="prose max-w-none text-gray-700">
+                  {renderMarkdown(
+                    prefaceContent.includes('**Goals**')
+                      ? prefaceContent.split('**Goals**')[1].split('**Acknowledgments**')[0]
+                      : ''
+                  )}
+                </div>
+              </section>
+
+              {/* Acknowledgments Section */}
+              <section>
+                <h2 className="text-2xl font-bold mb-4 text-gray-800">Acknowledgments</h2>
+                <div className="prose max-w-none text-gray-700">
+                  {renderMarkdown(
+                    prefaceContent.includes('**Acknowledgments**')
+                      ? prefaceContent.split('**Acknowledgments**')[1].split('With anticipation')[0]
+                      : ''
+                  )}
+                </div>
+              </section>
+
+              {/* Author Signature */}
+              <div className="mt-12 text-right italic text-gray-700">
+                <p className="mb-2">With anticipation and excitement,</p>
+                <p className="font-semibold">{bookData.authorName}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'toc':
+      return (
+        <div 
+          className="space-y-6"
+          contentEditable={editMode}
+          onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
+        >
+          <h2 className="text-2xl font-bold mb-4">Table of Contents</h2>
+          <div className="space-y-2">
+            {bookData.bookChapter.map((chapter: any) => (
+              <div key={chapter.id} className="flex justify-between items-center py-2 border-b">
+                <span className="text-lg">
+                  {chapter.chapterInfo.split('\n')[0].replace('# ', '')}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onPageChange(`chapter-${chapter.chapterNo}`)}
+                >
+                  Read
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'glossary':
+      return (
+        <div 
+          className={`space-y-6 ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}`}
+          contentEditable={editMode}
+          onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
+        >
+          <h2 className="text-2xl font-bold mb-4">Glossary</h2>
+          {renderMarkdown(bookData.additionalData.fullContent.split('Glossary\n')[1])}
+        </div>
+      );
+
+    case 'references':
+      return (
+        <div 
+          className={`space-y-6 ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}`}
+          contentEditable={editMode}
+          onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
+        >
+          <h2 className="text-2xl font-bold mb-4">References</h2>
+          {renderMarkdown(bookData.additionalData.fullContent.split('References\n')[1])}
+        </div>
+      );
+
+    case 'backCover':
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[800px] text-center space-y-8 relative">
+          <div className="relative w-full max-w-2xl">
+            <ImageUpload
+              currentImage={bookData.additionalData.backCoverImageUrl}
+              onImageUpdate={(file) => onImageUpdate(file, 'backCover')}
+              label="Back Cover"
+              isEditing={editMode}
+            />
+          </div>
+          <div 
+            className="space-y-6 max-w-2xl bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-lg"
+            contentEditable={editMode}
+            onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
+          >
+            <h2 className="text-2xl font-bold">About this Book</h2>
+            <p className="text-gray-700">{bookData.bookDescription || bookData.ideaCore}</p>
+          </div>
+        </div>
+      );
+
+    case 'index':
+      return (
+        <div 
+          className={`space-y-6 ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}`}
+          contentEditable={editMode}
+          onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
+        >
+          <h2 className="text-2xl font-bold mb-4">Index</h2>
+          {renderMarkdown(bookData.additionalData.fullContent.split('Index\n')[1].split('Preface')[0])}
+        </div>
+      );
+
+    default:
+      if (currentPage.startsWith('chapter-')) {
+        const chapterNum = parseInt(currentPage.split('-')[1]);
+        const chapter = bookData.bookChapter.find((c: any) => c.chapterNo === chapterNum);
+        
+        return chapter ? (
+          <div 
+            contentEditable={editMode}
+            onBlur={(e) => handleContentChange(e.currentTarget.textContent || '', chapter.chapterNo.toString())}
+            className={editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}
+          >
+            {renderMarkdown(chapter.chapterInfo)}
+          </div>
+        ) : (
+          <div className="text-center text-gray-500">Chapter not found</div>
+        );
+      }
+
+      return (
+        <div className="text-center text-gray-500">
+          Select a section from the navigation
+        </div>
+      );
+  }
+};
+
+// Update ImageUpload component props interface
+interface ImageUploadProps {
+  currentImage: string;
+  onImageUpdate: (file: File) => void;
+  label: string;
+  isEditing: boolean;
 }
+
+// Updated ImageUpload component
+const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing }: ImageUploadProps) => (
+  <div className="relative group">
+    <img
+      src={`${BASE_URl}/uploads/${currentImage}`}
+      alt={label}
+      className="w-full h-auto rounded-lg shadow-2xl"
+    />
+    {isEditing && (
+      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <label className="cursor-pointer">
+          <input
+            type="file"
+            className="hidden"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onImageUpdate(file);
+            }}
+          />
+          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg">
+            <Image className="w-4 h-4" />
+            <span>Change Image</span>
+          </div>
+        </label>
+      </div>
+    )}
+  </div>
+);
+
+// Add this to your types
+interface ContentEditorProps {
+  content: string;
+  onChange: (content: string) => void;
+  isEditing: boolean;
+}
+
+// Create a reusable content editor component
+const ContentEditor: React.FC<ContentEditorProps> = ({ content, onChange, isEditing }) => {
+  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const newContent = e.currentTarget.innerHTML;
+    onChange(newContent);
+  };
+
+  return (
+    <div
+      contentEditable={isEditing}
+      onInput={handleInput}
+      dangerouslySetInnerHTML={{ __html: content }}
+      className={`prose max-w-none ${isEditing ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}`}
+    />
+  );
+};
+
+export default BookModel;
+

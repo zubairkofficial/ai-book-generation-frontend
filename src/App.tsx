@@ -22,6 +22,7 @@ import HomePage from './pages/HomePage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import { RootState } from './store/store'; // Import RootState
 import ResponsePage from '@/pages/ResponsePage/ResponsePage';
+import BookModel from './components/BookModel/BookModel';
 
 function App() {
   const dispatch = useDispatch();
@@ -83,7 +84,7 @@ function App() {
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/response" element={<ResponsePage />} />
-         
+            <Route path="/book-modal" element={<BookModel />} />
           </Route>
 
           {/* Response Page */}

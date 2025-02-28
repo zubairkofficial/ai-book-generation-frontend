@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUserMeQuery, useUpdateUserMutation } from '@/api/userApi';
 import { UpdateUserPayload } from '@/interfaces/user.interface';
 import { useToast } from '@/context/ToastContext'; // Import custom toast hook
-import { ToastType } from '@/constant';
+import { DEFAULT_Model, ToastType } from '@/constant';
 import { useFetchApiKeysQuery, useUpdateApiKeysMutation } from '@/api/apiKeysApi';
 import * as yup from 'yup';
 import { useForm } from 'react-hook-form';
@@ -108,7 +108,7 @@ interface ApiKeysFormData {
 
 // Add interface for API keys payload
 interface UpdateApiKeysPayload {
-  id?: string;
+  id?: number;
   model?: string;
   openai_key?: string;
   dalle_key?: string;
@@ -243,7 +243,7 @@ useEffect(()=>{userRefetch()},[])
   const handleApiKeysSave = async (data: ApiKeysFormData) => {
     try {
       const payload: UpdateApiKeysPayload = {
-        id: apiKeyInfo?.id || data.id, // Always include ID if it exists in apiKeyInfo
+        id: Number(apiKeyInfo?.id) || Number(data.id), // Always include ID if it exists in apiKeyInfo
         ...(data.llmModel && { model: data.llmModel }),
         ...(data.openaiKey && { openai_key: data.openaiKey }),
         ...(data.dalleKey && { dalle_key: data.dalleKey }),

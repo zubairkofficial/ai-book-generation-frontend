@@ -13,5 +13,5 @@ export enum ToastType {
     type: ToastType; // Use the enum here
   };
 
+export const DEFAULT_Model="gpt-4o"
 
-  
