@@ -130,6 +130,19 @@ interface RegenerateImageRequest {
   additionalContent: string;
 }
 
+// Add new interface for cover content update
+interface UpdateBookCoverDto {
+  bookGenerationId: number;
+  bookTitle: string;
+  authorName: string;
+  publisher: string;
+  language: string;
+  genre: string;
+  numberOfChapters: string;
+  ideaCore: string;
+  authorBio: string;
+}
+
 export const bookApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Endpoint to fetch all books
@@ -246,6 +259,15 @@ export const bookApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+
+    // Add new endpoint for updating cover content
+    updateBookCover: builder.mutation<any, UpdateBookCoverDto>({
+      query: (payload) => ({
+        url: '/book-generation/update-book-cover',
+        method: 'PUT',
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -263,4 +285,5 @@ export const {
   useUpdateImageMutation,
   useUpdateBookGeneratedMutation, // Add this export
   useRegenerateImageMutation,
+  useUpdateBookCoverMutation, // Add this export
 } = bookApi;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { FormEvent, SetStateAction, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -13,6 +13,7 @@ import { useFetchBookByIdQuery, useUpdateChapterMutation,  useUpdateImageMutatio
 import { BASE_URl, FONT_OPTIONS, FONT_SIZES } from '@/constant';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { RegenerateImageModal } from './RegenerateImageModal';
+import { CoverContent } from './CoverContent';
 
 
 const PAGES: PageContent[] = [
@@ -156,6 +157,8 @@ console.log("editable",pendingContent)
 
   // Handle content update
   const handleContentUpdate = async (content: string, pageType?: string) => {
+    
+    console.log("content",content)
     if (!bookId) return;
 console.log("bookId", bookId)
     try {
@@ -575,7 +578,8 @@ console.log("bookId", bookId)
               editMode, 
               handleContentUpdate,
               setCurrentPage,
-              handleImageUpdate
+              handleImageUpdate,
+              setHasChanges
             )}
           </div>
         </div>
@@ -602,7 +606,9 @@ const renderCurrentPageContent = (
   editMode: boolean,
   onUpdate: (content: string, pageType?: string) => void,
   onPageChange: (page: string) => void,
-  onImageUpdate: (file: File, type: 'cover' | 'backCover') => void
+  onImageUpdate: (file: File, type: 'cover' | 'backCover') => void,
+  setHasChanges: { (value: SetStateAction<boolean>): void; (arg0: boolean): void; }
+
 ): JSX.Element => {
   const renderMarkdown = (content: string) => (
  <>  
@@ -633,6 +639,14 @@ const renderCurrentPageContent = (
     {content}
   </ReactMarkdown> </>
   );
+
+  const handleCovrtPage=(e: FormEvent<HTMLHeadingElement>)=>{
+     e.preventDefault()
+    console.log("change",e)
+    setHasChanges(true)
+
+   
+  }
 
   const handleContentChange = async (content: string, pageType?: string) => {
 
@@ -671,59 +685,11 @@ const renderCurrentPageContent = (
               imageType="cover"
             />
           </div>
-          <div 
-            className="space-y-6 max-w-2xl bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-lg"
-            contentEditable={editMode}
-            onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
-          >
-            <h1 className="text-4xl font-bold text-gray-900 leading-tight">
-              {bookData.bookTitle}
-            </h1>
-            
-            <div className="space-y-2">
-              <p className="text-2xl text-gray-700">by</p>
-              <p className="text-3xl font-semibold text-gray-800">{bookData.authorName}</p>
-            </div>
-
-            {/* Additional Book Information */}
-            <div className="grid grid-cols-2 gap-4 text-left mt-8 text-gray-600">
-              <div>
-                <p className="font-semibold">Publisher</p>
-                <p>{bookData.authorName || "AiBookPublisher"}</p>
-              </div>
-              <div>
-                <p className="font-semibold">Language</p>
-                <p>{bookData.language || "English"}</p>
-              </div>
-              <div>
-                <p className="font-semibold">Genre</p>
-                <p>{bookData.genre}</p>
-              </div>
-              <div>
-                <p className="font-semibold">Chapters</p>
-                <p>{bookData.numberOfChapters}</p>
-              </div>
-            </div>
-
-            {/* Core Idea / Book Description */}
-            <div className="mt-8 text-left">
-              <p className="font-semibold text-gray-700">About this book:</p>
-              <p className="text-gray-600 mt-2 leading-relaxed">
-                {bookData.ideaCore}
-              </p>
-            </div>
-
-            {/* Author Bio if available */}
-            {bookData.authorBio && (
-              <div className="mt-8 text-left">
-                <p className="font-semibold text-gray-700">About the Author:</p>
-                <p className="text-gray-600 mt-2">
-                  {bookData.authorBio}
-                </p>
-              </div>
-            )}
-          </div>
-
+          <CoverContent
+            bookData={bookData}
+            editMode={editMode}
+            setHasChanges={setHasChanges}
+          />
           {/* Copyright Notice */}
           <div className="text-sm text-gray-500 mt-4">
             © {new Date().getFullYear()} {bookData.authorName}. All rights reserved.
