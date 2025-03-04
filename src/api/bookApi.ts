@@ -47,6 +47,12 @@ export interface UpdateBookGenerateRequest {
   chapterNo: number;
   bookGenerationId: number;
   updateContent: string;
+  additionalData: {
+    fullContent: string;
+    coverImageUrl: string;
+    backCoverImageUrl: string;
+    tableOfContents: string;
+  };
 }
 
 interface GenerateBookResponse {
@@ -109,6 +115,19 @@ interface UpdateImageRequest {
   bookId: number;
   imageType: 'cover' | 'backCover';
   image: File;
+}
+
+// Add new interface for update book request
+export interface UpdateBookDto {
+  bookGenerationId: number;
+    fullContent: string;
+}
+
+// Add this interface
+interface RegenerateImageRequest {
+  bookId: number;
+  imageType: string;
+  additionalContent: string;
 }
 
 export const bookApi = baseApi.injectEndpoints({
@@ -209,6 +228,24 @@ export const bookApi = baseApi.injectEndpoints({
         };
       },
     }),
+
+    // Add new endpoint for updating book content
+    updateBookGenerated: builder.mutation<any, UpdateBookDto>({
+      query: (payload) => ({
+        url: '/book-generation/update-book-generated',
+        method: 'PUT',
+        body: payload,
+      }),
+    }),
+
+    // Add this to your endpoints
+    regenerateImage: builder.mutation<any, RegenerateImageRequest>({
+      query: (payload) => ({
+        url: '/book-generation/regenerate-image',
+        method: 'PUT',
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -224,4 +261,6 @@ export const {
   useFetchBookByIdQuery, // Add this export
   useUpdateStyleMutation,
   useUpdateImageMutation,
+  useUpdateBookGeneratedMutation, // Add this export
+  useRegenerateImageMutation,
 } = bookApi;

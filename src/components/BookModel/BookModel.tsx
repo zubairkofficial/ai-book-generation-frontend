@@ -1,34 +1,19 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { 
   Loader2, Edit2, Image,  Bold, Italic, 
   AlignLeft, AlignCenter, AlignRight,
   BookOpen, List, Heart, BookmarkIcon, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useFetchBookByIdQuery, useUpdateChapterMutation, useUpdateStyleMutation, useUpdateImageMutation } from '@/api/bookApi';
-import { BASE_URl } from '@/constant';
-import debounce from 'lodash/debounce';
+import { useFetchBookByIdQuery, useUpdateChapterMutation,  useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
+import { BASE_URl, FONT_OPTIONS, FONT_SIZES } from '@/constant';
+import { ReloadIcon } from '@radix-ui/react-icons';
+import { RegenerateImageModal } from './RegenerateImageModal';
 
-// Types
-interface TextStyle {
-  bold: boolean;
-  italic: boolean;
-  align: 'left' | 'center' | 'right';
-  fontSize: string;
-  fontFamily: string;
-  color: string;
-  lineHeight: string;
-  letterSpacing: string;
-}
-
-interface PageContent {
-  id: string;
-  icon: JSX.Element;
-  label: string;
-}
 
 const PAGES: PageContent[] = [
   { id: 'cover', icon: <BookOpen className="w-4 h-4" />, label: 'Cover' },
@@ -41,62 +26,15 @@ const PAGES: PageContent[] = [
   { id: 'backCover', icon: <BookOpen className="w-4 h-4" />, label: 'Back Cover' },
 ];
 
-export interface Book {
-  id: number;
-  bookTitle: string;
-  authorName: string;
-  genre: string;
-  numberOfChapters: number;
-  additionalData: {
-    fullContent: string;
-    coverImageUrl: string;
-    backCoverImageUrl: string;
-    tableOfContents: string;
-  };
-  bookChapter: Array<{
-    id: number;
-    chapterNo: number;
-    chapterInfo: string;
-  }>;
-}
 
-export interface BookModelProps {
-  book: Book;
-}
+
+
 
 // Add these font options
-const FONT_OPTIONS = [
-  { label: 'Times New Roman', value: 'Times New Roman' },
-  { label: 'Arial', value: 'Arial' },
-  { label: 'Georgia', value: 'Georgia' },
-  { label: 'Palatino', value: 'Palatino' },
-  { label: 'Garamond', value: 'Garamond' },
-  { label: 'Bookman', value: 'Bookman' },
-  { label: 'Baskerville', value: 'Baskerville' }
-];
 
-const FONT_SIZES = [
-  '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'
-];
 
-// Add a helper function to convert HTML to Markdown
-const htmlToMarkdown = (html: string): string => {
-  // Replace heading tags with markdown
-  let markdown = html
-    .replace(/<h1[^>]*>(.*?)<\/h1>/g, '# $1\n')
-    .replace(/<h2[^>]*>(.*?)<\/h2>/g, '## $1\n')
-    .replace(/<h3[^>]*>(.*?)<\/h3>/g, '### $1\n')
-    .replace(/<h4[^>]*>(.*?)<\/h4>/g, '#### $1\n')
-    .replace(/<h5[^>]*>(.*?)<\/h5>/g, '##### $1\n')
-    .replace(/<h6[^>]*>(.*?)<\/h6>/g, '###### $1\n');
 
-  // Replace bold and italic
-  markdown = markdown
-    .replace(/<strong[^>]*>(.*?)<\/strong>/g, '**$1**')
-    .replace(/<em[^>]*>(.*?)<\/em>/g, '*$1*');
 
-  return markdown;
-};
 
 // Add proper type definitions
 const BookModel = () => {
@@ -119,34 +57,16 @@ const BookModel = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [pendingContent, setPendingContent] = useState<string>('');
   const [pendingStyle, setPendingStyle] = useState<TextStyle | null>(null);
-
+console.log("editable",pendingContent)
   // API Hooks
   const { data: book, isLoading } = useFetchBookByIdQuery(bookId, {
     skip: !bookId,
   });
   const [updateChapter] = useUpdateChapterMutation();
-  const [updateStyle] = useUpdateStyleMutation();
   const [updateImage] = useUpdateImageMutation();
+  const [updateBookGenerated] = useUpdateBookGeneratedMutation();
 
-  // Create a debounced version of the style update
-  const debouncedStyleUpdate = useCallback(
-    debounce((newStyle: TextStyle) => {
-      if (!bookId) return;
-
-      updateStyle({
-        bookId,
-        pageType: currentPage,
-        chapterNo: currentPage.startsWith('chapter-') 
-          ? parseInt(currentPage.split('-')[1]) 
-          : undefined,
-        style: newStyle
-      }).unwrap()
-        .catch(error => console.error('Failed to update style:', error));
-    }, 1000), // Wait 1 second after last change before making API call
-    [bookId, currentPage]
-  );
-
-  // Handle text formatting
+  // Updated handleFormat function for better text formatting
   const handleFormat = (format: 'h1' | 'h2' | 'h3' | 'bold' | 'italic') => {
     const selection = window.getSelection();
     if (!selection || !selection.rangeCount) return;
@@ -155,74 +75,68 @@ const BookModel = () => {
     const selectedText = range.toString();
     if (!selectedText) return;
 
-    let markdownFormat = '';
+    // Create a new container for the formatted text
+    const container = document.createElement('span');
+    
     switch (format) {
       case 'h1':
-        markdownFormat = `# ${selectedText}`;
+        container.innerHTML = `<h1>${selectedText}</h1>`;
         break;
       case 'h2':
-        markdownFormat = `## ${selectedText}`;
+        container.innerHTML = `<h2>${selectedText}</h2>`;
         break;
       case 'h3':
-        markdownFormat = `### ${selectedText}`;
+        container.innerHTML = `<h3>${selectedText}</h3>`;
         break;
       case 'bold':
-        markdownFormat = `**${selectedText}**`;
+        container.innerHTML = `<strong>${selectedText}</strong>`;
         break;
       case 'italic':
-        markdownFormat = `*${selectedText}*`;
+        container.innerHTML = `<em>${selectedText}</em>`;
         break;
     }
 
-    // Replace selected text with markdown
-    const newText = document.createTextNode(markdownFormat);
+    // Replace selected text with formatted content
     range.deleteContents();
-    range.insertNode(newText);
+    range.insertNode(container.firstChild!);
 
-    // Update the content state but don't trigger API call yet
-    const container = range.commonAncestorContainer.parentElement;
-    if (container) {
-      setTextStyle(prevStyle => ({ ...prevStyle, [format]: markdownFormat }));
+    // Update content in state and trigger save
+    const editableContent = range.commonAncestorContainer.parentElement;
+    if (editableContent) {
+      setPendingContent(editableContent.innerHTML);
+      setHasChanges(true);
     }
   };
 
-  // Debounced content update
-  const debouncedContentUpdate = useCallback(
-    debounce((content: string, pageType?: string) => {
-      if (!bookId) return;
-
-      // Convert HTML to Markdown before saving
-      const markdownContent = htmlToMarkdown(content);
-
-      updateChapter({
-        chapterNo: pageType && !isNaN(Number(pageType)) ? Number(pageType) : -1,
-        bookGenerationId: bookId,
-        updateContent: markdownContent
-      }).unwrap()
-        .catch(error => console.error('Failed to update content:', error));
-    }, 1000),
-    [bookId]
-  );
-
-  // Handle style update
+  // Updated handleStyleUpdate for specific text styling
   const handleStyleUpdate = async (newStyle: TextStyle) => {
     if (!bookId) return;
 
-    try {
-      await updateStyle({
-        bookId,
-        pageType: currentPage,
-        chapterNo: currentPage.startsWith('chapter-') 
-          ? parseInt(currentPage.split('-')[1]) 
-          : undefined,
-        style: newStyle
-      }).unwrap();
-      
-      // Update local state
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) {
+      // If no selection, apply to whole content
       setTextStyle(newStyle);
-    } catch (error) {
-      console.error('Failed to update style:', error);
+      setPendingStyle(newStyle);
+      setHasChanges(true);
+      return;
     }
+
+    // Apply style to selected text
+    const range = selection.getRangeAt(0);
+    const span = document.createElement('span');
+    span.style.fontFamily = newStyle.fontFamily;
+    span.style.fontSize = newStyle.fontSize;
+    span.style.color = newStyle.color;
+    span.style.lineHeight = newStyle.lineHeight;
+    span.style.letterSpacing = newStyle.letterSpacing;
+    
+    const selectedContent = range.extractContents();
+    span.appendChild(selectedContent);
+    range.insertNode(span);
+
+    // Update pending changes
+    setPendingStyle(newStyle);
+    setHasChanges(true);
   };
 
   // Handle image update
@@ -243,7 +157,7 @@ const BookModel = () => {
   // Handle content update
   const handleContentUpdate = async (content: string, pageType?: string) => {
     if (!bookId) return;
-
+console.log("bookId", bookId)
     try {
       // Add logic to handle different page types
       switch (pageType) {
@@ -260,65 +174,66 @@ const BookModel = () => {
         default:
           // Handle chapter updates
           if (typeof pageType === 'number') {
-            await updateChapter({
-              chapterNo: pageType,
-              bookGenerationId: bookId,
-              updateContent: content
-            }).unwrap();
-          }
+           }
       }
     } catch (error) {
       console.error('Failed to update content:', error);
     }
   };
 
-  // Handle update button click
+  // Updated handleUpdate function
   const handleUpdate = async () => {
     if (!bookId || !hasChanges) return;
+
     try {
-      // Handle content update
+      const currentContent = book.data.additionalData.fullContent;
+      let updatedContent = currentContent;
+
       if (pendingContent) {
-        await updateChapter({
-          chapterNo: currentPage.startsWith('chapter-') 
-            ? parseInt(currentPage.split('-')[1]) 
-            : -1,
-          bookGenerationId: bookId,
-          updateContent: pendingContent
-        }).unwrap();
-      }
+        // Create a regex pattern that matches the specific section being edited
+        const sectionPattern = new RegExp(
+          `(${currentPage}\\n)([\\s\\S]*?)(\\n(?:(?!${currentPage})[\\w]+|$))`,
+          'i'
+        );
+        
+        // Replace only the content of the current section while preserving the rest
+        updatedContent = currentContent.replace(
+          sectionPattern,
+          `$1${pendingContent}$3`
+        );
 
-      // Handle style update
-      if (pendingStyle) {
-        await updateStyle({
-          bookId,
-          pageType: currentPage,
-          style: pendingStyle
-        }).unwrap();
-      }
+        // Call the appropriate API based on the update type
+        if (currentPage.startsWith('chapter-')) {
+          const chapterNo = parseInt(currentPage.split('-')[1]);
+          await updateChapter({
+            chapterNo,
+            bookGenerationId: bookId,
+            updateContent: pendingContent,
+            additionalData: {
+              ...book.data.additionalData,
+              fullContent: updatedContent
+            }
+          }).unwrap();
+        } else {
+          // Use updateBookGenerated for non-chapter updates
+          await updateBookGenerated({
+            bookGenerationId: bookId,
+            fullContent: updatedContent,
+            // Preserve all other additionalData fields
+          }).unwrap();
+        }
 
-      // Reset states
-      setPendingContent('');
-      setPendingStyle(null);
-      setHasChanges(false);
+        // Reset states after successful update
+        setPendingContent('');
+        setPendingStyle(null);
+        setHasChanges(false);
+      }
     } catch (error) {
       console.error('Failed to update:', error);
     }
   };
 
-  // Render markdown content
-  const renderMarkdown = (content: string) => (
-    <ReactMarkdown 
-      remarkPlugins={[remarkGfm]}
-      className="prose max-w-none"
-      components={{
-        h1: ({node, ...props}) => <h1 className="text-3xl font-bold mb-4" {...props} />,
-        h2: ({node, ...props}) => <h2 className="text-2xl font-bold mb-3" {...props} />,
-        p: ({node, ...props}) => <p className="mb-4" {...props} />,
-      }}
-    >
-      {content}
-    </ReactMarkdown>
-  );
+
 
   // Add these styles at the top of your file
   const navStyles = {
@@ -601,6 +516,20 @@ const BookModel = () => {
     </div>
   );
 
+  // Add a SaveButton component
+  const SaveButton = ({ hasChanges, onSave }: { hasChanges: boolean; onSave: () => void }) => (
+    <Button
+      variant="default"
+      onClick={onSave}
+      disabled={!hasChanges}
+      className={`fixed bottom-4 right-4 transition-all ${
+        hasChanges ? 'bg-amber-500 hover:bg-amber-600' : 'bg-gray-300'
+      }`}
+    >
+      {hasChanges ? 'Save Changes' : 'No Changes'}
+    </Button>
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -652,10 +581,19 @@ const BookModel = () => {
         </div>
       </div>
 
+      {/* Add Save Button when in edit mode */}
+      {editMode && <SaveButton hasChanges={hasChanges} onSave={handleUpdate} />}
+
       {editMode && renderEditingTools()}
     </div>
   );
 };
+
+const onRegenerateImage = async () => {
+  console.log("Regenerate Image");
+  // await coverImageUpdate(null, 'cover');
+  
+}
 
 // Helper function to render current page content
 const renderCurrentPageContent = (
@@ -667,23 +605,36 @@ const renderCurrentPageContent = (
   onImageUpdate: (file: File, type: 'cover' | 'backCover') => void
 ): JSX.Element => {
   const renderMarkdown = (content: string) => (
-    <ReactMarkdown 
-      remarkPlugins={[remarkGfm]}
-      className="prose max-w-none"
-      components={{
-        h1: ({node, ...props}) => <h1 className="text-3xl font-bold mb-6 text-gray-900" {...props} />,
-        h2: ({node, ...props}) => <h2 className="text-2xl font-bold mb-4 text-gray-800" {...props} />,
-        p: ({node, ...props}) => <p className="mb-6 text-gray-700 leading-relaxed" {...props} />,
-        strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
-        em: ({node, ...props}) => <em className="italic text-gray-800" {...props} />
-      }}
-    >
-      {content}
-    </ReactMarkdown>
+ <>  
+ { console.log("content",content)
+}
+<ReactMarkdown
+    remarkPlugins={[remarkGfm]} // Optional: For GitHub-flavored markdown
+    rehypePlugins={[rehypeRaw]} // This allows raw HTML to be rendered
+    className="prose max-w-none"
+    components={{
+      h1: ({ node, ...props }) => (
+        <h1 className="text-3xl font-bold mb-6 text-gray-900" {...props} />
+      ),
+      h2: ({ node, ...props }) => (
+        <h2 className="text-2xl font-bold mb-4 text-gray-800" {...props} />
+      ),
+      p: ({ node, ...props }) => (
+        <p className="mb-6 text-gray-700 leading-relaxed" {...props} />
+      ),
+      strong: ({ node, ...props }) => (
+        <strong className="font-semibold text-gray-900" {...props} />
+      ),
+      em: ({ node, ...props }) => (
+        <em className="italic text-gray-800" {...props} />
+      ),
+    }}
+  >
+    {content}
+  </ReactMarkdown> </>
   );
 
   const handleContentChange = async (content: string, pageType?: string) => {
-    // if (!bookId) return;
 
     try {
       switch (pageType) {
@@ -716,6 +667,8 @@ const renderCurrentPageContent = (
               onImageUpdate={(file) => onImageUpdate(file, 'cover')}
               label={bookData.bookTitle}
               isEditing={editMode}
+              bookId={bookData.id}
+              imageType="cover"
             />
           </div>
           <div 
@@ -927,6 +880,8 @@ const renderCurrentPageContent = (
               onImageUpdate={(file) => onImageUpdate(file, 'backCover')}
               label="Back Cover"
               isEditing={editMode}
+              bookId={bookData.id}
+              imageType="backCover"
             />
           </div>
           <div 
@@ -984,37 +939,60 @@ interface ImageUploadProps {
   onImageUpdate: (file: File) => void;
   label: string;
   isEditing: boolean;
+  bookId: number;
+  imageType: 'cover' | 'backCover';
 }
 
 // Updated ImageUpload component
-const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing }: ImageUploadProps) => (
-  <div className="relative group">
-    <img
-      src={`${BASE_URl}/uploads/${currentImage}`}
-      alt={label}
-      className="w-full h-auto rounded-lg shadow-2xl"
-    />
-    {isEditing && (
-      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-        <label className="cursor-pointer">
-          <input
-            type="file"
-            className="hidden"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onImageUpdate(file);
-            }}
-          />
-          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg">
-            <Image className="w-4 h-4" />
-            <span>Change Image</span>
-          </div>
-        </label>
-      </div>
-    )}
-  </div>
-);
+const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing, bookId, imageType }: ImageUploadProps) => {
+  const [isRegenerateModalOpen, setIsRegenerateModalOpen] = useState(false);
+
+  return (
+    <div className="relative group">
+      <img
+        src={`${BASE_URl}/uploads/${currentImage}`}
+        alt={label}
+        className="w-full h-auto rounded-lg shadow-2xl"
+      />
+      {isEditing && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+          {/* Change Image */}
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onImageUpdate(file);
+              }}
+            />
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg">
+              <Image className="w-4 h-4" />
+              <span>Change Image</span>
+            </div>
+          </label>
+
+          {/* Regenerate Image */}
+          <button
+            onClick={() => setIsRegenerateModalOpen(true)}
+            className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg"
+          >
+            <ReloadIcon className="w-4 h-4" />
+            <span>Regenerate Image</span>
+          </button>
+        </div>
+      )}
+
+      <RegenerateImageModal
+        isOpen={isRegenerateModalOpen}
+        onClose={() => setIsRegenerateModalOpen(false)}
+        bookId={bookId}
+        imageType={imageType}
+      />
+    </div>
+  );
+};
 
 // Add this to your types
 interface ContentEditorProps {
@@ -1023,19 +1001,40 @@ interface ContentEditorProps {
   isEditing: boolean;
 }
 
-// Create a reusable content editor component
+// Update the ContentEditor component to use modern clipboard API
 const ContentEditor: React.FC<ContentEditorProps> = ({ content, onChange, isEditing }) => {
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     const newContent = e.currentTarget.innerHTML;
     onChange(newContent);
   };
 
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    
+    // Use modern selection API instead of execCommand
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const textNode = document.createTextNode(text);
+      range.deleteContents();
+      range.insertNode(textNode);
+    }
+  };
+
   return (
     <div
       contentEditable={isEditing}
       onInput={handleInput}
+      onPaste={handlePaste}
       dangerouslySetInnerHTML={{ __html: content }}
-      className={`prose max-w-none ${isEditing ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}`}
+      className={`prose max-w-none ${
+        isEditing ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''
+      }`}
+      style={{
+        minHeight: '100px',
+        whiteSpace: 'pre-wrap'
+      }}
     />
   );
 };
