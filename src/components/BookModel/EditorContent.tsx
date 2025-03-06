@@ -12,6 +12,7 @@ interface EditorContentProps {
   className?: string;
   titleClassName?: string;
   contentClassName?: string;
+  setHasChanges?: (value: boolean) => void;
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({

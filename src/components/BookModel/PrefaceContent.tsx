@@ -75,9 +75,8 @@ export const PrefaceContent = ({
   const updateSection = (sectionKey: keyof PrefaceSections, content: string) => {
     setSections(prev => ({
       ...prev,
-      [sectionKey]: content
+      [sectionKey]: content.trim()
     }));
-    setHasChanges(true);
   };
 
   // Combine all sections back into a formatted preface
@@ -100,7 +99,6 @@ ${sections.acknowledgments}`;
 
   // Save the updated preface
   const savePreface = async () => {
-    setHasChanges(true);
     const combinedContent = combineAllSections();
     
     try {
@@ -146,10 +144,6 @@ ${sections.acknowledgments}`;
             <ReactMarkdown 
               remarkPlugins={[remarkGfm]} 
               rehypePlugins={[rehypeRaw]}
-              components={{
-                // Customize how strong (bold) elements are rendered
-                strong: ({node, ...props}) => <strong className="font-bold" {...props} />
-              }}
             >
               {prepareMarkdown(content)}
             </ReactMarkdown>
@@ -163,10 +157,14 @@ ${sections.acknowledgments}`;
         title={title}
         content={content}
         editMode={true}
-        onUpdate={(updatedContent) => updateSection(sectionKey, updatedContent)}
+        onUpdate={(updatedContent) => {
+          updateSection(sectionKey, updatedContent);
+          setHasChanges(true);
+        }}
         className="mb-8"
         titleClassName="text-2xl font-bold mb-4 text-gray-800"
         contentClassName="prose max-w-none text-gray-700"
+        setHasChanges={setHasChanges}
       />
     );
   };
