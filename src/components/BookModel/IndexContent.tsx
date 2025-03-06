@@ -12,7 +12,6 @@ export const IndexContent: React.FC<IndexContentProps> = ({
   bookData,
   editMode,
   onUpdate,
-  setHasChanges,
 }) => {
   const indexContent = bookData.additionalData.index || '';
 
@@ -25,7 +24,6 @@ export const IndexContent: React.FC<IndexContentProps> = ({
       className="min-h-[800px] px-8 py-12"
       titleClassName="text-4xl text-center mb-8 text-gray-900"
       contentClassName="prose max-w-none"
-    //   setHasChanges={setHasChanges}
     />
   );
 }; 
