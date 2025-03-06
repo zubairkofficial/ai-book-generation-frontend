@@ -41,55 +41,100 @@ export const htmlToMarkdown = (element: HTMLElement): string => {
   // Clone to avoid modifying the original
   const clone = element.cloneNode(true) as HTMLElement;
   
+  // Extract styling information before converting to markdown
+  const styleInfo: Record<string, any> = {};
+  
+  // Collect styling information from all styled elements
+  const styledElements = clone.querySelectorAll('[style]');
+  styledElements.forEach((el, index) => {
+    const htmlEl = el as HTMLElement;
+    const elementId = `style-element-${index}`;
+    
+    // Store style information
+    styleInfo[elementId] = {
+      selector: createUniqueSelector(htmlEl),
+      fontFamily: htmlEl.style.fontFamily,
+      fontSize: htmlEl.style.fontSize,
+      color: htmlEl.style.color,
+      textAlign: htmlEl.style.textAlign,
+      fontWeight: htmlEl.style.fontWeight,
+      fontStyle: htmlEl.style.fontStyle,
+      lineHeight: htmlEl.style.lineHeight,
+      letterSpacing: htmlEl.style.letterSpacing,
+      tagName: htmlEl.tagName.toLowerCase()
+    };
+    
+    // Add a data attribute to identify this element later
+    htmlEl.setAttribute('data-style-id', elementId);
+  });
+  
   // Process headings from h4 to h1 (order matters)
   const h4s = clone.querySelectorAll('h4');
   h4s.forEach(h4 => {
-    h4.outerHTML = `#### ${h4.textContent?.trim()}\n\n`;
+    // Preserve styling with custom HTML comment
+    const styleId = h4.getAttribute('data-style-id');
+    const styleTag = styleId ? `<!-- STYLE_ID:${styleId} -->` : '';
+    h4.outerHTML = `${styleTag}#### ${h4.textContent?.trim()}\n\n`;
   });
   
+  // Continue with other heading levels
   const h3s = clone.querySelectorAll('h3');
   h3s.forEach(h3 => {
-    h3.outerHTML = `### ${h3.textContent?.trim()}\n\n`;
+    const styleId = h3.getAttribute('data-style-id');
+    const styleTag = styleId ? `<!-- STYLE_ID:${styleId} -->` : '';
+    h3.outerHTML = `${styleTag}### ${h3.textContent?.trim()}\n\n`;
   });
   
   const h2s = clone.querySelectorAll('h2');
   h2s.forEach(h2 => {
-    h2.outerHTML = `## ${h2.textContent?.trim()}\n\n`;
+    const styleId = h2.getAttribute('data-style-id');
+    const styleTag = styleId ? `<!-- STYLE_ID:${styleId} -->` : '';
+    h2.outerHTML = `${styleTag}## ${h2.textContent?.trim()}\n\n`;
   });
   
   const h1s = clone.querySelectorAll('h1');
   h1s.forEach(h1 => {
-    h1.outerHTML = `# ${h1.textContent?.trim()}\n\n`;
+    const styleId = h1.getAttribute('data-style-id');
+    const styleTag = styleId ? `<!-- STYLE_ID:${styleId} -->` : '';
+    h1.outerHTML = `${styleTag}# ${h1.textContent?.trim()}\n\n`;
   });
   
   // Process formatting
   const strongs = clone.querySelectorAll('strong, b');
   strongs.forEach(strong => {
-    strong.outerHTML = `**${strong.textContent?.trim()}**`;
+    const styleId = strong.getAttribute('data-style-id');
+    const styleTag = styleId ? `<!-- STYLE_ID:${styleId} -->` : '';
+    strong.outerHTML = `${styleTag}**${strong.textContent?.trim()}**`;
   });
   
   const ems = clone.querySelectorAll('em, i');
   ems.forEach(em => {
-    em.outerHTML = `*${em.textContent?.trim()}*`;
+    const styleId = em.getAttribute('data-style-id');
+    const styleTag = styleId ? `<!-- STYLE_ID:${styleId} -->` : '';
+    em.outerHTML = `${styleTag}*${em.textContent?.trim()}*`;
   });
   
   // Process lists
   const uls = clone.querySelectorAll('ul');
   uls.forEach(ul => {
+    const styleId = ul.getAttribute('data-style-id');
+    const styleTag = styleId ? `<!-- STYLE_ID:${styleId} -->` : '';
     const items = ul.querySelectorAll('li');
     let listHtml = '\n';
     items.forEach(li => {
-      listHtml += `- ${li.textContent?.trim()}\n`;
+      listHtml += `${styleTag}- ${li.textContent?.trim()}\n`;
     });
     ul.outerHTML = listHtml + '\n';
   });
   
   const ols = clone.querySelectorAll('ol');
   ols.forEach(ol => {
+    const styleId = ol.getAttribute('data-style-id');
+    const styleTag = styleId ? `<!-- STYLE_ID:${styleId} -->` : '';
     const items = ol.querySelectorAll('li');
     let listHtml = '\n';
     items.forEach((li, index) => {
-      listHtml += `${index + 1}. ${li.textContent?.trim()}\n`;
+      listHtml += `${styleTag}${index + 1}. ${li.textContent?.trim()}\n`;
     });
     ol.outerHTML = listHtml + '\n';
   });
@@ -97,14 +142,18 @@ export const htmlToMarkdown = (element: HTMLElement): string => {
   // Process horizontal rules
   const hrs = clone.querySelectorAll('hr');
   hrs.forEach(hr => {
+    const styleId = hr.getAttribute('data-style-id');
+    const styleTag = styleId ? `<!-- STYLE_ID:${styleId} -->` : '';
     hr.outerHTML = '\n---\n\n';
   });
   
   // Clean paragraphs
   const paragraphs = clone.querySelectorAll('p');
   paragraphs.forEach(p => {
+    const styleId = p.getAttribute('data-style-id');
+    const styleTag = styleId ? `<!-- STYLE_ID:${styleId} -->` : '';
     if (p.textContent?.trim()) {
-      p.outerHTML = `${p.textContent.trim()}\n\n`;
+      p.outerHTML = `${styleTag}${p.textContent.trim()}\n\n`;
     } else {
       p.outerHTML = '';
     }
@@ -118,8 +167,27 @@ export const htmlToMarkdown = (element: HTMLElement): string => {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
   
+  if (Object.keys(styleInfo).length > 0) {
+    return `<!-- STYLES:${JSON.stringify(styleInfo)} -->\n\n${content}`;
+  }
+  
   return content;
 };
+
+// Helper function to create a unique selector for an element
+function createUniqueSelector(element: HTMLElement): string {
+  // Create a simple selector using tag name and classes
+  let selector = element.tagName.toLowerCase();
+  if (element.id) {
+    selector += `#${element.id}`;
+  } else if (element.className) {
+    const classes = element.className.split(' ').filter(c => c).join('.');
+    if (classes) {
+      selector += `.${classes}`;
+    }
+  }
+  return selector;
+}
 
 // Custom React Markdown components with consistent styling
 export const markdownComponents = {

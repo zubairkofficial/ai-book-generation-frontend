@@ -19,7 +19,7 @@ import { GlossaryContent } from './GlossaryContent';
 import { IndexContent } from './IndexContent';
 import { ReferencesContent } from './ReferencesContent';
 import { TableOfContentsContent } from './TableOfContentsContent';
-import { markdownComponents } from '@/utils/markdownUtils';
+import { markdownToHtml, htmlToMarkdown, markdownComponents } from '@/utils/markdownUtils.tsx';
 
 
 const PAGES: PageContent[] = [

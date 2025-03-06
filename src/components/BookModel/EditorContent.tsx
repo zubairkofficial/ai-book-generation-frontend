@@ -3,7 +3,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { TextStyle, TextStyleToolbar } from './TextStyleToolbar';
-import { markdownToHtml, markdownComponents, htmlToMarkdown } from '@/utils/markdownUtils';
 
 interface EditorContentProps {
   title: string;
@@ -13,7 +12,6 @@ interface EditorContentProps {
   className?: string;
   titleClassName?: string;
   contentClassName?: string;
-  setHasChanges?: (value: boolean) => void;
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({
@@ -23,8 +21,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   onUpdate,
   className = "min-h-[800px] px-8 py-12",
   titleClassName = "text-4xl text-center mb-8 text-gray-900", 
-  contentClassName = "prose max-w-none",
-  setHasChanges
+  contentClassName = "prose max-w-none"
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [textStyle, setTextStyle] = useState<TextStyle>({
@@ -41,19 +38,61 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   // Convert markdown to HTML for editing
   const [htmlContent, setHtmlContent] = useState<string>('');
   
-  // Process markdown to HTML when content changes
+  // Process markdown to HTML when content changes or edit mode toggles
   useEffect(() => {
-    if (content) {
-      setHtmlContent(markdownToHtml(content));
+    if (editMode && content) {
+      // Convert markdown headings to styled HTML
+      let processedContent = content
+        // Replace markdown headings with styled HTML headings
+        .replace(/^### (.*$)/gm, '<h3 class="text-xl font-bold mb-3 text-gray-800">$1</h3>')
+        .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold mb-4 text-gray-800">$1</h2>')
+        .replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mb-5 text-gray-900">$1</h1>')
+        // Replace bold
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+        // Replace italic
+        .replace(/\*(.*?)\*/g, '<em class="italic text-gray-800">$1</em>')
+        // Replace lists
+        .replace(/^\- (.*$)/gm, '<li class="ml-4 mb-2">$1</li>')
+        // Replace horizontal rules
+        .replace(/^---$/gm, '<hr class="my-6 border-t-2 border-gray-300" />')
+        // Replace paragraphs (must be last)
+        .replace(/^(?!<[^>]+>)(.+)$/gm, '<p class="mb-4 text-gray-700 leading-relaxed">$1</p>');
+        
+      setHtmlContent(processedContent);
     }
-  }, [content]);
+  }, [content, editMode]);
 
   const renderMarkdown = (text: string) => {
     return (
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
-        components={markdownComponents}
+        components={{
+          h1: ({ node, ...props }) => (
+            <h1 className="text-3xl font-bold mb-5 text-gray-900" {...props} />
+          ),
+          h2: ({ node, ...props }) => (
+            <h2 className="text-2xl font-bold mb-4 text-gray-800" {...props} />
+          ),
+          h3: ({ node, ...props }) => (
+            <h3 className="text-xl font-bold mb-3 text-gray-800" {...props} />
+          ),
+          p: ({ node, ...props }) => (
+            <p className="mb-4 text-gray-700 leading-relaxed" {...props} />
+          ),
+          strong: ({ node, ...props }) => (
+            <strong className="font-semibold text-gray-900" {...props} />
+          ),
+          em: ({ node, ...props }) => (
+            <em className="italic text-gray-800" {...props} />
+          ),
+          li: ({ node, ...props }) => (
+            <li className="ml-4 mb-2" {...props} />
+          ),
+          hr: ({ node, ...props }) => (
+            <hr className="my-6 border-t-2 border-gray-300" {...props} />
+          ),
+        }}
       >
         {text}
       </ReactMarkdown>
@@ -61,106 +100,64 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-    const markdownContent = htmlToMarkdown(e.currentTarget);
+    const htmlContent = e.currentTarget.innerHTML;
+    
+    // Convert the edited HTML back to markdown format for storage
+    let markdownContent = htmlContent
+      // Clean up the HTML
+      .replace(/<div>/g, '\n')
+      .replace(/<\/div>/g, '')
+      .replace(/<br>/g, '\n');
+      
+    // Here we could add more conversions for special formatting if needed
+    
     onUpdate(markdownContent);
-    if (setHasChanges) {
-      setHasChanges(true);
-    }
   };
 
-  // Existing style application methods
-  const applyStyle = (style: Partial<TextStyle>) => {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-    
-    // Apply bold
-    if (style.bold !== undefined) {
-      document.execCommand('bold', false);
-    }
-    
-    // Apply italic
-    if (style.italic !== undefined) {
-      document.execCommand('italic', false);
-    }
-    
-    // Apply text alignment
-    if (style.align) {
-      document.execCommand('justifyLeft', false);
-      if (style.align === 'center') document.execCommand('justifyCenter', false);
-      if (style.align === 'right') document.execCommand('justifyRight', false);
-    }
-    
-    // Apply font family
-    if (style.fontFamily) {
-      document.execCommand('fontName', false, style.fontFamily);
-    }
-    
-    // Apply font size
-    if (style.fontSize) {
-      document.execCommand('fontSize', false, style.fontSize);
-    }
-    
-    // Apply text color
-    if (style.color) {
-      document.execCommand('foreColor', false, style.color);
-    }
-  };
-
-  // Add heading at current selection
-  const addHeading = (level: number) => {
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      let container = range.commonAncestorContainer;
-      
-      // Navigate up to find a block element
-      while (container.nodeType !== 1 || 
-            !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes((container as Element).tagName)) {
-        if (!container.parentElement) break;
-        container = container.parentElement;
-      }
-      
-      if (container.nodeType === 1) {
-        const content = (container as HTMLElement).textContent;
-        const newHeading = document.createElement(`h${level}`);
-        newHeading.textContent = content || '';
-        newHeading.className = level === 1 ? 'text-3xl font-bold mb-5 text-gray-900' : 
-                             level === 2 ? 'text-2xl font-bold mb-4 text-gray-800' :
-                             level === 3 ? 'text-xl font-bold mb-3 text-gray-800' :
-                             'text-lg font-bold mb-2 text-gray-700';
+  const applyStyle = (command: string, value?: string) => {
+    // For font size, we need special handling because execCommand expects sizes 1-7
+    if (command === 'fontSize') {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const span = document.createElement('span');
+        span.style.fontSize = value || '16px';
         
-        container.parentNode?.replaceChild(newHeading, container);
+        try {
+          range.surroundContents(span);
+        } catch (e) {
+          console.error("Can't apply style to current selection:", e);
+          // Fallback: Just use execCommand with a size value of 3 (default)
+          document.execCommand('fontSize', false, '3');
+        }
+      }
+    } 
+    // Handle font family
+    else if (command === 'fontName') {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const span = document.createElement('span');
+        span.style.fontFamily = value || 'Times New Roman';
+        
+        try {
+          range.surroundContents(span);
+        } catch (e) {
+          console.error("Can't apply style to current selection:", e);
+          document.execCommand('fontName', false, value);
+        }
       }
     }
-  };
-
-  // Replace your current adapter function with this one
-  const handleApplyStyle = (command: string, value?: string) => {
-    // Map the command/value to appropriate style object properties
-    const styleUpdate: Partial<TextStyle> = {};
-    
-    switch (command) {
-      case 'bold':
-        styleUpdate.bold = !textStyle.bold;
-        break;
-      case 'italic':
-        styleUpdate.italic = !textStyle.italic;
-        break;
-      case 'justify':
-        styleUpdate.align = value as 'left' | 'center' | 'right';
-        break;
-      case 'fontSize':
-        styleUpdate.fontSize = value || '16px';
-        break;
-      case 'fontName':
-        styleUpdate.fontFamily = value || 'Times New Roman';
-        break;
-      case 'foreColor':
-        styleUpdate.color = value || '#000000';
-        break;
+    // Handle color
+    else if (command === 'foreColor') {
+      document.execCommand(command, false, value);
+    }
+    // For other styles, use the standard execCommand
+    else {
+      document.execCommand(command, false, value);
     }
     
-    applyStyle(styleUpdate);
+    contentRef.current?.focus();
   };
 
   return (
@@ -169,59 +166,17 @@ export const EditorContent: React.FC<EditorContentProps> = ({
         <h1 className={titleClassName}>{title}</h1>
         
         {editMode && (
-          <div className="mb-6">
-            <TextStyleToolbar 
-              textStyle={textStyle} 
-              onStyleChange={setTextStyle} 
-              onApplyStyle={handleApplyStyle} 
-            />
-            
-            {/* Formatting toolbar */}
-            <div className="flex flex-wrap gap-2 p-2 mt-2 border border-gray-200 rounded-lg bg-gray-50">
-              <button 
-                className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() => addHeading(1)}
-              >
-                Heading 1
-              </button>
-              <button 
-                className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() => addHeading(2)}
-              >
-                Heading 2
-              </button>
-              <button 
-                className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() => addHeading(3)}
-              >
-                Heading 3
-              </button>
-              <button 
-                className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() => addHeading(4)}
-              >
-                Heading 4
-              </button>
-              <button 
-                className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() => document.execCommand('insertUnorderedList')}
-              >
-                Bullet List
-              </button>
-              <button 
-                className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() => document.execCommand('insertOrderedList')}
-              >
-                Numbered List
-              </button>
-            </div>
-          </div>
+          <TextStyleToolbar 
+            textStyle={textStyle} 
+            onStyleChange={setTextStyle} 
+            onApplyStyle={applyStyle} 
+          />
         )}
         
         <div 
           ref={contentRef}
           className={`${contentClassName} ${
-            editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg min-h-[400px]' : ''
+            editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''
           }`}
           contentEditable={editMode}
           onBlur={handleBlur}
@@ -239,7 +194,11 @@ export const EditorContent: React.FC<EditorContentProps> = ({
           {!editMode ? (
             renderMarkdown(content)
           ) : (
-            <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+            <div 
+              dangerouslySetInnerHTML={{ 
+                __html: htmlContent || content 
+              }} 
+            />
           )}
         </div>
       </div>

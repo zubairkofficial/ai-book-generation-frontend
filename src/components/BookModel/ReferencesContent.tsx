@@ -25,7 +25,7 @@ export const ReferencesContent: React.FC<ReferencesContentProps> = ({
       className="min-h-[800px] px-8 py-12"
       titleClassName="text-4xl text-center mb-8 text-gray-900"
       contentClassName="prose max-w-none"
-      setHasChanges={setHasChanges}
+    //   setHasChanges={setHasChanges}
     />
   );
 }; 
