@@ -19,6 +19,7 @@ import { GlossaryContent } from './GlossaryContent';
 import { IndexContent } from './IndexContent';
 import { ReferencesContent } from './ReferencesContent';
 import { TableOfContentsContent } from './TableOfContentsContent';
+import { markdownComponents } from '@/utils/markdownUtils';
 
 
 const PAGES: PageContent[] = [
@@ -339,32 +340,14 @@ const renderCurrentPageContent = (
 
 ): JSX.Element => {
   const renderMarkdown = (content: string) => (
- <>  
- 
-<ReactMarkdown
-    remarkPlugins={[remarkGfm]} // Optional: For GitHub-flavored markdown
-    rehypePlugins={[rehypeRaw]} // This allows raw HTML to be rendered
-    className="prose max-w-none"
-    components={{
-      h1: ({ node, ...props }) => (
-        <h1 className="text-3xl font-bold mb-6 text-gray-900" {...props} />
-      ),
-      h2: ({ node, ...props }) => (
-        <h2 className="text-2xl font-bold mb-4 text-gray-800" {...props} />
-      ),
-      p: ({ node, ...props }) => (
-        <p className="mb-6 text-gray-700 leading-relaxed" {...props} />
-      ),
-      strong: ({ node, ...props }) => (
-        <strong className="font-semibold text-gray-900" {...props} />
-      ),
-      em: ({ node, ...props }) => (
-        <em className="italic text-gray-800" {...props} />
-      ),
-    }}
-  >
-    {content}
-  </ReactMarkdown> </>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw]}
+      className="prose max-w-none"
+      components={markdownComponents}
+    >
+      {content}
+    </ReactMarkdown>
   );
 
   switch (currentPage) {
