@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { TextStyle, TextStyleToolbar } from './TextStyleToolbar';
+import { applyTextStyle, TextStyle, TextStyleToolbar } from './TextStyleToolbar';
 
 interface EditorContentProps {
   title: string;
@@ -115,50 +115,15 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     onUpdate(markdownContent);
   };
 
-  const applyStyle = (command: string, value?: string) => {
-    // For font size, we need special handling because execCommand expects sizes 1-7
-    if (command === 'fontSize') {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        const span = document.createElement('span');
-        span.style.fontSize = value || '16px';
-        
-        try {
-          range.surroundContents(span);
-        } catch (e) {
-          console.error("Can't apply style to current selection:", e);
-          // Fallback: Just use execCommand with a size value of 3 (default)
-          document.execCommand('fontSize', false, '3');
-        }
-      }
-    } 
-    // Handle font family
-    else if (command === 'fontName') {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        const span = document.createElement('span');
-        span.style.fontFamily = value || 'Times New Roman';
-        
-        try {
-          range.surroundContents(span);
-        } catch (e) {
-          console.error("Can't apply style to current selection:", e);
-          document.execCommand('fontName', false, value);
-        }
-      }
-    }
-    // Handle color
-    else if (command === 'foreColor') {
-      document.execCommand(command, false, value);
-    }
-    // For other styles, use the standard execCommand
-    else {
-      document.execCommand(command, false, value);
-    }
+  const handleApplyStyle = (command: string, value?: string) => {
+    if (!contentRef.current) return;
     
-    contentRef.current?.focus();
+    // Use the new styling function
+    applyTextStyle(command, value);
+    
+    // Update the content state if needed
+    const newContent = contentRef.current.innerHTML;
+    setHtmlContent(newContent);
   };
 
   return (
@@ -170,7 +135,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
           <TextStyleToolbar 
             textStyle={textStyle} 
             onStyleChange={setTextStyle} 
-            onApplyStyle={applyStyle} 
+            onApplyStyle={handleApplyStyle} 
           />
         )}
         

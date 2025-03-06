@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { 
   Bold, Italic, AlignLeft, AlignCenter, AlignRight, 
   Type, TextCursor, Palette, Baseline, ArrowLeftRight
@@ -56,134 +56,212 @@ const colors = [
   '#0000FF', '#800080', '#008000', '#FF0000', '#FFA500'
 ];
 
+// Modern alternative to execCommand
+const applyInlineStyle = (element: HTMLElement, style: Partial<CSSStyleDeclaration>) => {
+  Object.assign(element.style, style);
+};
+
+// Enhanced text styling function
+export const applyTextStyle = (command: string, value?: string) => {
+  const selection = window.getSelection();
+  if (!selection || !selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0);
+  const span = document.createElement('span');
+  
+  // Apply styles based on command
+  switch (command) {
+    case 'bold':
+      span.style.fontWeight = 'bold';
+      break;
+    case 'italic':
+      span.style.fontStyle = 'italic';
+      break;
+    case 'fontSize':
+      span.style.fontSize = value || '16px';
+      break;
+    case 'fontFamily':
+      span.style.fontFamily = value || 'Times New Roman';
+      break;
+    case 'color':
+      span.style.color = value || '#000000';
+      break;
+    case 'lineHeight':
+      span.style.lineHeight = value || '1.6';
+      break;
+    case 'letterSpacing':
+      span.style.letterSpacing = value || 'normal';
+      break;
+    case 'align':
+      // Find the closest block element
+      const block = range.commonAncestorContainer.parentElement;
+      if (block) {
+        block.style.textAlign = value || 'left';
+      }
+      return; // Don't wrap alignment in span
+  }
+
+  try {
+    // Wrap selected content in styled span
+    range.surroundContents(span);
+  } catch (e) {
+    console.warn('Could not wrap selection, falling back to insertNode', e);
+    // Alternative approach for complex selections
+    const fragment = range.extractContents();
+    span.appendChild(fragment);
+    range.insertNode(span);
+  }
+};
+
+// Enhanced line height presets
+const lineHeightPresets = [
+  { value: '1', label: 'Single' },
+  { value: '1.15', label: 'Tight' },
+  { value: '1.5', label: 'Normal' },
+  { value: '1.75', label: 'Relaxed' },
+  { value: '2', label: 'Double' },
+  { value: '2.5', label: 'Spacious' }
+];
+
+// Professional font presets with fallbacks
+const fontPresets = [
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: '"Times New Roman", Times, serif', label: 'Times New Roman' },
+  { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+  { value: '"Helvetica Neue", Helvetica, Arial, sans-serif', label: 'Helvetica' },
+  { value: 'Garamond, serif', label: 'Garamond' },
+  { value: '"Palatino Linotype", "Book Antiqua", Palatino, serif', label: 'Palatino' }
+];
+
 export const TextStyleToolbar: React.FC<TextStyleToolbarProps> = ({
   textStyle,
   onStyleChange,
   onApplyStyle
 }) => {
-  const handleStyleChange = (key: keyof TextStyle, value: any) => {
+  const handleStyleChange = useCallback((key: keyof TextStyle, value: any) => {
     onStyleChange({ ...textStyle, [key]: value });
     
-    // Get current selection
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) {
-      // If no selection, still update global style for new text
-      return;
-    }
+    if (!selection || selection.rangeCount === 0) return;
     
-    // Store the current selection
-    const range = selection.getRangeAt(0);
+    const range = selection.getRangeAt(0).cloneRange();
     
-    // Apply the style to the selected text
-    switch (key) {
-      case 'bold':
-        onApplyStyle('bold');
-        break;
-      case 'italic':
-        onApplyStyle('italic');
-        break;
-      case 'align':
-        onApplyStyle('justify', value);
-        break;
-      case 'fontSize':
-        onApplyStyle('fontSize', value);
-        break;
-      case 'fontFamily':
-        onApplyStyle('fontName', value);
-        break;
-      case 'color':
-        onApplyStyle('foreColor', value);
-        break;
-      case 'lineHeight':
-      case 'letterSpacing':
-        // These are handled through container styles
-        break;
-    }
+    // Apply the style using modern approach
+    applyTextStyle(key, value);
     
-    // Restore focus to the editor
+    // Restore selection
     requestAnimationFrame(() => {
-      // Delay to allow the DOM to update
       const editor = document.querySelector('[contenteditable=true]');
       if (editor) {
         (editor as HTMLElement).focus();
-        
-        // Try to restore selection
         try {
           selection.removeAllRanges();
           selection.addRange(range);
         } catch (e) {
-          console.log('Could not restore selection', e);
+          console.warn('Could not restore selection', e);
         }
       }
     });
-  };
+  }, [textStyle, onStyleChange]);
 
   return (
-    <div className="flex flex-wrap gap-2 p-2 mb-4 border border-gray-200 rounded-lg bg-gray-50">
-      {/* Text Formatting */}
-      <Button
-        variant={textStyle.bold ? "default" : "outline"}
-        size="sm"
-        className="h-8 px-2"
-        onClick={() => handleStyleChange('bold', !textStyle.bold)}
-      >
-        <Bold className="w-4 h-4" />
-      </Button>
+    <div className="flex flex-wrap gap-2 p-3 mb-4 border border-gray-200 rounded-lg bg-gray-50 shadow-sm">
+      {/* Format Groups */}
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1">
+          <Button
+            variant={textStyle.bold ? "default" : "outline"}
+            size="sm"
+            className="h-8 px-2 hover:bg-gray-100"
+            onClick={() => handleStyleChange('bold', !textStyle.bold)}
+            title="Bold (Ctrl+B)"
+          >
+            <Bold className="w-4 h-4" />
+          </Button>
 
-      <Button
-        variant={textStyle.italic ? "default" : "outline"}
-        size="sm"
-        className="h-8 px-2"
-        onClick={() => handleStyleChange('italic', !textStyle.italic)}
-      >
-        <Italic className="w-4 h-4" />
-      </Button>
+          <Button
+            variant={textStyle.italic ? "default" : "outline"}
+            size="sm"
+            className="h-8 px-2 hover:bg-gray-100"
+            onClick={() => handleStyleChange('italic', !textStyle.italic)}
+            title="Italic (Ctrl+I)"
+          >
+            <Italic className="w-4 h-4" />
+          </Button>
+        </div>
 
-      {/* Text Alignment */}
-      <div className="flex gap-1 border-l border-gray-300 pl-2">
-        <Button
-          variant={textStyle.align === 'left' ? "default" : "outline"}
-          size="sm"
-          className="h-8 px-2"
-          onClick={() => handleStyleChange('align', 'left')}
-        >
-          <AlignLeft className="w-4 h-4" />
-        </Button>
-        <Button
-          variant={textStyle.align === 'center' ? "default" : "outline"}
-          size="sm"
-          className="h-8 px-2"
-          onClick={() => handleStyleChange('align', 'center')}
-        >
-          <AlignCenter className="w-4 h-4" />
-        </Button>
-        <Button
-          variant={textStyle.align === 'right' ? "default" : "outline"}
-          size="sm"
-          className="h-8 px-2"
-          onClick={() => handleStyleChange('align', 'right')}
-        >
-          <AlignRight className="w-4 h-4" />
-        </Button>
+        <div className="h-6 w-px bg-gray-300 mx-1" />
+
+        {/* Alignment Group */}
+        <div className="flex gap-1">
+          <Button
+            variant={textStyle.align === 'left' ? "default" : "outline"}
+            size="sm"
+            className="h-8 px-2 hover:bg-gray-100"
+            onClick={() => handleStyleChange('align', 'left')}
+            title="Align Left"
+          >
+            <AlignLeft className="w-4 h-4" />
+          </Button>
+          <Button
+            variant={textStyle.align === 'center' ? "default" : "outline"}
+            size="sm"
+            className="h-8 px-2 hover:bg-gray-100"
+            onClick={() => handleStyleChange('align', 'center')}
+            title="Align Center"
+          >
+            <AlignCenter className="w-4 h-4" />
+          </Button>
+          <Button
+            variant={textStyle.align === 'right' ? "default" : "outline"}
+            size="sm"
+            className="h-8 px-2 hover:bg-gray-100"
+            onClick={() => handleStyleChange('align', 'right')}
+            title="Align Right"
+          >
+            <AlignRight className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Font Size */}
-      <Select
-        value={textStyle.fontSize}
-        onValueChange={(value) => handleStyleChange('fontSize', value)}
-      >
-        <SelectTrigger className="h-8 w-20">
-          <Type className="w-4 h-4 mr-2" />
-          <SelectValue placeholder="16px" />
-        </SelectTrigger>
-        <SelectContent>
-          {fontSizes.map(size => (
-            <SelectItem key={size} value={size}>
-              {size}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="h-6 w-px bg-gray-300 mx-1" />
+
+      {/* Typography Controls */}
+      <div className="flex items-center gap-2">
+        <Select
+          value={textStyle.fontSize}
+          onValueChange={(value) => handleStyleChange('fontSize', value)}
+        >
+          <SelectTrigger className="h-8 w-24">
+            <Type className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Size" />
+          </SelectTrigger>
+          <SelectContent>
+            {fontSizes.map(size => (
+              <SelectItem key={size} value={size}>
+                {size}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={textStyle.lineHeight}
+          onValueChange={(value) => handleStyleChange('lineHeight', value)}
+        >
+          <SelectTrigger className="h-8 w-32">
+            <Baseline className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Line Height" />
+          </SelectTrigger>
+          <SelectContent>
+            {lineHeightPresets.map(preset => (
+              <SelectItem key={preset.value} value={preset.value}>
+                {preset.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Font Family */}
       <Select
@@ -227,24 +305,6 @@ export const TextStyleToolbar: React.FC<TextStyleToolbarProps> = ({
           </div>
         </PopoverContent>
       </Popover>
-
-      {/* Line Height */}
-      <Select
-        value={textStyle.lineHeight}
-        onValueChange={(value) => handleStyleChange('lineHeight', value)}
-      >
-        <SelectTrigger className="h-8 w-20">
-          <Baseline className="w-4 h-4 mr-2" />
-          <SelectValue placeholder="1.6" />
-        </SelectTrigger>
-        <SelectContent>
-          {lineHeights.map(height => (
-            <SelectItem key={height} value={height}>
-              {height}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
 
       {/* Letter Spacing */}
       <Select

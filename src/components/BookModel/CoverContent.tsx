@@ -48,6 +48,7 @@ export const CoverContent = ({ bookData, editMode, setHasChanges }: CoverContent
   }, [bookData]);
 
   const handleContentChange = async (element: HTMLElement) => {
+    console.log("element.querySelector('h1')?.textContent ",element.querySelector('h1')?.textContent )
     const newContent = {
       bookTitle: element.querySelector('h1')?.textContent || localContent.bookTitle,
       authorName: element.querySelector('.text-3xl')?.textContent || localContent.authorName,

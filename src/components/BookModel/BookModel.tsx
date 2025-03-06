@@ -22,7 +22,7 @@ import { TableOfContentsContent } from './TableOfContentsContent';
 import {  markdownComponents } from '@/utils/markdownUtils.tsx';
 
 
-const PAGES: PageContent[] = [
+const PAGES: (PageContent | { id: 'edit'; icon: JSX.Element; label: string; isAction?: boolean })[] = [
   { id: 'cover', icon: <BookOpen className="w-4 h-4" />, label: 'Cover' },
   { id: 'dedication', icon: <Heart className="w-4 h-4" />, label: 'Dedication' },
   { id: 'preface', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Preface' },
@@ -31,6 +31,12 @@ const PAGES: PageContent[] = [
   { id: 'index', icon: <List className="w-4 h-4" />, label: 'Index' },
   { id: 'references', icon: <BookmarkIcon className="w-4 h-4" />, label: 'References' },
   { id: 'backCover', icon: <BookOpen className="w-4 h-4" />, label: 'Back Cover' },
+  { 
+    id: 'edit', 
+    icon: <Edit2 className="w-4 h-4" />, 
+    label: 'Edit',
+    isAction: true
+  }
 ];
 
 
@@ -187,37 +193,57 @@ const BookModel = () => {
           <div className="h-1 w-6 bg-amber-300 rounded-full" />
         </div>
         
-        {PAGES.map(page => (
-          <Button
-            key={page.id}
-            variant="ghost"
-            size="sm"
-            onClick={() => setCurrentPage(page.id)}
-            className={`
-              ${navStyles.button.base}
-              ${currentPage === page.id ? navStyles.button.active : navStyles.button.inactive}
-              group
-            `}
-            title={page.label}
-          >
-            <div className="flex items-center gap-3 px-2 py-1">
-              <div className={`
-                ${currentPage === page.id ? 'text-amber-700' : 'text-gray-500'}
-                group-hover:text-amber-600 transition-colors
-              `}>
+        {PAGES.map((page) => {
+          // Special handling for edit button
+          if (page.id === 'edit') {
+            return (
+              <Button
+                key={page.id}
+                variant={editMode ? "default" : "outline"}
+                onClick={() => setEditMode(!editMode)}
+                className="flex items-center gap-2"
+              >
                 {page.icon}
+                <span className="font-medium">
+                  {editMode ? 'Editing' : 'Edit'}
+                </span>
+              </Button>
+            );
+          }
+
+          // Regular navigation buttons
+          return (
+            <Button
+              key={page.id}
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentPage(page.id)}
+              className={`
+                ${navStyles.button.base}
+                ${currentPage === page.id ? navStyles.button.active : navStyles.button.inactive}
+                group
+              `}
+              title={page.label}
+            >
+              <div className="flex items-center gap-3 px-2 py-1">
+                <div className={`
+                  ${currentPage === page.id ? 'text-amber-700' : 'text-gray-500'}
+                  group-hover:text-amber-600 transition-colors
+                `}>
+                  {page.icon}
+                </div>
+                <span className={`
+                  hidden lg:block text-sm font-medium
+                  transition-all duration-200
+                  ${currentPage === page.id ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-60'}
+                  group-hover:translate-x-0 group-hover:opacity-100
+                `}>
+                  {page.label}
+                </span>
               </div>
-              <span className={`
-                hidden lg:block text-sm font-medium
-                transition-all duration-200
-                ${currentPage === page.id ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-60'}
-                group-hover:translate-x-0 group-hover:opacity-100
-              `}>
-                {page.label}
-              </span>
-            </div>
-          </Button>
-        ))}
+            </Button>
+          );
+        })}
         
         <div className="mt-4 px-2">
           <div className="h-1 w-6 bg-amber-300 rounded-full mb-1" />
@@ -228,30 +254,50 @@ const BookModel = () => {
       {/* Mobile Navigation */}
       <div className={navStyles.mobile}>
         <div className="flex justify-around items-center">
-          {PAGES.map(page => (
-            <Button
-              key={page.id}
-              variant="ghost"
-              size="sm"
-              onClick={() => setCurrentPage(page.id)}
-              className={`
-                px-3 py-2 rounded-lg transition-all
-                ${currentPage === page.id ? 'bg-amber-100 text-amber-900' : 'text-gray-600'}
-              `}
-              title={page.label}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className={`
-                  ${currentPage === page.id ? 'text-amber-700' : 'text-gray-500'}
-                `}>
+          {PAGES.map((page) => {
+            // Special handling for edit button
+            if (page.id === 'edit') {
+              return (
+                <Button
+                  key={page.id}
+                  variant={editMode ? "default" : "outline"}
+                  onClick={() => setEditMode(!editMode)}
+                  className="flex items-center gap-2"
+                >
                   {page.icon}
+                  <span className="font-medium">
+                    {editMode ? 'Editing' : 'Edit'}
+                  </span>
+                </Button>
+              );
+            }
+
+            // Regular navigation buttons
+            return (
+              <Button
+                key={page.id}
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentPage(page.id)}
+                className={`
+                  px-3 py-2 rounded-lg transition-all
+                  ${currentPage === page.id ? 'bg-amber-100 text-amber-900' : 'text-gray-600'}
+                `}
+                title={page.label}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`
+                    ${currentPage === page.id ? 'text-amber-700' : 'text-gray-500'}
+                  `}>
+                    {page.icon}
+                  </div>
+                  <span className="text-[10px] font-medium">
+                    {page.label.split(' ')[0]}
+                  </span>
                 </div>
-                <span className="text-[10px] font-medium">
-                  {page.label.split(' ')[0]}
-                </span>
-              </div>
-            </Button>
-          ))}
+              </Button>
+            );
+          })}
         </div>
         
         {/* Mobile Progress Indicator */}
@@ -280,17 +326,6 @@ const BookModel = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <NavigationButtons />
-
-      {/* Edit Mode Toggle */}
-      <div className="fixed right-4 top-4">
-        <Button
-          variant={editMode ? "default" : "outline"}
-          onClick={() => setEditMode(!editMode)}
-        >
-          <Edit2 className="w-4 h-4 mr-2" />
-          {editMode ? 'Editing' : 'Edit'}
-        </Button>
-      </div>
 
       {/* Book Content */}
       <div className="container mx-auto p-8">
