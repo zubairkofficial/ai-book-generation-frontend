@@ -54,19 +54,31 @@ export const PrefaceContent = ({
   }, [prefaceContent]);
 
   const extractSection = (content: string, sectionName: string, nextSectionName?: string) => {
-    if (!content.includes(sectionName)) {
-      return '';
-    }
+    if (!content) return '';
     
-    const parts = content.split(`## ${sectionName}`);
+    // Handle both bold and non-bold section headers
+    const sectionPattern = new RegExp(`\\*\\*${sectionName}\\*\\*|## ${sectionName}|${sectionName}`);
+    const nextSectionPattern = nextSectionName ? 
+      new RegExp(`\\*\\*${nextSectionName}\\*\\*|## ${nextSectionName}|${nextSectionName}`) : 
+      null;
+    
+    // Split by the current section name
+    const parts = content.split(sectionPattern);
     if (parts.length < 2) return '';
     
     let sectionContent = parts[1].trim();
     
-    if (nextSectionName && content.includes(nextSectionName)) {
-      const endParts = sectionContent.split(`## ${nextSectionName}`);
+    // If there's a next section, split by it
+    if (nextSectionPattern && sectionContent.match(nextSectionPattern)) {
+      const endParts = sectionContent.split(nextSectionPattern);
       sectionContent = endParts[0].trim();
     }
+    
+    // Remove any remaining bold markers
+    sectionContent = sectionContent
+      .replace(/\*\*/g, '')
+      .replace(/\[Author's Name\]/g, bookData.authorName || '')
+      .trim();
     
     return sectionContent;
   };
@@ -81,20 +93,24 @@ export const PrefaceContent = ({
 
   // Combine all sections back into a formatted preface
   const combineAllSections = () => {
-    return `## Introduction
+    return `**Preface**
+
+**Introduction**
 ${sections.introduction}
 
-## Core Idea
+**Core Idea**
 ${sections.coreIdea}
 
-## Why This Book Matters
+**Why This Book Matters**
 ${sections.whyItMatters}
 
-## What to Expect
+**What to Expect**
 ${sections.whatToExpect}
 
-## Acknowledgments
-${sections.acknowledgments}`;
+**Acknowledgments**
+${sections.acknowledgments}
+
+`;
   };
 
   // Save the updated preface
@@ -145,7 +161,7 @@ ${sections.acknowledgments}`;
               remarkPlugins={[remarkGfm]} 
               rehypePlugins={[rehypeRaw]}
             >
-              {prepareMarkdown(content)}
+              {content}
             </ReactMarkdown>
           </div>
         </section>
@@ -172,7 +188,7 @@ ${sections.acknowledgments}`;
   return (
     <div className="min-h-[800px] px-8 py-12">
       <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg">
-        <h1 className="text-4xl text-center mb-8 text-gray-900">Preface</h1>
+        <h1 className="text-4xl text-center mb-8 text-gray-900 font-bold">Preface</h1>
         
         {editMode && (
           <div className="mb-8">
@@ -242,7 +258,7 @@ ${sections.acknowledgments}`;
 
             {/* Author Signature */}
             <div className="mt-12 text-right italic text-gray-700">
-              <p className="mb-2">With anticipation and excitement,</p>
+              <p className="mb-2">With gratitude and anticipation,</p>
               <p className="font-semibold">{bookData.authorName}</p>
             </div>
           </div>

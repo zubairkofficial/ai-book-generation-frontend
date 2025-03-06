@@ -20,6 +20,7 @@ import { IndexContent } from './IndexContent';
 import { ReferencesContent } from './ReferencesContent';
 import { TableOfContentsContent } from './TableOfContentsContent';
 import {  markdownComponents } from '@/utils/markdownUtils.tsx';
+import { ChapterContent } from './ChapterContent';
 
 
 const PAGES: (PageContent | { id: 'edit'; icon: JSX.Element; label: string; isAction?: boolean })[] = [
@@ -371,8 +372,7 @@ const renderCurrentPageContent = (
   onUpdate: (content: string, pageType?: string) => void,
   onPageChange: (page: string) => void,
   onImageUpdate: (file: File, type: 'cover' | 'backCover') => void,
-  setHasChanges: { (value: SetStateAction<boolean>): void; (arg0: boolean): void; }
-
+  setHasChanges: (value: boolean) => void
 ): JSX.Element => {
   const renderMarkdown = (content: string) => (
     <ReactMarkdown
@@ -435,6 +435,7 @@ const renderCurrentPageContent = (
           bookData={bookData} 
           editMode={editMode}
           onUpdate={(content) => onUpdate(content, 'toc')}
+          onChapterSelect={(chapterNo) => onPageChange(`chapter-${chapterNo}`)}
         />
       );
 
@@ -492,16 +493,19 @@ const renderCurrentPageContent = (
     default:
       if (currentPage.startsWith('chapter-')) {
         const chapterNum = parseInt(currentPage.split('-')[1]);
-        const chapter = bookData.bookChapter.find((c: any) => c.chapterNo === chapterNum);
+        const chapter = bookData.bookChapter.find(
+          (c: any) => c.chapterNo === chapterNum
+        );
         
         return chapter ? (
-          <div 
-            contentEditable={editMode}
-            onBlur={(e) => onUpdate(e.currentTarget.textContent || '', chapter.chapterNo.toString())}
-            className={editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}
-          >
-            {renderMarkdown(chapter.chapterInfo)}
-          </div>
+          <ChapterContent
+            chapter={chapter}
+            totalChapters={bookData.bookChapter.length}
+            editMode={editMode}
+            onUpdate={onUpdate}
+            setHasChanges={setHasChanges}
+            onNavigate={(chapterNo) => onPageChange(`chapter-${chapterNo}`)}
+          />
         ) : (
           <div className="text-center text-gray-500">Chapter not found</div>
         );
