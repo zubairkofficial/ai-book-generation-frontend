@@ -120,7 +120,12 @@ interface UpdateImageRequest {
 // Add new interface for update book request
 export interface UpdateBookDto {
   bookGenerationId: number;
-    fullContent: string;
+  glossary?: string;
+  dedication?: string;
+  preface?: string;
+  references?: string;
+  tableOfContents?: string;
+  index?: string;
 }
 
 // Add this interface

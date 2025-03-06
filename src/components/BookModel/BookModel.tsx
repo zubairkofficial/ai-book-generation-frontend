@@ -4,16 +4,21 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { 
-  Loader2, Edit2, Image,  Bold, Italic, 
-  AlignLeft, AlignCenter, AlignRight,
+  Loader2, Edit2, Image,
   BookOpen, List, Heart, BookmarkIcon, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFetchBookByIdQuery, useUpdateChapterMutation,  useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
-import { BASE_URl, FONT_OPTIONS, FONT_SIZES } from '@/constant';
+import { BASE_URl } from '@/constant';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { RegenerateImageModal } from './RegenerateImageModal';
 import { CoverContent } from './CoverContent';
+import { DedicationContent } from './DedicationContent';
+import { PrefaceContent } from './PrefaceContent';
+import { GlossaryContent } from './GlossaryContent';
+import { IndexContent } from './IndexContent';
+import { ReferencesContent } from './ReferencesContent';
+import { TableOfContentsContent } from './TableOfContentsContent';
 
 
 const PAGES: PageContent[] = [
@@ -26,15 +31,6 @@ const PAGES: PageContent[] = [
   { id: 'references', icon: <BookmarkIcon className="w-4 h-4" />, label: 'References' },
   { id: 'backCover', icon: <BookOpen className="w-4 h-4" />, label: 'Back Cover' },
 ];
-
-
-
-
-
-// Add these font options
-
-
-
 
 
 // Add proper type definitions
@@ -57,8 +53,6 @@ const BookModel = () => {
   });
   const [hasChanges, setHasChanges] = useState(false);
   const [pendingContent, setPendingContent] = useState<string>('');
-  const [pendingStyle, setPendingStyle] = useState<TextStyle | null>(null);
-console.log("editable",pendingContent)
   // API Hooks
   const { data: book, isLoading } = useFetchBookByIdQuery(bookId, {
     skip: !bookId,
@@ -68,77 +62,8 @@ console.log("editable",pendingContent)
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
 
   // Updated handleFormat function for better text formatting
-  const handleFormat = (format: 'h1' | 'h2' | 'h3' | 'bold' | 'italic') => {
-    const selection = window.getSelection();
-    if (!selection || !selection.rangeCount) return;
+ 
 
-    const range = selection.getRangeAt(0);
-    const selectedText = range.toString();
-    if (!selectedText) return;
-
-    // Create a new container for the formatted text
-    const container = document.createElement('span');
-    
-    switch (format) {
-      case 'h1':
-        container.innerHTML = `<h1>${selectedText}</h1>`;
-        break;
-      case 'h2':
-        container.innerHTML = `<h2>${selectedText}</h2>`;
-        break;
-      case 'h3':
-        container.innerHTML = `<h3>${selectedText}</h3>`;
-        break;
-      case 'bold':
-        container.innerHTML = `<strong>${selectedText}</strong>`;
-        break;
-      case 'italic':
-        container.innerHTML = `<em>${selectedText}</em>`;
-        break;
-    }
-
-    // Replace selected text with formatted content
-    range.deleteContents();
-    range.insertNode(container.firstChild!);
-
-    // Update content in state and trigger save
-    const editableContent = range.commonAncestorContainer.parentElement;
-    if (editableContent) {
-      setPendingContent(editableContent.innerHTML);
-      setHasChanges(true);
-    }
-  };
-
-  // Updated handleStyleUpdate for specific text styling
-  const handleStyleUpdate = async (newStyle: TextStyle) => {
-    if (!bookId) return;
-
-    const selection = window.getSelection();
-    if (!selection || !selection.rangeCount) {
-      // If no selection, apply to whole content
-      setTextStyle(newStyle);
-      setPendingStyle(newStyle);
-      setHasChanges(true);
-      return;
-    }
-
-    // Apply style to selected text
-    const range = selection.getRangeAt(0);
-    const span = document.createElement('span');
-    span.style.fontFamily = newStyle.fontFamily;
-    span.style.fontSize = newStyle.fontSize;
-    span.style.color = newStyle.color;
-    span.style.lineHeight = newStyle.lineHeight;
-    span.style.letterSpacing = newStyle.letterSpacing;
-    
-    const selectedContent = range.extractContents();
-    span.appendChild(selectedContent);
-    range.insertNode(span);
-
-    // Update pending changes
-    setPendingStyle(newStyle);
-    setHasChanges(true);
-  };
 
   // Handle image update
   const handleImageUpdate = async (file: File, type: 'cover' | 'backCover') => {
@@ -157,84 +82,63 @@ console.log("editable",pendingContent)
 
   // Handle content update
   const handleContentUpdate = async (content: string, pageType?: string) => {
+    if (!bookId || !book?.data) return;
     
-    console.log("content",content)
-    if (!bookId) return;
-console.log("bookId", bookId)
+    setHasChanges(false); // Reset changes flag after save
+    
     try {
       // Add logic to handle different page types
       switch (pageType) {
-        case 'cover':
-          // Update cover content
+        case 'glossary':
+          await updateBookGenerated({
+            bookGenerationId: book.data.id,
+            glossary: content
+          }).unwrap();
           break;
+          
+        case 'index':
+          await updateBookGenerated({
+            bookGenerationId: book.data.id,
+            index: content
+          }).unwrap();
+          break;
+          
+        case 'references':
+          await updateBookGenerated({
+            bookGenerationId: book.data.id,
+            references: content
+          }).unwrap();
+          break;
+          
+        case 'toc':
+          await updateBookGenerated({
+            bookGenerationId: book.data.id,
+            tableOfContents: content
+          }).unwrap();
+          break;
+          
         case 'dedication':
-          // Update dedication content
+          await updateBookGenerated({
+            bookGenerationId: book.data.id,
+            dedication: content
+          }).unwrap();
           break;
-        case 'preface':
-          // Update preface content
-          break;
+          
         // ... handle other page types
         default:
           // Handle chapter updates
           if (typeof pageType === 'number') {
-           }
+            // Chapter update logic here
+          }
       }
     } catch (error) {
       console.error('Failed to update content:', error);
+      // Optionally add user feedback for error
+      setHasChanges(true); // Indicate that changes weren't saved
     }
   };
 
-  // Updated handleUpdate function
-  const handleUpdate = async () => {
-    if (!bookId || !hasChanges) return;
 
-    try {
-      const currentContent = book.data.additionalData.fullContent;
-      let updatedContent = currentContent;
-
-      if (pendingContent) {
-        // Create a regex pattern that matches the specific section being edited
-        const sectionPattern = new RegExp(
-          `(${currentPage}\\n)([\\s\\S]*?)(\\n(?:(?!${currentPage})[\\w]+|$))`,
-          'i'
-        );
-        
-        // Replace only the content of the current section while preserving the rest
-        updatedContent = currentContent.replace(
-          sectionPattern,
-          `$1${pendingContent}$3`
-        );
-
-        // Call the appropriate API based on the update type
-        if (currentPage.startsWith('chapter-')) {
-          const chapterNo = parseInt(currentPage.split('-')[1]);
-          await updateChapter({
-            chapterNo,
-            bookGenerationId: bookId,
-            updateContent: pendingContent,
-            additionalData: {
-              ...book.data.additionalData,
-              fullContent: updatedContent
-            }
-          }).unwrap();
-        } else {
-          // Use updateBookGenerated for non-chapter updates
-          await updateBookGenerated({
-            bookGenerationId: bookId,
-            fullContent: updatedContent,
-            // Preserve all other additionalData fields
-          }).unwrap();
-        }
-
-        // Reset states after successful update
-        setPendingContent('');
-        setPendingStyle(null);
-        setHasChanges(false);
-      }
-    } catch (error) {
-      console.error('Failed to update:', error);
-    }
-  };
 
 
 
@@ -305,7 +209,7 @@ console.log("bookId", bookId)
               <span className={`
                 hidden lg:block text-sm font-medium
                 transition-all duration-200
-                ${currentPage === page.id ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-0'}
+                ${currentPage === page.id ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-60'}
                 group-hover:translate-x-0 group-hover:opacity-100
               `}>
                 {page.label}
@@ -362,176 +266,7 @@ console.log("bookId", bookId)
     </>
   );
 
-  // Update the editing tools component
-  const renderEditingTools = () => (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-4 flex flex-wrap gap-4 items-center max-w-3xl">
-      {/* Heading Controls */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleFormat('h1')}
-          title="Heading 1"
-        >
-          H1
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleFormat('h2')}
-          title="Heading 2"
-        >
-          H2
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleFormat('h3')}
-          title="Heading 3"
-        >
-          H3
-        </Button>
-      </div>
-
-      {/* Text Style Controls */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleFormat('bold')}
-          className={textStyle.bold ? 'bg-amber-100' : ''}
-        >
-          <Bold className={`w-4 h-4 ${textStyle.bold ? 'text-amber-600' : ''}`} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleFormat('italic')}
-          className={textStyle.italic ? 'bg-amber-100' : ''}
-        >
-          <Italic className={`w-4 h-4 ${textStyle.italic ? 'text-amber-600' : ''}`} />
-        </Button>
-      </div>
-
-      {/* Alignment Controls */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            const newStyle:TextStyle = { ...textStyle, align: 'left' };
-            handleStyleUpdate(newStyle);
-          }}
-          className={textStyle.align === 'left' ? 'bg-amber-100' : ''}
-        >
-          <AlignLeft className={`w-4 h-4 ${textStyle.align === 'left' ? 'text-amber-600' : ''}`} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            const newStyle:TextStyle = { ...textStyle, align: 'center' };
-            handleStyleUpdate(newStyle);
-          }}
-          className={textStyle.align === 'center' ? 'bg-amber-100' : ''}
-        >
-          <AlignCenter className={`w-4 h-4 ${textStyle.align === 'center' ? 'text-amber-600' : ''}`} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            const newStyle:TextStyle = { ...textStyle, align: 'right' };
-            handleStyleUpdate(newStyle);
-          }}
-          className={textStyle.align === 'right' ? 'bg-amber-100' : ''}
-        >
-          <AlignRight className={`w-4 h-4 ${textStyle.align === 'right' ? 'text-amber-600' : ''}`} />
-        </Button>
-      </div>
-
-      {/* Font Family Selector */}
-      <select
-        value={textStyle.fontFamily}
-        onChange={(e) => {
-          const newStyle:TextStyle = { ...textStyle, fontFamily: e.target.value };
-          handleStyleUpdate(newStyle);
-        }}
-        className="px-2 py-1 border rounded-md text-sm"
-      >
-        {FONT_OPTIONS.map(font => (
-          <option key={font.value} value={font.value}>{font.label}</option>
-        ))}
-      </select>
-
-      {/* Font Size Selector */}
-      <select
-        value={textStyle.fontSize}
-        onChange={(e) => {
-          const newStyle:TextStyle = { ...textStyle, fontSize: e.target.value };
-          handleStyleUpdate(newStyle);
-        }}
-        className="px-2 py-1 border rounded-md text-sm w-20"
-      >
-        {FONT_SIZES.map(size => (
-          <option key={size} value={size}>{size}</option>
-        ))}
-      </select>
-
-      {/* Color Picker */}
-      <input
-        type="color"
-        value={textStyle.color}
-        onChange={(e) => {
-          const newStyle:TextStyle = { ...textStyle, color: e.target.value };
-          handleStyleUpdate(newStyle);
-        }}
-        className="w-8 h-8 rounded cursor-pointer"
-      />
-
-      {/* Line Height Control */}
-      <select
-        value={textStyle.lineHeight}
-        onChange={(e) => {
-          const newStyle:TextStyle = { ...textStyle, lineHeight: e.target.value };
-          handleStyleUpdate(newStyle);
-        }}
-        className="px-2 py-1 border rounded-md text-sm w-24"
-      >
-        <option value="1.2">Compact</option>
-        <option value="1.6">Normal</option>
-        <option value="2.0">Relaxed</option>
-      </select>
-
-      {/* Letter Spacing Control */}
-      <select
-        value={textStyle.letterSpacing}
-        onChange={(e) => {
-          const newStyle:TextStyle = { ...textStyle, letterSpacing: e.target.value };
-          handleStyleUpdate(newStyle);
-        }}
-        className="px-2 py-1 border rounded-md text-sm w-24"
-      >
-        <option value="-.05em">Tight</option>
-        <option value="normal">Normal</option>
-        <option value=".05em">Spaced</option>
-      </select>
-    </div>
-  );
-
-  // Add a SaveButton component
-  const SaveButton = ({ hasChanges, onSave }: { hasChanges: boolean; onSave: () => void }) => (
-    <Button
-      variant="default"
-      onClick={onSave}
-      disabled={!hasChanges}
-      className={`fixed bottom-4 right-4 transition-all ${
-        hasChanges ? 'bg-amber-500 hover:bg-amber-600' : 'bg-gray-300'
-      }`}
-    >
-      {hasChanges ? 'Save Changes' : 'No Changes'}
-    </Button>
-  );
+ 
 
   if (isLoading) {
     return (
@@ -585,19 +320,12 @@ console.log("bookId", bookId)
         </div>
       </div>
 
-      {/* Add Save Button when in edit mode */}
-      {editMode && <SaveButton hasChanges={hasChanges} onSave={handleUpdate} />}
 
-      {editMode && renderEditingTools()}
     </div>
   );
 };
 
-const onRegenerateImage = async () => {
-  console.log("Regenerate Image");
-  // await coverImageUpdate(null, 'cover');
-  
-}
+
 
 // Helper function to render current page content
 const renderCurrentPageContent = (
@@ -612,8 +340,7 @@ const renderCurrentPageContent = (
 ): JSX.Element => {
   const renderMarkdown = (content: string) => (
  <>  
- { console.log("content",content)
-}
+ 
 <ReactMarkdown
     remarkPlugins={[remarkGfm]} // Optional: For GitHub-flavored markdown
     rehypePlugins={[rehypeRaw]} // This allows raw HTML to be rendered
@@ -639,37 +366,6 @@ const renderCurrentPageContent = (
     {content}
   </ReactMarkdown> </>
   );
-
-  const handleCovrtPage=(e: FormEvent<HTMLHeadingElement>)=>{
-     e.preventDefault()
-    console.log("change",e)
-    setHasChanges(true)
-
-   
-  }
-
-  const handleContentChange = async (content: string, pageType?: string) => {
-
-    try {
-      switch (pageType) {
-        case 'cover':
-        case 'dedication':
-        case 'preface':
-        case 'glossary':
-        case 'references':
-        case 'backCover':
-        case 'index':
-          await onUpdate(content, pageType);
-          break;
-        default:
-          if (pageType && !isNaN(Number(pageType))) {
-            await onUpdate(content, pageType);
-          }
-      }
-    } catch (error) {
-      console.error('Failed to update content:', error);
-    }
-  };
 
   switch (currentPage) {
     case 'cover':
@@ -699,142 +395,56 @@ const renderCurrentPageContent = (
 
     case 'dedication':
       return (
-        <div className="min-h-[800px] flex flex-col items-center justify-center px-8 py-12">
-          <div className="max-w-2xl w-full bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg">
-            <h1 className="text-3xl font-serif text-center mb-8 text-gray-900">Dedication</h1>
-            <ContentEditor
-              content={bookData.additionalData.fullContent
-                .split('Dedication\n')[1]
-                .split('\n\n')[0]}
-              onChange={(content) => handleContentChange(content, 'dedication')}
-              isEditing={editMode}
-            />
-          </div>
-        </div>
+        <DedicationContent
+          bookData={bookData}
+          editMode={editMode}
+          onUpdate={(content) => onUpdate(content, 'dedication')}
+        />
       );
 
     case 'preface':
-      const prefaceContent = bookData.additionalData.fullContent
-        .split('Preface\n')[1]
-        ?.split('Glossary')[0] || '';
-
       return (
-        <div className="min-h-[800px] px-8 py-12">
-          <div 
-            className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg"
-            contentEditable={editMode}
-            onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
-          >
-            <h1 className="text-4xl  text-center mb-12 text-gray-900">Preface</h1>
-            
-            <div className="space-y-8">
-              {/* Overview Section */}
-              <section>
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">Overview</h2>
-                <div className="prose max-w-none text-gray-700">
-                  {renderMarkdown(
-                    prefaceContent.includes('**Overview**') 
-                      ? prefaceContent.split('**Overview**')[1].split('**Use')[0]
-                      : ''
-                  )}
-                </div>
-              </section>
-
-              {/* Use in Curriculum Section */}
-              <section>
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">Use in Curriculum</h2>
-                <div className="prose max-w-none text-gray-700">
-                  {renderMarkdown(
-                    prefaceContent.includes('**Use in Curriculum**')
-                      ? prefaceContent.split('**Use in Curriculum**')[1].split('**Goals**')[0]
-                      : ''
-                  )}
-                </div>
-              </section>
-
-              {/* Goals Section */}
-              <section>
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">Goals</h2>
-                <div className="prose max-w-none text-gray-700">
-                  {renderMarkdown(
-                    prefaceContent.includes('**Goals**')
-                      ? prefaceContent.split('**Goals**')[1].split('**Acknowledgments**')[0]
-                      : ''
-                  )}
-                </div>
-              </section>
-
-              {/* Acknowledgments Section */}
-              <section>
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">Acknowledgments</h2>
-                <div className="prose max-w-none text-gray-700">
-                  {renderMarkdown(
-                    prefaceContent.includes('**Acknowledgments**')
-                      ? prefaceContent.split('**Acknowledgments**')[1].split('With anticipation')[0]
-                      : ''
-                  )}
-                </div>
-              </section>
-
-              {/* Author Signature */}
-              <div className="mt-12 text-right italic text-gray-700">
-                <p className="mb-2">With anticipation and excitement,</p>
-                <p className="font-semibold">{bookData.authorName}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PrefaceContent
+          bookData={bookData}
+          editMode={editMode}
+          setHasChanges={setHasChanges}
+        />
       );
 
     case 'toc':
       return (
-        <div 
-          className="space-y-6"
-          contentEditable={editMode}
-          onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
-        >
-          <h2 className="text-2xl font-bold mb-4">Table of Contents</h2>
-          <div className="space-y-2">
-            {bookData.bookChapter.map((chapter: any) => (
-              <div key={chapter.id} className="flex justify-between items-center py-2 border-b">
-                <span className="text-lg">
-                  {chapter.chapterInfo.split('\n')[0].replace('# ', '')}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onPageChange(`chapter-${chapter.chapterNo}`)}
-                >
-                  Read
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
+        <TableOfContentsContent 
+          bookData={bookData} 
+          editMode={editMode}
+          onUpdate={(content) => onUpdate(content, 'toc')}
+        />
       );
 
     case 'glossary':
       return (
-        <div 
-          className={`space-y-6 ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}`}
-          contentEditable={editMode}
-          onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
-        >
-          <h2 className="text-2xl font-bold mb-4">Glossary</h2>
-          {renderMarkdown(bookData.additionalData.fullContent.split('Glossary\n')[1])}
-        </div>
+        <GlossaryContent 
+          bookData={bookData} 
+          editMode={editMode}
+          onUpdate={(content) => onUpdate(content, 'glossary')}
+        />
+      );
+
+    case 'index':
+      return (
+        <IndexContent 
+          bookData={bookData} 
+          editMode={editMode}
+          onUpdate={(content) => onUpdate(content, 'index')}
+        />
       );
 
     case 'references':
       return (
-        <div 
-          className={`space-y-6 ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}`}
-          contentEditable={editMode}
-          onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
-        >
-          <h2 className="text-2xl font-bold mb-4">References</h2>
-          {renderMarkdown(bookData.additionalData.fullContent.split('References\n')[1])}
-        </div>
+        <ReferencesContent 
+          bookData={bookData} 
+          editMode={editMode}
+          onUpdate={(content) => onUpdate(content, 'references')}
+        />
       );
 
     case 'backCover':
@@ -853,23 +463,11 @@ const renderCurrentPageContent = (
           <div 
             className="space-y-6 max-w-2xl bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-lg"
             contentEditable={editMode}
-            onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
+            onBlur={(e) => onUpdate(e.currentTarget.textContent || '')}
           >
             <h2 className="text-2xl font-bold">About this Book</h2>
             <p className="text-gray-700">{bookData.bookDescription || bookData.ideaCore}</p>
           </div>
-        </div>
-      );
-
-    case 'index':
-      return (
-        <div 
-          className={`space-y-6 ${editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}`}
-          contentEditable={editMode}
-          onBlur={(e) => handleContentChange(e.currentTarget.textContent || '')}
-        >
-          <h2 className="text-2xl font-bold mb-4">Index</h2>
-          {renderMarkdown(bookData.additionalData.fullContent.split('Index\n')[1].split('Preface')[0])}
         </div>
       );
 
@@ -881,7 +479,7 @@ const renderCurrentPageContent = (
         return chapter ? (
           <div 
             contentEditable={editMode}
-            onBlur={(e) => handleContentChange(e.currentTarget.textContent || '', chapter.chapterNo.toString())}
+            onBlur={(e) => onUpdate(e.currentTarget.textContent || '', chapter.chapterNo.toString())}
             className={editMode ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''}
           >
             {renderMarkdown(chapter.chapterInfo)}
@@ -968,42 +566,7 @@ interface ContentEditorProps {
 }
 
 // Update the ContentEditor component to use modern clipboard API
-const ContentEditor: React.FC<ContentEditorProps> = ({ content, onChange, isEditing }) => {
-  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    const newContent = e.currentTarget.innerHTML;
-    onChange(newContent);
-  };
 
-  const handlePaste = async (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    
-    // Use modern selection API instead of execCommand
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const textNode = document.createTextNode(text);
-      range.deleteContents();
-      range.insertNode(textNode);
-    }
-  };
-
-  return (
-    <div
-      contentEditable={isEditing}
-      onInput={handleInput}
-      onPaste={handlePaste}
-      dangerouslySetInnerHTML={{ __html: content }}
-      className={`prose max-w-none ${
-        isEditing ? 'focus:outline-none focus:ring-2 focus:ring-amber-500 p-4 rounded-lg' : ''
-      }`}
-      style={{
-        minHeight: '100px',
-        whiteSpace: 'pre-wrap'
-      }}
-    />
-  );
-};
 
 export default BookModel;
 
