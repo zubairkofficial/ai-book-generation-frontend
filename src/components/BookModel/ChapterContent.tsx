@@ -45,33 +45,10 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Chapter Header */}
-      <div className="border-b pb-6">
-        <div className="flex items-center gap-3 text-amber-700 mb-2">
-          <BookOpen className="w-5 h-5" />
-          <span className="text-sm font-medium">Chapter {chapter.chapterNo}</span>
-        </div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          {chapter.chapterInfo.split('\n')[0].replace('# ', '')}
-        </h1>
-      </div>
+    
 
       {/* Main Content */}
-      {editMode ? (
-        <EditorContent
-          title={`Chapter ${chapter.chapterNo}`}
-          content={chapter.chapterInfo}
-          editMode={true}
-          onUpdate={(content) => {
-            onUpdate(content, chapter.chapterNo.toString());
-            setHasChanges(true);
-          }}
-          className="prose max-w-none"
-          titleClassName="sr-only"
-          contentClassName="prose max-w-none text-gray-700"
-          setHasChanges={setHasChanges}
-        />
-      ) : (
+     
         <div className="prose max-w-none">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -81,7 +58,7 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
             {chapter.chapterInfo}
           </ReactMarkdown>
         </div>
-      )}
+      
 
       {/* Chapter Summary Card */}
       <div className="mt-12 relative">

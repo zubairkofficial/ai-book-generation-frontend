@@ -1,0 +1,322 @@
+/* Custom Quill styles */
+
+.quill-container {
+    font-family: 'Georgia', serif;
+    margin-top: 1.5rem;
+}
+
+.quill-container .ql-editor {
+    min-height: 300px;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #4b5563;
+}
+
+.quill-container.editing .ql-editor {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.quill-container .ql-toolbar.ql-snow {
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.quill-container .ql-container.ql-snow {
+    border-bottom-left-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+    border-color: #e2e8f0;
+    background-color: white;
+    min-height: 300px;
+    font-size: 1rem;
+}
+
+.quill-container .ql-editor p {
+    margin-bottom: 1rem;
+}
+
+.quill-container .ql-editor h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    color: #1f2937;
+}
+
+.quill-container .ql-editor h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #1f2937;
+}
+
+.quill-container .ql-editor h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.quill-container .ql-editor ol,
+.quill-container .ql-editor ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.quill-container .ql-editor li {
+    margin-bottom: 0.25rem;
+}
+
+.quill-container .ql-formats button {
+    height: 28px;
+    width: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quill-container .ql-formats {
+    margin-right: 10px;
+}
+
+
+/* Read-only viewer */
+
+.ql-viewer {
+    font-family: 'Georgia', serif;
+    line-height: 1.6;
+    font-size: 16px;
+    color: #333;
+}
+
+.ql-viewer h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+    color: #1a202c;
+}
+
+.ql-viewer h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.875rem;
+    font-weight: bold;
+    color: #2d3748;
+}
+
+.ql-viewer h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+    font-weight: bold;
+    color: #4a5568;
+}
+
+.ql-viewer p {
+    margin-bottom: 1rem;
+}
+
+.ql-viewer ul,
+.ql-viewer ol {
+    padding-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+.ql-viewer li {
+    margin-bottom: 0.25rem;
+}
+
+.ql-viewer blockquote {
+    border-left: 4px solid #e2e8f0;
+    padding-left: 1rem;
+    font-style: italic;
+    margin-bottom: 1rem;
+}
+
+.ql-viewer a {
+    color: #4299e1;
+    text-decoration: underline;
+}
+
+
+/* Styling for view mode */
+
+.quill-content-view {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #4b5563;
+}
+
+.quill-content-view h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    color: #1f2937;
+}
+
+.quill-content-view h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #1f2937;
+}
+
+.quill-content-view h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.quill-content-view p {
+    margin-bottom: 1rem;
+}
+
+.quill-content-view ol,
+.quill-content-view ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.quill-content-view li {
+    margin-bottom: 0.25rem;
+}
+
+.quill-content-view a {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+
+/* Add custom reference styling */
+
+.quill-container.reference-entry .ql-editor p {
+    margin-left: 2rem;
+    text-indent: -2rem;
+}
+
+.quill-content-view.reference-entry p {
+    margin-left: 2rem;
+    text-indent: -2rem;
+}
+
+
+/* Index entry styling */
+
+.quill-container.index-entry .ql-editor p {
+    margin-bottom: 0.5rem;
+}
+
+.quill-container.index-entry .ql-editor strong {
+    font-size: 1.5rem;
+    display: block;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #1f2937;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+}
+
+.quill-container.index-entry .ql-editor ul {
+    margin-left: 0;
+    padding-left: 0;
+    list-style-type: none;
+}
+
+.quill-container.index-entry .ql-editor li {
+    margin-left: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.quill-content-view.index-entry strong {
+    font-size: 1.5rem;
+    display: block;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #1f2937;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+}
+
+.quill-content-view.index-entry ul {
+    margin-left: 0;
+    padding-left: 0;
+    list-style-type: none;
+}
+
+.quill-content-view.index-entry li {
+    margin-left: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+
+/* Index styling for both edit and view modes */
+
+.quill-container .ql-editor .index-section-header,
+.quill-content-view .index-section-header {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    color: #1f2937;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.25rem;
+}
+
+.quill-container .ql-editor .index-entry,
+.quill-content-view .index-entry {
+    margin-left: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.quill-container .ql-editor .index-subentry,
+.quill-content-view .index-subentry {
+    margin-left: 2rem;
+    margin-bottom: 0.25rem;
+}
+
+.quill-container .ql-editor .index-term,
+.quill-content-view .index-term {
+    font-weight: normal;
+}
+
+.quill-container .ql-editor .index-pages,
+.quill-content-view .index-pages {
+    margin-left: 0.5rem;
+    color: #4b5563;
+}
+
+
+/* Additional styling to make the Quill editor more index-friendly */
+
+.quill-container.editing .ql-editor {
+    min-height: 500px;
+}
+
+.quill-container.editing .ql-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+
+/* Style for bold section headers in index */
+
+.quill-content-view.index-content strong,
+.quill-container .ql-editor strong {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    color: #1f2937;
+}

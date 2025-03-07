@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+import { QuillEditor } from './QuillEditor';
 import { useUpdateBookGeneratedMutation } from '@/api/bookApi';
-import { EditorContent } from './EditorContent.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';
@@ -83,105 +80,66 @@ export const PrefaceContent = ({
     return sectionContent;
   };
 
-  // Handle updates to individual sections
-  const updateSection = (sectionKey: keyof PrefaceSections, content: string) => {
+  const updateSection = (sectionName: string, sectionContent: string) => {
     setSections(prev => ({
       ...prev,
-      [sectionKey]: content.trim()
+      [sectionName]: sectionContent
     }));
+    setHasChanges(true);
   };
 
-  // Combine all sections back into a formatted preface
-  const combineAllSections = () => {
-    return `**Preface**
-
-**Introduction**
+  const savePreface = async () => {
+    try {
+      // Combine all sections into a single document
+      const combinedContent = `
+<h2>Introduction</h2>
 ${sections.introduction}
 
-**Core Idea**
+<h2>Core Idea</h2>
 ${sections.coreIdea}
 
-**Why This Book Matters**
+<h2>Why This Book Matters</h2>
 ${sections.whyItMatters}
 
-**What to Expect**
+<h2>What to Expect</h2>
 ${sections.whatToExpect}
 
-**Acknowledgments**
+<h2>Acknowledgments</h2>
 ${sections.acknowledgments}
-
-`;
-  };
-
-  // Save the updated preface
-  const savePreface = async () => {
-    const combinedContent = combineAllSections();
-    
-    try {
+      `.trim();
+      
+      // Update the book data
       await updateBookGenerated({
         bookGenerationId: bookData.id,
-        preface: combinedContent,
+        preface: combinedContent
       }).unwrap();
+      
       setHasChanges(false);
     } catch (error) {
-      console.error("Failed to update preface:", error);
+      console.error('Error saving preface:', error);
     }
   };
 
-  // Add this improved markdown processing function
-  const prepareMarkdown = (content: string) => {
-    if (!content) return '';
-    
-    // Fix common bold/italic formatting issues
-    return content
-      // Fix pattern like '**text **' (space before closing asterisks)
-      .replace(/\*\*(.*?)\s\*\*/g, '**$1** ')
-      
-      // Fix pattern like '** text**' (space after opening asterisks)
-      .replace(/\*\*\s(.*?)\*\*/g, ' **$1**')
-      
-      // Fix pattern like '*text *' (for italics)
-      .replace(/\*(.*?)\s\*/g, '*$1* ')
-      
-      // Fix pattern like '* text*' (for italics)
-      .replace(/\*\s(.*?)\*/g, ' *$1*')
-      
-      // Handle cases where there might be consecutive asterisks without proper spacing
-      .replace(/\*\*\*\*/g, '** **');
-  };
-
-  // Render individual section with section name
-  const renderSection = (title: string, content: string, sectionKey: keyof PrefaceSections) => {
-    if (!editMode) {
-      return (
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800">{title}</h2>
-          <div className="prose max-w-none text-gray-700">
-            <ReactMarkdown 
-              remarkPlugins={[remarkGfm]} 
-              rehypePlugins={[rehypeRaw]}
-            >
-              {content}
-            </ReactMarkdown>
-          </div>
-        </section>
-      );
-    }
-    
+  const renderSection = (title: string, content: string, sectionKey: string) => {
     return (
-      <EditorContent
-        title={title}
-        content={content}
-        editMode={true}
-        onUpdate={(updatedContent) => {
-          updateSection(sectionKey, updatedContent);
-          setHasChanges(true);
-        }}
-        className="mb-8"
-        titleClassName="text-2xl font-bold mb-4 text-gray-800"
-        contentClassName="prose max-w-none text-gray-700"
-        setHasChanges={setHasChanges}
-      />
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold mb-4 text-gray-800">{title}</h2>
+        {editMode ? (
+          <div className="bg-white rounded-lg border border-gray-200">
+            <QuillEditor
+              content={content}
+              editMode={true}
+              onUpdate={(newContent) => updateSection(sectionKey, newContent)}
+              className="min-h-0 p-0"
+              contentClassName="prose max-w-none min-h-[150px]"
+              placeholder={`Write the ${title.toLowerCase()} section here...`}
+              
+            />
+          </div>
+        ) : (
+          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
+        )}
+      </div>
     );
   };
 

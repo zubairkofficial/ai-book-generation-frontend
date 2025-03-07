@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { EditorContent } from './EditorContent.tsx';
+import { QuillEditor } from './QuillEditor';
 
 interface DedicationContentProps {
   bookData: any;
@@ -40,7 +40,7 @@ export const DedicationContent: React.FC<DedicationContentProps> = ({
   };
 
   return (
-    <EditorContent
+    <QuillEditor
       title="Dedication"
       content={processedContent}
       editMode={editMode}
@@ -48,6 +48,7 @@ export const DedicationContent: React.FC<DedicationContentProps> = ({
       className="min-h-[800px] flex flex-col items-center justify-center px-8 py-12"
       titleClassName="text-3xl font-serif text-center mb-8 text-gray-900"
       contentClassName="prose max-w-none text-gray-700 min-h-[200px] italic"
-    />
+      placeholder="To whom would you like to dedicate this book?"
+        />
   );
 };

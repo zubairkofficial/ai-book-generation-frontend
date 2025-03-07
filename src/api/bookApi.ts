@@ -148,6 +148,39 @@ interface UpdateBookCoverDto {
   authorBio: string;
 }
 
+// Add this interface
+interface RegenerateChapterRequest {
+  bookId: number;
+  chapterId: number;
+  additionalInfo?: string;
+}
+
+// Add this interface
+interface UpdateChapterImageRequest {
+  bookId: number;
+  chapterId: number;
+  image: File;
+}
+
+// Add this interface
+interface RegenerateChapterImageRequest {
+  bookId: number;
+  chapterId: number;
+  prompt: string;
+}
+
+// Add these interfaces
+interface ChapterSummaryRequest {
+  bookId: number;
+  chapterIds: number[];
+}
+
+interface PresentationSlidesRequest {
+  bookId: number;
+  chapterIds: number[];
+  numberOfSlides: number;
+}
+
 export const bookApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Endpoint to fetch all books
@@ -273,6 +306,58 @@ export const bookApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+
+    // Add this to your endpoints in the builder
+    regenerateChapter: builder.mutation<any, RegenerateChapterRequest>({
+      query: (payload) => ({
+        url: '/book-chapter/regenerate-chapter',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
+
+    // Add this to your endpoints in the builder
+    updateChapterImage: builder.mutation<any, UpdateChapterImageRequest>({
+      query: (payload) => {
+        const formData = new FormData();
+        formData.append('bookId', payload.bookId.toString());
+        formData.append('chapterId', payload.chapterId.toString());
+        formData.append('image', payload.image);
+
+        return {
+          url: '/book-chapter/update-image',
+          method: 'PUT',
+          body: formData,
+        };
+      },
+    }),
+
+    // Add this to your endpoints in the builder
+    regenerateChapterImage: builder.mutation<any, RegenerateChapterImageRequest>({
+      query: (payload) => ({
+        url: '/book-chapter/regenerate-image',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
+
+    // Add this to your endpoints in the builder
+    generateChapterSummary: builder.mutation<any, ChapterSummaryRequest>({
+      query: (payload) => ({
+        url: '/book-chapter/summary',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
+
+    // Add this to your endpoints in the builder
+    generatePresentationSlides: builder.mutation<any, PresentationSlidesRequest>({
+      query: (payload) => ({
+        url: '/book-chapter/presentation-slides',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -291,4 +376,9 @@ export const {
   useUpdateBookGeneratedMutation, // Add this export
   useRegenerateImageMutation,
   useUpdateBookCoverMutation, // Add this export
+  useRegenerateChapterMutation,
+  useUpdateChapterImageMutation,
+  useRegenerateChapterImageMutation,
+  useGenerateChapterSummaryMutation,
+  useGeneratePresentationSlidesMutation,
 } = bookApi;

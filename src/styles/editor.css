@@ -1,0 +1,32 @@
+/* Quill editor styling overrides */
+
+.quill {
+    border-radius: 0.375rem;
+    background-color: white;
+}
+
+.ql-container {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 16px;
+    min-height: 200px;
+}
+
+.ql-editor {
+    min-height: 200px;
+    line-height: 1.6;
+}
+
+
+/* View mode */
+
+.ql-container.ql-disabled {
+    border: none;
+    background: transparent;
+}
+
+.ql-disabled .ql-editor {
+    padding: 0;
+}
+
+
+/* Add this to your main CSS import file */

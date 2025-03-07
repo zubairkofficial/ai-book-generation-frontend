@@ -23,6 +23,10 @@ import SettingsPage from './pages/Settings/SettingsPage';
 import { RootState } from './store/store'; // Import RootState
 import ResponsePage from '@/pages/ResponsePage/ResponsePage';
 import BookModel from './components/BookModel/BookModel';
+import 'react-quill/dist/quill.snow.css';
+import './styles/editor.css';
+import ChapterSummaryPage from './pages/ChapterSummary/ChapterSummaryPage';
+import PresentationSlidesPage from './pages/PresentationSlides/PresentationSlidesPage';
 
 function App() {
   const dispatch = useDispatch();
@@ -85,6 +89,8 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/response" element={<ResponsePage />} />
             <Route path="/book-modal" element={<BookModel />} />
+            <Route path="/chapter-summary" element={<ChapterSummaryPage />} />
+            <Route path="/presentation-slides" element={<PresentationSlidesPage />} />
           </Route>
 
           {/* Response Page */}

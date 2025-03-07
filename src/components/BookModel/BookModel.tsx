@@ -500,6 +500,7 @@ const renderCurrentPageContent = (
         return chapter ? (
           <ChapterContent
             chapter={chapter}
+            bookId={bookData.id}
             totalChapters={bookData.bookChapter.length}
             editMode={editMode}
             onUpdate={onUpdate}

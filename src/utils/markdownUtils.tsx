@@ -224,4 +224,83 @@ export const markdownComponents = {
   hr: (props: React.HTMLAttributes<HTMLHRElement>) => (
     <hr className="my-6 border-t-2 border-gray-300" {...props} />
   ),
+};
+
+/**
+ * Utility to clean up content formatting issues
+ */
+export const cleanupHtmlContent = (htmlContent: string): string => {
+  if (!htmlContent) return '';
+  
+  try {
+    // Use DOM parsing for reliable HTML handling
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    
+    // 1. Remove nested font-family spans but preserve their content
+    const fontSpans = doc.querySelectorAll('span[style*="font-family"]');
+    fontSpans.forEach(span => {
+      // Keep track of the deepest spans to process first
+      if (!span.querySelector('span[style*="font-family"]')) {
+        const parent = span.parentNode;
+        if (parent) {
+          // Move the content outside the span
+          while (span.firstChild) {
+            parent.insertBefore(span.firstChild, span);
+          }
+          parent.removeChild(span);
+        }
+      }
+    });
+    
+    // 2. Clean up any remaining empty elements
+    ['h1', 'h2', 'h3', 'p', 'span', 'div'].forEach(tag => {
+      const emptyElements = doc.querySelectorAll(`${tag}:empty`);
+      emptyElements.forEach(el => el.parentNode?.removeChild(el));
+    });
+    
+    // 3. Handle duplicate headings (keep first non-empty)
+    const headings = doc.querySelectorAll('h1');
+    let foundHeading = false;
+    headings.forEach(heading => {
+      if (!heading.textContent?.trim()) {
+        heading.parentNode?.removeChild(heading);
+      } else if (!foundHeading) {
+        foundHeading = true;
+      } else {
+        heading.parentNode?.removeChild(heading);
+      }
+    });
+    
+    // Return the cleaned HTML
+    return doc.body.innerHTML;
+  } catch (error) {
+    console.error('Error cleaning HTML content:', error);
+    return htmlContent; // Return original if cleanup fails
+  }
+};
+
+// Higher-order component for content sections that need cleanup
+export const withContentCleanup = (Component: React.ComponentType<any>) => {
+  return (props: any) => {
+    const content = props.bookData?.additionalData?.[props.contentField] || '';
+    const cleanContent = cleanupHtmlContent(content);
+    
+    const handleUpdate = (updatedContent: string) => {
+      // Clean content before sending to server
+      const cleanedUpdatedContent = cleanupHtmlContent(updatedContent);
+      props.onUpdate(cleanedUpdatedContent, props.contentField);
+      if (props.setHasChanges) {
+        props.setHasChanges(true);
+      }
+    };
+    
+    return (
+      <Component
+        {...props}
+        content={cleanContent}
+        onContentUpdate={handleUpdate}
+      />
+    );
+  };
 }; 

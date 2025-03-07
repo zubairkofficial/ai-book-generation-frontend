@@ -1,10 +1,12 @@
 import Layout from '@/components/layout/Layout';
 import { useState } from 'react';
-import { MessageSquare, BookOpen, Paintbrush, ArrowRight } from 'lucide-react';
+import { MessageSquare, BookOpen, Paintbrush, ArrowRight, FileText, Presentation } from 'lucide-react';
 import ChatDialog from '@/components/chat/ChatDialog';
+import { useNavigate } from 'react-router-dom';
 
 const AIAssistantPage = () => {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const aiAssistantData = [
     {
@@ -15,7 +17,8 @@ const AIAssistantPage = () => {
       color: 'bg-gradient-to-br from-blue-500/5 to-purple-500/5 hover:from-blue-500/10 hover:to-purple-500/10',
       borderColor: 'border-blue-100',
       iconColor: 'text-blue-600',
-      shadowColor: 'hover:shadow-blue-100'
+      shadowColor: 'hover:shadow-blue-100',
+      onClick: () => setSelectedTool('Generate Book Ideas')
     },
     {
       id: 2,
@@ -25,7 +28,8 @@ const AIAssistantPage = () => {
       color: 'bg-gradient-to-br from-amber-500/5 to-red-500/5 hover:from-amber-500/10 hover:to-red-500/10',
       borderColor: 'border-amber-100',
       iconColor: 'text-amber-600',
-      shadowColor: 'hover:shadow-amber-100'
+      shadowColor: 'hover:shadow-amber-100',
+      onClick: () => setSelectedTool('Book Cover Design')
     },
     {
       id: 3,
@@ -35,7 +39,30 @@ const AIAssistantPage = () => {
       color: 'bg-gradient-to-br from-green-500/5 to-emerald-500/5 hover:from-green-500/10 hover:to-emerald-500/10',
       borderColor: 'border-green-100',
       iconColor: 'text-green-600',
-      shadowColor: 'hover:shadow-green-100'
+      shadowColor: 'hover:shadow-green-100',
+      onClick: () => setSelectedTool('Writing Assistant')
+    },
+    {
+      id: 4,
+      title: 'Chapter Summary',
+      description: 'Generate comprehensive summaries of your book chapters. Perfect for book proposals, back cover content, or quick reference while editing.',
+      icon: <FileText className="w-7 h-7" />,
+      color: 'bg-gradient-to-br from-indigo-500/5 to-blue-500/5 hover:from-indigo-500/10 hover:to-blue-500/10',
+      borderColor: 'border-indigo-100',
+      iconColor: 'text-indigo-600',
+      shadowColor: 'hover:shadow-indigo-100',
+      onClick: () => navigate('/chapter-summary')
+    },
+    {
+      id: 5,
+      title: 'Presentation Slides',
+      description: 'Transform your chapters into professional presentation slides. Ideal for book talks, readings, educational contexts, or promotional events.',
+      icon: <Presentation className="w-7 h-7" />,
+      color: 'bg-gradient-to-br from-rose-500/5 to-pink-500/5 hover:from-rose-500/10 hover:to-pink-500/10',
+      borderColor: 'border-rose-100',
+      iconColor: 'text-rose-600',
+      shadowColor: 'hover:shadow-rose-100',
+      onClick: () => navigate('/presentation-slides')
     }
   ];
 
@@ -45,11 +72,12 @@ const AIAssistantPage = () => {
         <h1 className="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
           AI Writing Assistant
         </h1>
-        <div className=" grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <p className="text-center text-gray-600 mb-8">Select a tool to enhance your book creation process</p>
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {aiAssistantData.map((item) => (
             <div
               key={item.id}
-              onClick={() => setSelectedTool(item.title)}
+              onClick={item.onClick}
               className={`
                 group cursor-pointer rounded-2xl border-2 ${item.borderColor} ${item.color} 
                 p-8 transition-all duration-300 hover:scale-[1.02]
@@ -73,11 +101,10 @@ const AIAssistantPage = () => {
         </div>
       </div>
       <ChatDialog 
-        isOpen={!!selectedTool}
-        title={selectedTool}
+        isOpen={!!selectedTool && selectedTool !== 'Chapter Summary' && selectedTool !== 'Presentation Slides'}
+        title={selectedTool || ''}
         onClose={() => setSelectedTool(null)}
       />
-    
     </Layout>
   );
 };

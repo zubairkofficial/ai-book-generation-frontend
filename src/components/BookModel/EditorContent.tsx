@@ -63,7 +63,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     }
   }, [content, editMode]);
 
-  const renderMarkdown = (text: string) => {
+   const renderMarkdown = (text: string) => {
     return (
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
