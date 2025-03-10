@@ -51,6 +51,11 @@ export const ReferencesContent: React.FC<ReferencesContentProps> = ({
   };
 
   return (
+    <>
+     
+    {editMode ? (
+      <div className={`quill-container ${editMode ? 'editing' : 'viewing'}`}>
+         
     <QuillEditor
       title="References"
       content={formattedContent}
@@ -61,5 +66,19 @@ export const ReferencesContent: React.FC<ReferencesContentProps> = ({
       contentClassName="prose max-w-none reference-entry"
       placeholder="Add references and citations here..."
       />
+      </div>
+    ) : (
+      <div className="min-h-[800px] px-8 py-12">
+      <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg">
+        <h1 className="text-4xl text-center mb-8 text-gray-900">References</h1>
+        
+      <div className={`${formattedContent} quill-content-view`}>
+        <div dangerouslySetInnerHTML={{ __html: formattedContent }} />
+      </div>
+      </div>
+      </div>
+    )}
+   
+    </>
   );
 }; 

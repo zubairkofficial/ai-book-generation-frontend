@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/layout/Layout';
 import { useFetchBooksByTypeQuery, useGeneratePresentationSlidesMutation, BookStatus } from '@/api/bookApi';
 import { 
@@ -15,6 +15,12 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
+import { BASE_URl } from '@/constant';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 interface BookData {
   id: number;
@@ -57,10 +63,15 @@ const PresentationSlidesPage = () => {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [isGenerated, setIsGenerated] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  
+  const [streamedSlides, setStreamedSlides] = useState<string>('');
+  const [parsedSlides, setParsedSlides] = useState<Slide[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const { token } = useSelector((state: RootState) => state.auth);
+  console.log("streamedSlides",streamedSlides)
   // Hooks for API interactions
   const { data: booksResponse, isLoading: isLoadingBooks } = useFetchBooksByTypeQuery({ status: BookStatus.ALL });
-  const [generateSlides, { isLoading: isGenerating }] = useGeneratePresentationSlidesMutation();
+  const [generateSlides] = useGeneratePresentationSlidesMutation();
   const { addToast } = useToast();
   const navigate = useNavigate();
   
@@ -78,6 +89,15 @@ const PresentationSlidesPage = () => {
     setSlides([]);
     setCurrentSlide(0);
   }, [selectedBookId]);
+  
+  // Cleanup function for SSE connection
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
   
   // Handle chapter selection
   const handleChapterToggle = (chapterId: number) => {
@@ -97,28 +117,67 @@ const PresentationSlidesPage = () => {
     }
   };
   
-  // Generate the presentation slides
+  // Generate the presentation slides with SSE streaming
   const handleGenerateSlides = async () => {
     if (!selectedBookId || selectedChapters.length === 0) {
       addToast("Please select a book and at least one chapter", "error");
       return;
     }
-    
+
     try {
-      const response = await generateSlides({
+      setIsGenerating(true);
+      setStreamedSlides('');
+      setIsGenerated(false);
+
+      // Close any existing SSE connection
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+      let accumulatedContent = '';
+
+      // Initialize SSE connection
+      const eventSource = new EventSource(
+        `${BASE_URl}/book-chapter/slides-stream?token=${token}`,
+      );
+      eventSourceRef.current = eventSource;
+    
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.text) {
+            accumulatedContent += data.text;
+            setStreamedSlides(accumulatedContent);
+          }
+        } catch (error) {
+          console.error('Error parsing SSE data:', error);
+        }
+      };
+      eventSource.onerror = (error) => {
+        console.error('SSE Error:', error);
+        eventSource.close();
+        setIsGenerating(false);
+        addToast("Error in slides stream connection", "error");
+      };
+
+      eventSource.addEventListener('complete', () => {
+        eventSource.close();
+        setIsGenerating(false);
+        setIsGenerated(true);
+        setCurrentSlide(0);
+      });
+
+      // Initiate the slide generation
+      await generateSlides({
         bookId: selectedBookId,
         chapterIds: selectedChapters,
         numberOfSlides: numberOfSlides
       }).unwrap();
-      
-      const generatedSlides = response.slides || response.data?.slides || [];
-      setSlides(generatedSlides);
-      setIsGenerated(true);
-      setCurrentSlide(0);
-      addToast("Presentation slides generated successfully", "success");
+setIsGenerating(false);
     } catch (error) {
       console.error("Failed to generate slides:", error);
       addToast("Failed to generate presentation slides. Please try again.", "error");
+      setIsGenerating(false);
     }
   };
   
@@ -169,6 +228,54 @@ const PresentationSlidesPage = () => {
   
   // Render the current slide
   const renderCurrentSlide = () => {
+    if (isGenerating) {
+      return (
+        <div className="flex flex-col relative bg-white rounded-lg shadow-lg overflow-hidden h-96">
+          <div className="absolute top-0 left-0 right-0 bg-amber-100 text-amber-800 px-4 py-2 text-sm">
+            Generating your presentation slides... showing preview
+          </div>
+          <div className="flex-1 flex flex-col p-8 pt-12 overflow-auto">
+            <div className="prose max-w-none flex-1">
+              {streamedSlides ? (
+                <div className="markdown-content">
+                  {streamedSlides.split('\n').map((line, index, array) => {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) return null;
+                    
+                    // Check if this is a title line (starts with #)
+                    if (trimmedLine.startsWith('# ')) {
+                      return <h1 key={index} className="text-2xl font-bold mt-4">{trimmedLine.substring(2)}</h1>;
+                    } else if (trimmedLine.startsWith('## ')) {
+                      return <h2 key={index} className="text-xl font-bold mt-3">{trimmedLine.substring(3)}</h2>;
+                    } else if (trimmedLine.startsWith('- ')) {
+                      return <li key={index} className="ml-4">{trimmedLine.substring(2)}</li>;
+                    } else if (trimmedLine.startsWith('```')) {
+                      // Handle code blocks
+                      return null; // Skip markdown code block markers
+                    } else {
+                      return (
+                        <p key={index} className="mb-2">
+                          {trimmedLine}
+                          {index === array.length - 1 && isGenerating && (
+                            <span className="typing-cursor ml-1 animate-pulse">|</span>
+                          )}
+                        </p>
+                      );
+                    }
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                  <p className="ml-2 text-gray-500">Initializing...</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     if (!isGenerated || slides.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-64 text-center">
@@ -234,6 +341,44 @@ const PresentationSlidesPage = () => {
       </div>
     );
   };
+  const formatMarkdown = (content: string) => {
+    return (
+      <ReactMarkdown
+        className="prose max-w-none dark:prose-invert"
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+      >
+        {content}
+      </ReactMarkdown>
+    );
+  };
+
+  // Add a useEffect to parse the streamed content when complete
+  useEffect(() => {
+    if (isGenerated && streamedSlides) {
+      try {
+        // Extract slide content from markdown
+        const slideTexts = streamedSlides
+          .split(/# /g)
+          .filter(Boolean)
+          .map(content => `# ${content}`);
+        
+        // Convert to Slide objects
+        const parsedSlides = slideTexts.map(text => {
+          // Extract title from first heading
+          const titleMatch = text.match(/^# (.*?)(\n|$)/);
+          return {
+            title: titleMatch ? titleMatch[1].trim() : "Untitled Slide",
+            content: text
+          };
+        });
+        
+        setSlides(parsedSlides);
+      } catch (error) {
+        console.error('Error parsing slides:', error);
+      }
+    }
+  }, [isGenerated, streamedSlides]);
 
   return (
     <Layout>
@@ -435,14 +580,15 @@ const PresentationSlidesPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isGenerating ? (
+              {renderCurrentSlide()}
+              {/* {formatMarkdown(streamedSlides)} */}
+                {/* {isGenerating ? (
                   <div className="flex flex-col items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                    <p className="mt-4 text-gray-500">Generating your presentation slides...</p>
+                
                   </div>
                 ) : (
                   renderCurrentSlide()
-                )}
+                )} */}
               </CardContent>
             </Card>
           </div>

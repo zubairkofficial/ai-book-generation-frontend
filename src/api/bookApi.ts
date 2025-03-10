@@ -181,6 +181,13 @@ interface PresentationSlidesRequest {
   numberOfSlides: number;
 }
 
+// Add new interface for update summary request
+interface UpdateChapterSummaryRequest {
+  bookId: number;
+  chapterIds: number[];
+  summary: string;
+}
+
 export const bookApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Endpoint to fetch all books
@@ -358,6 +365,15 @@ export const bookApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+
+    // Add to the existing builder endpoints
+    updateChapterSummary: builder.mutation<any, UpdateChapterSummaryRequest>({
+      query: (payload) => ({
+        url: '/book-chapter/update-summary',
+        method: 'PUT',
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -381,4 +397,5 @@ export const {
   useRegenerateChapterImageMutation,
   useGenerateChapterSummaryMutation,
   useGeneratePresentationSlidesMutation,
+  useUpdateChapterSummaryMutation,
 } = bookApi;

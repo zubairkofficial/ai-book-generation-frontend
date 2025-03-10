@@ -51,15 +51,31 @@ export const IndexContent: React.FC<IndexContentProps> = ({
   };
 
   return (
-    <QuillEditor
-      title="Index"
-      content={formattedContent}
-      editMode={editMode}
-      onUpdate={handleUpdate}
-      className="min-h-[800px] px-8 py-12"
-      titleClassName="text-4xl text-center mb-8 text-gray-900"
-      contentClassName="prose max-w-none index-content"
-      placeholder="Add index entries here..."
-    />
+  <>
+        {editMode ? (
+          <div className={`quill-container ${editMode ? 'editing' : 'viewing'}`}>
+            <QuillEditor
+              title="Index"
+              content={formattedContent}
+              editMode={editMode}
+              onUpdate={handleUpdate}
+              className="min-h-[800px] px-8 py-12"
+              titleClassName="text-4xl text-center mb-8 text-gray-900"
+              contentClassName="prose max-w-none index-content"
+              placeholder="Add index entries here..."
+            />
+          </div>
+        ) : (
+          <div className="min-h-[800px] px-8 py-12">
+          <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg">
+            <h1 className="text-4xl text-center mb-8 text-gray-900">Index</h1>
+            
+          <div className={`${formattedContent} quill-content-view`}>
+            <div dangerouslySetInnerHTML={{ __html: formattedContent }} />
+          </div>
+          </div>
+          </div>
+        )}
+    </>
   );
 }; 
