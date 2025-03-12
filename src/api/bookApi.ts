@@ -47,12 +47,7 @@ export interface UpdateBookGenerateRequest {
   chapterNo: number;
   bookGenerationId: number;
   updateContent: string;
-  additionalData: {
-    fullContent: string;
-    coverImageUrl: string;
-    backCoverImageUrl: string;
-    tableOfContents: string;
-  };
+  
 }
 
 interface GenerateBookResponse {
@@ -125,6 +120,7 @@ export interface UpdateBookDto {
   preface?: string;
   references?: string;
   tableOfContents?: string;
+  introduction?: string;
   index?: string;
 }
 

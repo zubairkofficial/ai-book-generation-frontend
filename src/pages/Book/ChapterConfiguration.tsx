@@ -12,6 +12,8 @@ import { ArrowRight, BookOpen, Settings, RotateCw, Edit, Loader2 } from 'lucide-
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import { ChapterConfigurationProps, ChapterConfig } from './types/chapter.types';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
 
 
 
@@ -73,6 +75,8 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
   const [editInstruction, setEditInstruction] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editableContent, setEditableContent] = useState('');
+  const { token } = useSelector((state: RootState) => state.auth);
+
   const [textFormat, setTextFormat] = useState<TextFormat>({
     isBold: false,
     isItalic: false,
@@ -184,7 +188,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
         noOfImages:Number(input.noOfImages),
       };
 
-      const eventSource = new EventSource(`${BASE_URl}/book-chapter/chapter-stream`);
+      const eventSource = new EventSource(`${BASE_URl}/book-chapter/chapter-stream?token=${token}`);
 
       eventSource.onmessage = (event) => {
         try {
@@ -427,7 +431,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
         instruction: instruction,
       };
 
-      const eventSource = new EventSource(`${BASE_URl}/book-chapter/chapter-stream`);
+      const eventSource = new EventSource(`${BASE_URl}/book-chapter/chapter-stream?token=${token}`);
       
       let accumulatedContent = ''; // Track accumulated content
 
@@ -497,7 +501,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
         throw new Error('Invalid book ID');
       }
 
-      const updatePayload: UpdateBookGenerateRequest = {
+      const updatePayload:any = {
         chapterNo: currentChapterNo,
         bookGenerationId: bookId,
         updateContent: editableContent // Use raw content without formatting
@@ -549,7 +553,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
           throw new Error('Invalid book ID');
         }
 
-        const updatePayload: UpdateBookGenerateRequest = {
+        const updatePayload:any = {
           chapterNo: currentChapterNo,
           bookGenerationId: bookId,
           updateContent: updatedContent

@@ -1,7 +1,7 @@
 /* Custom Quill styles */
 
 .quill-container {
-    font-family: 'Georgia', serif;
+    font-family: 'Times New Roman', Times, serif;
     margin-top: 1.5rem;
 }
 
@@ -10,6 +10,7 @@
     font-size: 1rem;
     line-height: 1.6;
     color: #4b5563;
+    font-family: 'Times New Roman', Times, serif !important;
 }
 
 .quill-container.editing .ql-editor {
@@ -88,7 +89,7 @@
 /* Read-only viewer */
 
 .ql-viewer {
-    font-family: 'Georgia', serif;
+    font-family: 'Times New Roman', Times, serif;
     line-height: 1.6;
     font-size: 16px;
     color: #333;
@@ -148,6 +149,7 @@
     font-size: 1rem;
     line-height: 1.6;
     color: #4b5563;
+    font-family: 'Times New Roman', Times, serif !important;
 }
 
 .quill-content-view h1 {
@@ -319,4 +321,27 @@
     margin-bottom: 0.5rem;
     display: block;
     color: #1f2937;
+}
+
+
+/* Override the global styles */
+
+.prose {
+    font-family: 'Times New Roman', Times, serif !important;
+}
+
+
+/* Default font for Quill editor */
+
+.ql-font-Times-New-Roman {
+    font-family: 'Times New Roman', Times, serif;
+}
+
+
+/* When no font is selected (default state) */
+
+.ql-snow .ql-picker.ql-font .ql-picker-label::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item::before {
+    content: 'Times New Roman';
+    font-family: 'Times New Roman', Times, serif;
 }

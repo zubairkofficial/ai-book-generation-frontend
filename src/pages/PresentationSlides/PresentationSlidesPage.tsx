@@ -37,7 +37,7 @@ interface BookData {
 interface ChapterData {
   id: number;
   chapterNo: number;
-  title: string;
+  chapterName: string;
   content: string;
 }
 
@@ -49,10 +49,7 @@ interface Slide {
 }
 
 // Define proper API response type
-interface FetchBooksResponse {
-  books?: BookData[];
-  data?: BookData[];
-}
+
 
 const PresentationSlidesPage = () => {
   // State for book selection, chapters, loading, etc.
@@ -64,7 +61,6 @@ const PresentationSlidesPage = () => {
   const [isGenerated, setIsGenerated] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [streamedSlides, setStreamedSlides] = useState<string>('');
-  const [parsedSlides, setParsedSlides] = useState<Slide[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const { token } = useSelector((state: RootState) => state.auth);
@@ -476,7 +472,7 @@ setIsGenerating(false);
                               htmlFor={`chapter-${chapter.id}`}
                               className="text-sm cursor-pointer flex-1"
                             >
-                              Chapter {chapter.chapterNo}: {chapter.title}
+                              Chapter {chapter.chapterNo}: {chapter.chapterName}
                             </label>
                           </div>
                         ))}

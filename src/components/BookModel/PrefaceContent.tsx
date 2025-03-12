@@ -3,12 +3,15 @@ import { QuillEditor } from './QuillEditor';
 import { useUpdateBookGeneratedMutation } from '@/api/bookApi';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Save } from 'lucide-react';
+import { Save, X } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 interface PrefaceContentProps {
   bookData: any;
   editMode: boolean;
   setHasChanges: (value: boolean) => void;
+  refetchBook: any;
+  setEditMode: any
 }
 
 interface PrefaceSections {
@@ -23,10 +26,15 @@ export const PrefaceContent = ({
   bookData,
   editMode,
   setHasChanges,
+  refetchBook,
+  setEditMode
 }: PrefaceContentProps) => {
+  const { addToast } = useToast();
   const prefaceContent = bookData.additionalData.preface || '';
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
   const [activeTab, setActiveTab] = useState('all');
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasLocalChanges, setHasLocalChanges] = useState(false);
   
   // Parsed sections from the preface
   const [sections, setSections] = useState<PrefaceSections>({
@@ -37,26 +45,38 @@ export const PrefaceContent = ({
     acknowledgments: ''
   });
   
+  // Store original content for cancellation
+  const [originalSections, setOriginalSections] = useState<PrefaceSections>({
+    introduction: '',
+    coreIdea: '',
+    whyItMatters: '',
+    whatToExpect: '',
+    acknowledgments: ''
+  });
+  
   // Parse the preface content into sections when it changes
   useEffect(() => {
     if (prefaceContent) {
-      setSections({
-        introduction: extractSection(prefaceContent, "Introduction", "Core Idea"),
-        coreIdea: extractSection(prefaceContent, "Core Idea", "Why This Book Matters"),
-        whyItMatters: extractSection(prefaceContent, "Why This Book Matters", "What to Expect"),
+      const parsedSections = {
+        introduction: '',
+        coreIdea: extractSection(prefaceContent, "Core Idea", "Why It Matters"),
+        whyItMatters: extractSection(prefaceContent, "Why It Matters", "What to Expect"),
         whatToExpect: extractSection(prefaceContent, "What to Expect", "Acknowledgments"),
         acknowledgments: extractSection(prefaceContent, "Acknowledgments")
-      });
+      };
+      
+      setSections(parsedSections);
+      setOriginalSections(parsedSections);
     }
   }, [prefaceContent]);
 
   const extractSection = (content: string, sectionName: string, nextSectionName?: string) => {
     if (!content) return '';
     
-    // Handle both bold and non-bold section headers
-    const sectionPattern = new RegExp(`\\*\\*${sectionName}\\*\\*|## ${sectionName}|${sectionName}`);
+    // Handle multiple heading formats: Markdown, HTML, and bold text
+    const sectionPattern = new RegExp(`## ${sectionName}|<h\\d[^>]*>${sectionName}|\\*\\*${sectionName}\\*\\*|${sectionName}`, 'i');
     const nextSectionPattern = nextSectionName ? 
-      new RegExp(`\\*\\*${nextSectionName}\\*\\*|## ${nextSectionName}|${nextSectionName}`) : 
+      new RegExp(`## ${nextSectionName}|<h\\d[^>]*>${nextSectionName}|\\*\\*${nextSectionName}\\*\\*|${nextSectionName}`, 'i') : 
       null;
     
     // Split by the current section name
@@ -66,14 +86,16 @@ export const PrefaceContent = ({
     let sectionContent = parts[1].trim();
     
     // If there's a next section, split by it
-    if (nextSectionPattern && sectionContent.match(nextSectionPattern)) {
-      const endParts = sectionContent.split(nextSectionPattern);
-      sectionContent = endParts[0].trim();
+    if (nextSectionPattern) {
+      const nextSectionMatch = sectionContent.match(nextSectionPattern);
+      if (nextSectionMatch) {
+        sectionContent = sectionContent.substring(0, nextSectionMatch.index).trim();
+      }
     }
     
-    // Remove any remaining bold markers
+    // Clean up formatting markers but preserve HTML formatting
     sectionContent = sectionContent
-      .replace(/\*\*/g, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown but keep the text
       .replace(/\[Author's Name\]/g, bookData.authorName || '')
       .trim();
     
@@ -85,26 +107,26 @@ export const PrefaceContent = ({
       ...prev,
       [sectionName]: sectionContent
     }));
+    setHasLocalChanges(true);
     setHasChanges(true);
   };
 
   const savePreface = async () => {
     try {
-      // Combine all sections into a single document
+      setIsSaving(true);
+      
+      // Use markdown formatting to match what the API is sending back
       const combinedContent = `
-<h2>Introduction</h2>
-${sections.introduction}
-
-<h2>Core Idea</h2>
+## Core Idea
 ${sections.coreIdea}
 
-<h2>Why This Book Matters</h2>
+## Why It Matters
 ${sections.whyItMatters}
 
-<h2>What to Expect</h2>
+## What to Expect
 ${sections.whatToExpect}
 
-<h2>Acknowledgments</h2>
+## Acknowledgments
 ${sections.acknowledgments}
       `.trim();
       
@@ -114,10 +136,25 @@ ${sections.acknowledgments}
         preface: combinedContent
       }).unwrap();
       
+      await refetchBook();
+      setEditMode(false);
       setHasChanges(false);
+      setHasLocalChanges(false);
+      setOriginalSections({...sections});
+      addToast("Preface saved successfully", "success");
     } catch (error) {
       console.error('Error saving preface:', error);
+      addToast("Failed to save preface", "error");
+    } finally {
+      setIsSaving(false);
     }
+  };
+
+  // Discard changes
+  const handleCancelChanges = () => {
+    setSections({...originalSections});
+    setHasLocalChanges(false);
+    setHasChanges(false);
   };
 
   const renderSection = (title: string, content: string, sectionKey: string) => {
@@ -133,7 +170,6 @@ ${sections.acknowledgments}
               className="min-h-0 p-0"
               contentClassName="prose max-w-none min-h-[150px]"
               placeholder={`Write the ${title.toLowerCase()} section here...`}
-              
             />
           </div>
         ) : (
@@ -148,41 +184,67 @@ ${sections.acknowledgments}
       <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg">
         <h1 className="text-4xl text-center mb-8 text-gray-900 font-bold">Preface</h1>
         
+        {/* Save/Cancel buttons when in edit mode and changes exist */}
+        {editMode && (
+          <div className="sticky top-4 z-10 flex justify-end mb-4">
+            <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-gray-100 p-2 flex gap-2">
+              {hasLocalChanges && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancelChanges}
+                  className="flex items-center gap-1 text-gray-700 hover:text-red-600"
+                  disabled={isSaving}
+                >
+                  <X size={16} />
+                  <span className="hidden sm:inline">Cancel</span>
+                </Button>
+              )}
+              
+              <Button
+                variant="default"
+                size="sm"
+                onClick={savePreface}
+                className={`flex items-center gap-1 ${
+                  !hasLocalChanges 
+                    ? "bg-gray-300 hover:bg-gray-300 cursor-not-allowed" 
+                    : "bg-amber-500 hover:bg-amber-600 text-white"
+                }`}
+                disabled={!hasLocalChanges || isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
+                    <span className="hidden sm:inline">Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    <span className="hidden sm:inline">Save Preface</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+        
         {editMode && (
           <div className="mb-8">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-6 mb-4">
                 <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="introduction">Introduction</TabsTrigger>
                 <TabsTrigger value="coreIdea">Core Idea</TabsTrigger>
                 <TabsTrigger value="whyItMatters">Why It Matters</TabsTrigger>
                 <TabsTrigger value="whatToExpect">What to Expect</TabsTrigger>
                 <TabsTrigger value="acknowledgments">Acknowledgments</TabsTrigger>
               </TabsList>
               
-              <div className="text-right mb-4">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={savePreface}
-                  className="flex items-center gap-2"
-                >
-                  <Save size={16} />
-                  Save All Sections
-                </Button>
-              </div>
-              
-              {/* Individual tab content */}
-              <TabsContent value="introduction">
-                {renderSection("Introduction", sections.introduction, "introduction")}
-              </TabsContent>
-              
               <TabsContent value="coreIdea">
                 {renderSection("Core Idea", sections.coreIdea, "coreIdea")}
               </TabsContent>
               
               <TabsContent value="whyItMatters">
-                {renderSection("Why This Book Matters", sections.whyItMatters, "whyItMatters")}
+                {renderSection("Why It Matters", sections.whyItMatters, "whyItMatters")}
               </TabsContent>
               
               <TabsContent value="whatToExpect">
@@ -195,9 +257,8 @@ ${sections.acknowledgments}
               
               <TabsContent value="all">
                 <div className="space-y-6">
-                  {renderSection("Introduction", sections.introduction, "introduction")}
                   {renderSection("Core Idea", sections.coreIdea, "coreIdea")}
-                  {renderSection("Why This Book Matters", sections.whyItMatters, "whyItMatters")}
+                  {renderSection("Why It Matters", sections.whyItMatters, "whyItMatters")}
                   {renderSection("What to Expect", sections.whatToExpect, "whatToExpect")}
                   {renderSection("Acknowledgments", sections.acknowledgments, "acknowledgments")}
                 </div>
@@ -208,9 +269,8 @@ ${sections.acknowledgments}
         
         {!editMode && (
           <div className="space-y-8">
-            {renderSection("Introduction", sections.introduction, "introduction")}
             {renderSection("Core Idea", sections.coreIdea, "coreIdea")}
-            {renderSection("Why This Book Matters", sections.whyItMatters, "whyItMatters")}
+            {renderSection("Why It Matters", sections.whyItMatters, "whyItMatters")}
             {renderSection("What to Expect", sections.whatToExpect, "whatToExpect")}
             {renderSection("Acknowledgments", sections.acknowledgments, "acknowledgments")}
 

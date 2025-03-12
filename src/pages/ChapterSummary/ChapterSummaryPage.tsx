@@ -34,7 +34,7 @@ interface BookData {
 interface ChapterData {
   id: number;
   chapterNo: number;
-  title: string;
+  chapterName: string;
   content: string;
 }
 
@@ -71,7 +71,7 @@ const ChapterSummaryPage = () => {
   // Get chapters for selected book
   const selectedBook = selectedBookId ? books.find(book => book.id === selectedBookId) : undefined;
   const chapters = selectedBook?.bookChapter || [];
-  
+  console.log("selectedBook",selectedBook)
   // Reset selected chapters when book changes
   useEffect(() => {
     setSelectedChapters([]);
@@ -339,7 +339,7 @@ const ChapterSummaryPage = () => {
                               htmlFor={`chapter-${chapter.id}`}
                               className="text-sm cursor-pointer flex-1"
                             >
-                              Chapter {chapter.chapterNo}: {chapter.title}
+                              Chapter {chapter.chapterNo}: {chapter.chapterName}
                             </label>
                           </div>
                         ))}

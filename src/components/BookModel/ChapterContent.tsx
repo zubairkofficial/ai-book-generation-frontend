@@ -1,17 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { markdownComponents } from '@/utils/markdownUtils';
-import { EditorContent } from './EditorContent';
-import { BookOpen, AlignLeft, BookMarked } from 'lucide-react';
+import { AlignLeft, BookMarked, Loader2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { QuillEditor } from './QuillEditor';
+import { useUpdateChapterMutation } from '@/api/bookApi';
+import DOMPurify from 'dompurify';
+import { useToast } from '@/context/ToastContext';
 
 interface ChapterContentProps {
   chapter: {
     chapterNo: number;
     chapterInfo: string;
     chapterSummary: string;
+  };
+  bookId?: number;
+  bookGenerationId: number;
+  additionalData?: {
+    fullContent: string;
+    coverImageUrl: string;
+    backCoverImageUrl: string;
+    tableOfContents: string;
   };
   totalChapters: number;
   editMode: boolean;
@@ -22,14 +33,69 @@ interface ChapterContentProps {
 
 export const ChapterContent: React.FC<ChapterContentProps> = ({
   chapter,
+  bookGenerationId,
   totalChapters,
   editMode,
   onUpdate,
   setHasChanges,
   onNavigate
 }) => {
+  const { addToast } = useToast();
+  const [updateChapter, { isLoading: isSaving }] = useUpdateChapterMutation();
+  const [saveError, setSaveError] = useState('');
+  const [formattedContent, setFormattedContent] = useState(chapter.chapterInfo);
+  const [localContent, setLocalContent] = useState(chapter.chapterInfo);
+  const [originalContent, setOriginalContent] = useState(chapter.chapterInfo);
+  const [hasLocalChanges, setHasLocalChanges] = useState(false);
+  
   const hasPrevious = chapter.chapterNo > 1;
   const hasNext = chapter.chapterNo < totalChapters;
+
+  // Reset states when chapter changes
+  useEffect(() => {
+    setLocalContent(chapter.chapterInfo);
+    setOriginalContent(chapter.chapterInfo);
+    setHasLocalChanges(false);
+    setSaveError('');
+    processContent(chapter.chapterInfo);
+  }, [chapter.chapterInfo, chapter.chapterNo]);
+
+  // Process HTML content for display
+  const processContent = (content: string) => {
+    if (content && content.trim().startsWith('<')) {
+      // Create temporary element to work with the HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = DOMPurify.sanitize(content);
+      
+      // Find all headings to properly structure them
+      const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      headings.forEach(heading => {
+        // Add appropriate classes to headings
+        heading.classList.add('chapter-heading');
+        
+        // Make main chapter title stand out
+        if (heading.textContent?.includes(`Chapter ${chapter.chapterNo}`)) {
+          heading.classList.add('chapter-title');
+        }
+        
+        // Add spacing after headings
+        const nextElement = heading.nextElementSibling;
+        if (nextElement) {
+          nextElement.classList.add('mt-4');
+        }
+      });
+      
+      // Find paragraphs that need formatting
+      const paragraphs = tempDiv.querySelectorAll('p');
+      paragraphs.forEach(p => {
+        p.classList.add('chapter-paragraph');
+      });
+      
+      setFormattedContent(tempDiv.innerHTML);
+    } else {
+      setFormattedContent(content);
+    }
+  };
 
   const handlePrevious = () => {
     if (hasPrevious) {
@@ -43,22 +109,124 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-8">
+  // Track content changes locally
+  const handleContentUpdate = (content: string) => {
+    setLocalContent(content);
+    const hasChanged = content !== originalContent;
+    setHasLocalChanges(hasChanged);
+    setHasChanges(hasChanged);
+  };
+  
+  // Save changes to the server
+  const saveChanges = async () => {
+    if (!hasLocalChanges) return;
     
-
-      {/* Main Content */}
-     
-        <div className="prose max-w-none">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw]}
-            components={markdownComponents}
-          >
-            {chapter.chapterInfo}
-          </ReactMarkdown>
-        </div>
+    try {
+      setSaveError('');
       
+      // Update chapter content
+      await updateChapter({
+        bookGenerationId,
+        chapterNo: chapter.chapterNo,
+        updateContent: localContent
+      }).unwrap();
+      
+      // Update parent state
+      onUpdate(localContent, chapter.chapterNo.toString());
+      
+      // Reset state
+      setOriginalContent(localContent);
+      setHasLocalChanges(false);
+      setHasChanges(false);
+      processContent(localContent);
+      
+      addToast("Chapter saved successfully", "success");
+    } catch (error) {
+      setSaveError('Failed to save chapter. Please try again.');
+      addToast("Failed to save chapter", "error");
+    }
+  };
+  
+  // Discard changes
+  const handleCancelChanges = () => {
+    setLocalContent(originalContent);
+    setHasLocalChanges(false);
+    setHasChanges(false);
+  };
+
+  return (
+    <div className="min-h-[800px] relative">
+      {/* Save/Cancel buttons when in edit mode */}
+      {editMode && (
+        <div className="sticky top-4 z-10 flex justify-end mb-4 px-4">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-gray-100 p-2 flex gap-2">
+            {hasLocalChanges && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelChanges}
+                className="flex items-center gap-1 text-gray-700 hover:text-red-600"
+                disabled={isSaving}
+              >
+                <X size={16} />
+                <span className="hidden sm:inline">Cancel</span>
+              </Button>
+            )}
+            
+            <Button
+              variant="default"
+              size="sm"
+              onClick={saveChanges}
+              className={`flex items-center gap-1 ${
+                !hasLocalChanges 
+                  ? "bg-gray-300 hover:bg-gray-300 cursor-not-allowed" 
+                  : "bg-amber-500 hover:bg-amber-600 text-white"
+              }`}
+              disabled={!hasLocalChanges || isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
+                  <span className="hidden sm:inline">Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  <span className="hidden sm:inline">Save Chapter</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Chapter Content */}
+      {editMode ? (
+        <QuillEditor
+          content={chapter.chapterInfo}
+          editMode={true}
+          onUpdate={handleContentUpdate}
+          className="prose max-w-none"
+          placeholder="Edit chapter content here..."
+        />
+      ) : (
+        <div className="prose max-w-none">
+          {chapter.chapterInfo.trim().startsWith('<') ? (
+            <div 
+              className="chapter-content" 
+              dangerouslySetInnerHTML={{ __html: formattedContent }}
+            />
+          ) : (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
+              components={markdownComponents}
+            >
+              {chapter.chapterInfo}
+            </ReactMarkdown>
+          )}
+        </div>
+      )}
 
       {/* Chapter Summary Card */}
       <div className="mt-12 relative">

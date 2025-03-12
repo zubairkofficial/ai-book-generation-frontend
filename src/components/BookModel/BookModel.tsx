@@ -1,4 +1,4 @@
-import { FormEvent, SetStateAction, useState } from 'react';
+import { Dispatch, FormEvent, SetStateAction, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFetchBookByIdQuery, useUpdateChapterMutation,  useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
-import { BASE_URl } from '@/constant';
+import { BASE_URl, ToastType } from '@/constant';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { RegenerateImageModal } from './RegenerateImageModal';
 import { CoverContent } from './CoverContent';
@@ -21,25 +21,40 @@ import { ReferencesContent } from './ReferencesContent';
 import { TableOfContentsContent } from './TableOfContentsContent';
 import {  markdownComponents } from '@/utils/markdownUtils.tsx';
 import { ChapterContent } from './ChapterContent';
+import { IntroductionContent } from './IntroductionContent';
+import { useToast } from '@/context/ToastContext';
 
+// Define types for pages and content
+interface PageContent {
+  id: string;
+  icon: JSX.Element;
+  label: string;
+  isAction?: boolean;
+}
 
-const PAGES: (PageContent | { id: 'edit'; icon: JSX.Element; label: string; isAction?: boolean })[] = [
+interface TextStyle {
+  bold: boolean;
+  italic: boolean;
+  align: 'left' | 'center' | 'right';
+  fontSize: string;
+  fontFamily: string;
+  color: string;
+  lineHeight: string;
+  letterSpacing: string;
+}
+
+const PAGES: PageContent[] = [
   { id: 'cover', icon: <BookOpen className="w-4 h-4" />, label: 'Cover' },
   { id: 'dedication', icon: <Heart className="w-4 h-4" />, label: 'Dedication' },
+  { id: 'introduction', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Introduction' },
   { id: 'preface', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Preface' },
   { id: 'toc', icon: <List className="w-4 h-4" />, label: 'Contents' },
   { id: 'glossary', icon: <Users className="w-4 h-4" />, label: 'Glossary' },
   { id: 'index', icon: <List className="w-4 h-4" />, label: 'Index' },
   { id: 'references', icon: <BookmarkIcon className="w-4 h-4" />, label: 'References' },
   { id: 'backCover', icon: <BookOpen className="w-4 h-4" />, label: 'Back Cover' },
-  { 
-    id: 'edit', 
-    icon: <Edit2 className="w-4 h-4" />, 
-    label: 'Edit',
-    isAction: true
-  }
+  { id: 'edit', icon: <Edit2 className="w-4 h-4" />, label: 'Edit', isAction: true }
 ];
-
 
 // Add proper type definitions
 const BookModel = () => {
@@ -60,12 +75,11 @@ const BookModel = () => {
     letterSpacing: 'normal'
   });
   const [hasChanges, setHasChanges] = useState(false);
-  const [pendingContent, setPendingContent] = useState<string>('');
+  const { addToast } = useToast();
+  
   // API Hooks
-  const { data: book, isLoading } = useFetchBookByIdQuery(bookId, {
-    skip: !bookId,
-  });
-  const [updateChapter] = useUpdateChapterMutation();
+  const { data: book, isLoading, refetch: refetchBook } = useFetchBookByIdQuery(bookId, { skip: !bookId });
+  
   const [updateImage] = useUpdateImageMutation();
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
 
@@ -92,10 +106,9 @@ const BookModel = () => {
   const handleContentUpdate = async (content: string, pageType?: string) => {
     if (!bookId || !book?.data) return;
     
-    setHasChanges(false); // Reset changes flag after save
+    setHasChanges(false);
     
     try {
-      // Add logic to handle different page types
       switch (pageType) {
         case 'glossary':
           await updateBookGenerated({
@@ -132,17 +145,14 @@ const BookModel = () => {
           }).unwrap();
           break;
           
-        // ... handle other page types
-        default:
-          // Handle chapter updates
-          if (typeof pageType === 'number') {
-            // Chapter update logic here
-          }
+        // Add other cases as needed
       }
+      
+      setEditMode(false);
+      await refetchBook();
+      
     } catch (error) {
-      console.error('Failed to update content:', error);
-      // Optionally add user feedback for error
-      setHasChanges(true); // Indicate that changes weren't saved
+      addToast(`Failed to update ${pageType || 'content'}`, "error");
     }
   };
 
@@ -347,11 +357,13 @@ const BookModel = () => {
             {renderCurrentPageContent(
               currentPage, 
               book.data, 
-              editMode, 
+              editMode,
+              setEditMode, 
               handleContentUpdate,
               setCurrentPage,
               handleImageUpdate,
-              setHasChanges
+              setHasChanges,
+              refetchBook
             )}
           </div>
         </div>
@@ -369,21 +381,14 @@ const renderCurrentPageContent = (
   currentPage: string, 
   bookData: any, 
   editMode: boolean,
+  setEditMode: Dispatch<SetStateAction<boolean>>,
   onUpdate: (content: string, pageType?: string) => void,
   onPageChange: (page: string) => void,
   onImageUpdate: (file: File, type: 'cover' | 'backCover') => void,
-  setHasChanges: (value: boolean) => void
+  setHasChanges: (value: boolean) => void,
+  refetchBook: unknown
 ): JSX.Element => {
-  const renderMarkdown = (content: string) => (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw]}
-      className="prose max-w-none"
-      components={markdownComponents}
-    >
-      {content}
-    </ReactMarkdown>
-  );
+ ;
 
   switch (currentPage) {
     case 'cover':
@@ -417,15 +422,30 @@ const renderCurrentPageContent = (
           bookData={bookData}
           editMode={editMode}
           onUpdate={(content) => onUpdate(content, 'dedication')}
+         
         />
       );
 
+   
+   case 'introduction':
+      return (
+        <IntroductionContent
+          bookData={bookData}
+          editMode={editMode}
+          setHasChanges={setHasChanges}
+          refetchBook={refetchBook}
+          setEditMode={setEditMode}
+        />
+      );
     case 'preface':
       return (
         <PrefaceContent
           bookData={bookData}
           editMode={editMode}
           setHasChanges={setHasChanges}
+          refetchBook={refetchBook}
+          setEditMode={setEditMode}
+
         />
       );
 
@@ -436,6 +456,7 @@ const renderCurrentPageContent = (
           editMode={editMode}
           onUpdate={(content) => onUpdate(content, 'toc')}
           onChapterSelect={(chapterNo) => onPageChange(`chapter-${chapterNo}`)}
+        
         />
       );
 
@@ -444,8 +465,11 @@ const renderCurrentPageContent = (
         <GlossaryContent 
           bookData={bookData} 
           editMode={editMode}
-          onUpdate={(content) => onUpdate(content, 'glossary')}
-        />
+          // onUpdate={(content) => onUpdate(content, 'glossary')}
+          setEditMode={setEditMode}
+          setHasChanges={setHasChanges}
+          refetchBook={refetchBook}
+          />
       );
 
     case 'index':
@@ -453,16 +477,20 @@ const renderCurrentPageContent = (
         <IndexContent 
           bookData={bookData} 
           editMode={editMode}
-          onUpdate={(content) => onUpdate(content, 'index')}
+          setHasChanges={setHasChanges}
+          refetchBook={refetchBook}
+          setEditMode={setEditMode}
         />
       );
 
     case 'references':
       return (
         <ReferencesContent 
-          bookData={bookData} 
-          editMode={editMode}
-          onUpdate={(content) => onUpdate(content, 'references')}
+        bookData={bookData} 
+        editMode={editMode}
+        setHasChanges={setHasChanges}
+        refetchBook={refetchBook}
+        setEditMode={setEditMode}
         />
       );
 
@@ -500,8 +528,8 @@ const renderCurrentPageContent = (
         return chapter ? (
           <ChapterContent
             chapter={chapter}
-            bookId={bookData.id}
             totalChapters={bookData.bookChapter.length}
+            bookGenerationId={bookData.id}
             editMode={editMode}
             onUpdate={onUpdate}
             setHasChanges={setHasChanges}
