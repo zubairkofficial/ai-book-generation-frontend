@@ -1,11 +1,11 @@
 import { Dispatch, FormEvent, SetStateAction, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { 
   Loader2, Edit2, Image,
-  BookOpen, List, Heart, BookmarkIcon, Users
+  BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFetchBookByIdQuery, useUpdateChapterMutation,  useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
@@ -82,6 +82,9 @@ const BookModel = () => {
   
   const [updateImage] = useUpdateImageMutation();
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
+
+  // Add navigate function
+  const navigate = useNavigate();
 
   // Updated handleFormat function for better text formatting
  
@@ -212,7 +215,7 @@ const BookModel = () => {
                 key={page.id}
                 variant={editMode ? "default" : "outline"}
                 onClick={() => setEditMode(!editMode)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 justify-start w-full"
               >
                 {page.icon}
                 <span className="font-medium">
@@ -232,22 +235,22 @@ const BookModel = () => {
               className={`
                 ${navStyles.button.base}
                 ${currentPage === page.id ? navStyles.button.active : navStyles.button.inactive}
-                group
+                group text-left justify-start w-full
               `}
               title={page.label}
             >
-              <div className="flex items-center gap-3 px-2 py-1">
+              <div className="flex items-center gap-3 px-2 py-1 w-full">
                 <div className={`
                   ${currentPage === page.id ? 'text-amber-700' : 'text-gray-500'}
-                  group-hover:text-amber-600 transition-colors
+                  group-hover:text-amber-600 transition-colors flex-shrink-0
                 `}>
                   {page.icon}
                 </div>
                 <span className={`
                   hidden lg:block text-sm font-medium
-                  transition-all duration-200
-                  ${currentPage === page.id ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-60'}
-                  group-hover:translate-x-0 group-hover:opacity-100
+                  text-left
+                  ${currentPage === page.id ? 'opacity-100' : 'opacity-60'}
+                  group-hover:opacity-100
                 `}>
                   {page.label}
                 </span>
@@ -271,7 +274,7 @@ const BookModel = () => {
               return (
                 <Button
                   key={page.id}
-                  variant={editMode ? "default" : "outline"}
+                  variant={editMode ? "ghost" : "outline"}
                   onClick={() => setEditMode(!editMode)}
                   className="flex items-center gap-2"
                 >
@@ -336,6 +339,18 @@ const BookModel = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Add Back Button above the Navigation Buttons */}
+      <div className="mx-auto ">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className="flex  text-gray-600 hover:text-yellow-600"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      </div>
+      
       <NavigationButtons />
 
       {/* Book Content */}

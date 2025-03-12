@@ -1,23 +1,56 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Layout from '@/components/layout/Layout';
-import { useFetchBooksByTypeQuery, useGenerateChapterSummaryMutation, useUpdateChapterSummaryMutation, BookStatus } from '@/api/bookApi';
-import { 
-  FileText, X, Check, Loader2, ChevronDown, AlertCircle, ArrowLeft, Copy, Save
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/context/ToastContext';
-import { BASE_URl } from '@/constant';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
+import React, { useState, useEffect, useRef } from "react";
+import Layout from "@/components/layout/Layout";
+import {
+  useFetchBooksByTypeQuery,
+  useGenerateChapterSummaryMutation,
+  useUpdateChapterSummaryMutation,
+  BookStatus,
+} from "@/api/bookApi";
+import {
+  FileText,
+  X,
+  Check,
+  Loader2,
+  ChevronDown,
+  AlertCircle,
+  ArrowLeft,
+  Copy,
+  Save,
+  DownloadIcon,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/context/ToastContext";
+import { BASE_URl } from "@/constant";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
+import { cn } from "@/lib/utils";
+import { ReloadIcon } from "@radix-ui/react-icons";
+import { pdf } from "@react-pdf/renderer";
+import SummaryPDF from "./SummaryPDF";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface BookData {
   id: number;
@@ -48,37 +81,45 @@ const ChapterSummaryPage = () => {
   // State for book selection, chapters, loading, etc.
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
   const [selectedChapters, setSelectedChapters] = useState<number[]>([]);
-  const [summary, setSummary] = useState<string>('');
+  const [numberOfWords, setNumberOfWords] = useState(50);
+  const [isCombined, setIsCombined] = useState(false);
+  const [summary, setSummary] = useState<string>("");
   const [isGenerated, setIsGenerated] = useState(false);
-  const [streamedSummary, setStreamedSummary] = useState<string>('');
+  const [streamedSummary, setStreamedSummary] = useState<string>("");
+  const [chaptersSummary, setChaptersSummary] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
-  const [finalSummary, setFinalSummary] = useState<string>('');
+  const [finalSummary, setFinalSummary] = useState<string>("");
   const [isStreamComplete, setIsStreamComplete] = useState(false);
   const { token } = useSelector((state: RootState) => state.auth);
 
-  console.log("isStreamComplete",isStreamComplete)
+  console.log("isStreamComplete", isStreamComplete);
   // Hooks for API interactions
-  const { data: booksResponse, isLoading: isLoadingBooks } = useFetchBooksByTypeQuery({ status: BookStatus.ALL });
-  const [generateSummary, { isLoading: isGeneratingSummary }] = useGenerateChapterSummaryMutation();
-  const [updateChapterSummary, { isLoading: isUpdating }] = useUpdateChapterSummaryMutation();
+  const { data: booksResponse, isLoading: isLoadingBooks } =
+    useFetchBooksByTypeQuery({ status: BookStatus.ALL });
+  const [generateSummary, { isLoading: isGeneratingSummary }] =
+    useGenerateChapterSummaryMutation();
+  const [updateChapterSummary, { isLoading: isUpdating }] =
+    useUpdateChapterSummaryMutation();
   const { addToast } = useToast();
   const navigate = useNavigate();
-  
+
   // Extract books array from response - handle both possible response formats
   const books: BookData[] = booksResponse?.books || booksResponse?.data || [];
-  
+
   // Get chapters for selected book
-  const selectedBook = selectedBookId ? books.find(book => book.id === selectedBookId) : undefined;
+  const selectedBook = selectedBookId
+    ? books.find((book) => book.id === selectedBookId)
+    : undefined;
   const chapters = selectedBook?.bookChapter || [];
-  console.log("selectedBook",selectedBook)
+  console.log("selectedBook", selectedBook);
   // Reset selected chapters when book changes
   useEffect(() => {
     setSelectedChapters([]);
     setIsGenerated(false);
-    setSummary('');
+    setSummary("");
   }, [selectedBookId]);
-  
+
   // Cleanup function for SSE connection
   useEffect(() => {
     return () => {
@@ -87,25 +128,25 @@ const ChapterSummaryPage = () => {
       }
     };
   }, []);
-  
+
   // Handle chapter selection
   const handleChapterToggle = (chapterId: number) => {
     if (selectedChapters.includes(chapterId)) {
-      setSelectedChapters(selectedChapters.filter(id => id !== chapterId));
+      setSelectedChapters(selectedChapters.filter((id) => id !== chapterId));
     } else {
       setSelectedChapters([...selectedChapters, chapterId]);
     }
   };
-  
+
   // Handle "Select All" functionality
   const handleSelectAllChapters = () => {
     if (selectedChapters.length === chapters.length) {
       setSelectedChapters([]);
     } else {
-      setSelectedChapters(chapters.map(chapter => chapter.id));
+      setSelectedChapters(chapters.map((chapter) => chapter.id));
     }
   };
-  
+
   // Modified generate summary function
   const handleGenerateSummary = async () => {
     if (!selectedBookId || selectedChapters.length === 0) {
@@ -113,11 +154,16 @@ const ChapterSummaryPage = () => {
       return;
     }
 
+    if (numberOfWords < 50 || numberOfWords > 500) {
+      addToast("Number of words must be between 50 and 500", "error");
+      return;
+    }
+
     try {
       setIsGenerating(true);
-      setStreamedSummary('');
+      setStreamedSummary("");
       setIsStreamComplete(false);
-      setFinalSummary('');
+      setFinalSummary("");
 
       // Close any existing SSE connection
       if (eventSourceRef.current) {
@@ -125,14 +171,15 @@ const ChapterSummaryPage = () => {
       }
 
       // Initialize SSE connection
-
+      console.log("number of words", numberOfWords);
       const eventSource = new EventSource(
-        `${BASE_URl}/book-chapter/summary-stream?token=${token}`,
+        `${BASE_URl}/book-chapter/summary-stream?token=${token}&noOfWords=${numberOfWords}&isCombined=${isCombined}`,
       );
 
       eventSourceRef.current = eventSource;
 
-      let accumulatedContent = '';
+      let accumulatedContent = "";
+      const accumalatedChapters: string[] = [];
 
       eventSource.onmessage = (event) => {
         try {
@@ -140,20 +187,24 @@ const ChapterSummaryPage = () => {
           if (data.text) {
             accumulatedContent += data.text;
             setStreamedSummary(accumulatedContent);
+            if (!isCombined) {
+              accumalatedChapters.push(data.text);
+              setChaptersSummary(accumalatedChapters);
+            }
           }
         } catch (error) {
-          console.error('Error parsing SSE data:', error);
+          console.error("Error parsing SSE data:", error);
         }
       };
 
       eventSource.onerror = (error) => {
-        console.error('SSE Error:', error);
+        console.error("SSE Error:", error);
         eventSource.close();
         setIsGenerating(false);
         addToast("Error in summary stream connection", "error");
       };
 
-      eventSource.addEventListener('complete', () => {
+      eventSource.addEventListener("complete", () => {
         setIsStreamComplete(true);
 
         eventSource.close();
@@ -164,13 +215,14 @@ const ChapterSummaryPage = () => {
 
       await generateSummary({
         bookId: selectedBookId,
-        chapterIds: selectedChapters
+        chapterIds: selectedChapters,
+        noOfWords: numberOfWords,
+        isCombined,
       }).unwrap();
-      setIsGenerating(false)
-        setIsStreamComplete(true);
-
+      setIsGenerating(false);
+      setIsStreamComplete(true);
     } catch (error) {
-      console.error('Error generating summary:', error);
+      console.error("Error generating summary:", error);
       addToast("Error generating summary", "error");
       setIsGenerating(false);
     }
@@ -182,17 +234,17 @@ const ChapterSummaryPage = () => {
       addToast("No summary to apply", "error");
       return;
     }
-    
+
     try {
       await updateChapterSummary({
         bookId: selectedBookId,
         chapterIds: selectedChapters,
-        summary: finalSummary
+        summary: finalSummary,
       }).unwrap();
-      
+
       addToast("Summary applied successfully", "success");
     } catch (error) {
-      console.error('Error applying summary:', error);
+      console.error("Error applying summary:", error);
       addToast("Failed to apply summary", "error");
     }
   };
@@ -226,18 +278,19 @@ const ChapterSummaryPage = () => {
 
     if (!isGenerating) {
       return (
-        <div className="prose max-w-none">
-          {formatMarkdown(finalSummary)}
-        </div>
+        <div className="prose max-w-none">{formatMarkdown(finalSummary)}</div>
       );
     }
 
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center">
         <FileText className="h-16 w-16 text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-700">No Summary Generated Yet</h3>
+        <h3 className="text-lg font-medium text-gray-700">
+          No Summary Generated Yet
+        </h3>
         <p className="text-gray-500 mt-2 max-w-md">
-          Select a book and chapters from the configuration panel, then click "Generate Summary" to create your chapter summary.
+          Select a book and chapters from the configuration panel, then click
+          "Generate Summary" to create your chapter summary.
         </p>
       </div>
     );
@@ -246,25 +299,31 @@ const ChapterSummaryPage = () => {
   return (
     <Layout>
       <div className="container mx-auto p-6">
-        <div className="flex items-center mb-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/ai-assistant')}
+        <div className="flex mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/ai-assistant")}
             className="mr-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to AI Assistant
           </Button>
-          <h1 className="text-3xl font-bold">Chapter Summary Generator</h1>
+          <h1 className="text-3xl font-bold">
+            {selectedBook?.bookTitle
+              ? `Summary for "${selectedBook?.bookTitle}"`
+              : "Chapter Summary Generator"}
+          </h1>
         </div>
-        
+
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Configuration Panel */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle>Configuration</CardTitle>
-                <CardDescription>Select a book and chapters to summarize</CardDescription>
+                <CardDescription>
+                  Select a book and chapters to summarize
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Book Selection */}
@@ -274,8 +333,10 @@ const ChapterSummaryPage = () => {
                   </label>
                   <Select
                     disabled={isLoadingBooks || isGeneratingSummary}
-                    value={selectedBookId?.toString() || ''}
-                    onValueChange={(value) => setSelectedBookId(value ? parseInt(value) : null)}
+                    value={selectedBookId?.toString() || ""}
+                    onValueChange={(value) =>
+                      setSelectedBookId(value ? parseInt(value) : null)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a book" />
@@ -292,12 +353,14 @@ const ChapterSummaryPage = () => {
                           </SelectItem>
                         ))
                       ) : (
-                        <div className="p-2 text-sm text-gray-500">No books found</div>
+                        <div className="p-2 text-sm text-gray-500">
+                          No books found
+                        </div>
                       )}
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 {/* Chapter Selection */}
                 {selectedBookId && chapters.length > 0 && (
                   <div className="space-y-2">
@@ -305,9 +368,9 @@ const ChapterSummaryPage = () => {
                       <label className="text-sm font-medium text-gray-700">
                         Select Chapters
                       </label>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={handleSelectAllChapters}
                         disabled={isGeneratingSummary}
                       >
@@ -324,18 +387,23 @@ const ChapterSummaryPage = () => {
                         )}
                       </Button>
                     </div>
-                    
+
                     <div className="border rounded-md max-h-60 overflow-hidden">
                       <ScrollArea className="h-60 p-2">
                         {chapters.map((chapter: ChapterData) => (
-                          <div key={chapter.id} className="flex items-center space-x-2 py-2">
-                            <Checkbox 
+                          <div
+                            key={chapter.id}
+                            className="flex items-center space-x-2 py-2"
+                          >
+                            <Checkbox
                               id={`chapter-${chapter.id}`}
                               checked={selectedChapters.includes(chapter.id)}
-                              onCheckedChange={() => handleChapterToggle(chapter.id)}
+                              onCheckedChange={() =>
+                                handleChapterToggle(chapter.id)
+                              }
                               disabled={isGeneratingSummary}
                             />
-                            <label 
+                            <label
                               htmlFor={`chapter-${chapter.id}`}
                               className="text-sm cursor-pointer flex-1"
                             >
@@ -345,29 +413,77 @@ const ChapterSummaryPage = () => {
                         ))}
                       </ScrollArea>
                     </div>
-                    
+
                     <div className="text-xs text-gray-500">
-                      {selectedChapters.length} of {chapters.length} chapters selected
+                      {selectedChapters.length} of {chapters.length} chapters
+                      selected
                     </div>
                   </div>
                 )}
-                
+
                 {/* No chapters alert */}
                 {selectedBookId && chapters.length === 0 && (
                   <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>No chapters found</AlertTitle>
                     <AlertDescription>
-                      This book doesn't have any chapters. Please select a different book.
+                      This book doesn't have any chapters. Please select a
+                      different book.
                     </AlertDescription>
                   </Alert>
+                )}
+
+                {selectedBookId && (
+                  <div>
+                    <Label
+                      htmlFor={"numberOfWords"}
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Number of Words
+                    </Label>
+                    <Input
+                      id={"numberOfWords"}
+                      name={"numberOfWords"}
+                      type="number"
+                      min={50}
+                      max={500}
+                      placeholder="Enter number of words"
+                      value={numberOfWords}
+                      onChange={(e) =>
+                        setNumberOfWords(parseInt(e.target.value))
+                      }
+                    />
+                  </div>
+                )}
+                {selectedBookId && (
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      id={"combined"}
+                      className="w-4 h-4"
+                      name={"combined"}
+                      type="checkbox"
+                      checked={isCombined}
+                      onChange={() => setIsCombined((prev) => !prev)}
+                    />
+                    <Label
+                      htmlFor={"combined"}
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Combine Summary for all chapters
+                    </Label>
+                  </div>
                 )}
               </CardContent>
               <CardFooter>
                 <Button
                   className="w-full"
+                  variant={"amber"}
                   onClick={handleGenerateSummary}
-                  disabled={!selectedBookId || selectedChapters.length === 0 || isGeneratingSummary}
+                  disabled={
+                    !selectedBookId ||
+                    selectedChapters.length === 0 ||
+                    isGeneratingSummary
+                  }
                 >
                   {isGeneratingSummary ? (
                     <>
@@ -384,7 +500,7 @@ const ChapterSummaryPage = () => {
               </CardFooter>
             </Card>
           </div>
-          
+
           {/* Summary Output */}
           <div className="lg:col-span-2">
             <Card className="h-full">
@@ -394,8 +510,8 @@ const ChapterSummaryPage = () => {
                     <span>Chapter Summary</span>
                     <div className="flex space-x-2">
                       {isGenerated && !isGenerating && (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={handleApplySummary}
                           disabled={isUpdating}
@@ -413,32 +529,70 @@ const ChapterSummaryPage = () => {
                           )}
                         </Button>
                       )}
-                      
-                      {(isGenerated || isGenerating) && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(finalSummary || streamedSummary);
-                            addToast("Summary copied to clipboard", "success");
-                          }}
-                        >
-                          <Copy className="mr-2 h-4 w-4" />
-                          Copy to Clipboard
-                        </Button>
+                      {isStreamComplete && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              const blob = await pdf(
+                                <SummaryPDF
+                                  summary={streamedSummary}
+                                  chapters={selectedBook?.bookChapter}
+                                  isCombined={isCombined}
+                                  chaptersSummary={chaptersSummary}
+                                  title={
+                                    selectedBook?.bookTitle
+                                      ? `Summary for "${selectedBook?.bookTitle}"`
+                                      : "Summary"
+                                  }
+                                />,
+                              ).toBlob();
+                              const link = document.createElement("a");
+                              link.href = URL.createObjectURL(blob);
+                              link.download = `${selectedBook?.bookTitle}-Summary.pdf`;
+                              link.click();
+                              addToast("Summary PDF Downloaded", "success");
+                            }}
+                          >
+                            <DownloadIcon className="mr-2 h-4 w-4" />
+                            Download
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              await handleGenerateSummary();
+                              addToast("Summary Regenerated", "success");
+                            }}
+                          >
+                            <ReloadIcon className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
                 </CardTitle>
                 <CardDescription>
-                  {isGenerated 
-                    ? `Summary for ${selectedChapters.length} chapter${selectedChapters.length > 1 ? 's' : ''} from "${selectedBook?.bookTitle}"`
-                    : "Your generated summary will appear here"
-                  }
+                  {isGenerated
+                    ? `Summary for ${selectedChapters.length} chapter${
+                        selectedChapters.length > 1 ? "s" : ""
+                      } from "${selectedBook?.bookTitle}"`
+                    : "Your generated summary will appear here"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isStreamComplete?  formatMarkdown(streamedSummary): renderSummaryContent()}
+                {isStreamComplete
+                  ? formatMarkdown(
+                      isCombined
+                        ? streamedSummary
+                        : chaptersSummary
+                            .map(
+                              (text, i) => `**Chapter: ${i + 1}** \n\n ${text}`,
+                            )
+                            .join("\n\n"),
+                    )
+                  : renderSummaryContent()}
               </CardContent>
             </Card>
           </div>
@@ -448,4 +602,4 @@ const ChapterSummaryPage = () => {
   );
 };
 
-export default ChapterSummaryPage; 
+export default ChapterSummaryPage;

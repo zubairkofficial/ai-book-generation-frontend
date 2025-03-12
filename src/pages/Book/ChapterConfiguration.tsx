@@ -8,7 +8,7 @@ import { UpdateBookGenerateRequest, useCreateChapterMutation, useUpdateChapterMu
 import { useToast } from '@/context/ToastContext';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, BookOpen, Settings, RotateCw, Edit, Loader2 } from 'lucide-react';
+import { ArrowRight, BookOpen, Settings, RotateCw, Edit, Loader2, Circle } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import { ChapterConfigurationProps, ChapterConfig } from './types/chapter.types';
@@ -29,24 +29,14 @@ interface TextFormat {
   fontSize: string;
 }
 
-const styles = {
-  '@keyframes blink': {
-    '0%': { opacity: 1 },
-    '50%': { opacity: 0 },
-    '100%': { opacity: 1 },
-  },
-  '.typing-cursor': {
-    display: 'inline-block',
-    width: '2px',
-    animation: 'blink 1s infinite',
-    marginLeft: '2px',
-  }
-};
+
 
 const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousContent }) => {
- const navigate = useNavigate()
- const location=useLocation()
- console.log("location",location)
+ console.log("previousContent",previousContent)
+  const navigate = useNavigate()
+
+ 
+ console.log("previousContent",previousContent)
   const parsedContent = JSON.parse(previousContent);
   const tableOfContents = parsedContent?.additionalData?.tableOfContents || '';
   const [currentChapterNo, setCurrentChapterNo] = useState(1);
@@ -805,7 +795,10 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                     >
                       {isGenerating ? (
                         <div className="flex items-center gap-2">
-                          <div className="animate-spin">⌛</div>
+                          <div className="animate-spin">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                                       
+                          </div>
                           <span>Generating...</span>
                         </div>
                       ) : (

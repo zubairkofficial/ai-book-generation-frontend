@@ -19,6 +19,9 @@ interface BookData {
   bookTitle: string;
   authorName?: string;
   genre?: string;
+  type?: string;
+  numberOfChapters: number;
+  bookChapter?: any[];
   additionalData: {
     content: string;
     fullContent?: string;
@@ -36,7 +39,6 @@ export default function BookTable() {
   const [selectedStatus, setSelectedStatus] = useState<BookStatus>(BookStatus.ALL);
   const { data: allBookData, isLoading, isError, error, refetch: refetchAllBooks }:any = useFetchBooksQuery({});
   const { data: filterBookData }:any = useFetchBooksByTypeQuery({ status: selectedStatus });
-  const [selectedBook, setSelectedBook] = useState<BookData | null>(null);
   const [searchParams, setSearchParams] = useState<{ [key: string]: string }>({});
   const [deleteBook] = useDeleteBookMutation();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -175,16 +177,39 @@ export default function BookTable() {
                 >
                   <Card 
                     className="group cursor-pointer hover:shadow-lg transition-all duration-200 overflow-hidden bg-white"
-                    onClick={() => navigate(`/book-modal?id=${book.id}`)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (book.type === "incomplete") {
+                        // Calculate next chapter to generate
+                        const nextChapter = (book?.bookChapter?.length ?? 0) + 1;
+                        
+                        // Navigate to chapter configuration with the book data and next chapter
+                        navigate(`/books/add`, { 
+                          state: { 
+                            previousContent: JSON.stringify(book), 
+                            initialChapter: nextChapter 
+                          } 
+                        });
+                      } else {
+                        // For complete books, navigate to book modal as before
+                        navigate(`/book-modal?id=${book.id}`);
+                      }
+                    }}
                   >
-                    {/* Enhanced Book Cover */}
+                    {/* Book cover image */}
                     <div className="aspect-[3/4] relative overflow-hidden bg-gray-100">
                       <img
                         src={`${BASE_URl}/uploads/${book.additionalData.coverImageUrl}`}
                         alt={book.bookTitle}
                         className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300"
                       />
-                      {/* Enhanced Overlay */}
+                      {/* Status indicator overlay for incomplete books */}
+                      {book.type === "incomplete" && (
+                        <div className="absolute top-2 left-2 bg-amber-500 text-white rounded-full px-2 py-1 text-xs font-bold shadow-md">
+                          In Progress
+                        </div>
+                      )}
+                      {/* Regular overlay */}
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-200">
                         <div className="absolute inset-0 flex items-center justify-center gap-3">
                           <Button
@@ -203,11 +228,11 @@ export default function BookTable() {
                       </div>
                     </div>
 
-                    {/* Enhanced Book Info */}
+                    {/* Book info */}
                     <div className="p-4 space-y-2">
-                    <h3 className="font-semibold text-gray-900 truncate group-hover:text-amber-600 transition-colors w-full">
-  {book.bookTitle}
-</h3>
+                      <h3 className="font-semibold text-gray-900 truncate group-hover:text-amber-600 transition-colors w-full">
+                        {book.bookTitle}
+                      </h3>
 
                       <p className="text-sm text-gray-600 line-clamp-1">
                         {book.authorName || 'Unknown Author'}
@@ -215,14 +240,20 @@ export default function BookTable() {
                       <div className="flex flex-wrap gap-2">
                         {book.genre && (
                           <span className="text-xs px-2 py-1 bg-amber-50 text-amber-600 rounded-full truncate w-full">
-                          {book.genre}
-                        </span>
+                            {book.genre}
+                          </span>
+                        )}
                         
+                        {/* Status badge with progress */}
+                        {book.type === "incomplete" && (
+                          <span className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded-full truncate w-full">
+                            Incomplete ({book.bookChapter?.length || 0}/{book.numberOfChapters} chapters)
+                          </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Add delete button */}
+                    {/* Delete button */}
                     <div className="absolute top-2 right-2">
                       <Button
                         variant="destructive"
