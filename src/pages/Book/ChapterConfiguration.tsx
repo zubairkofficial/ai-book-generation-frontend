@@ -7,7 +7,7 @@ import { BASE_URl, ToastType } from '@/constant';
 import { UpdateBookGenerateRequest, useCreateChapterMutation, useUpdateChapterMutation } from '@/api/bookApi';
 import { useToast } from '@/context/ToastContext';
 import { Textarea } from '@/components/ui/textarea';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, BookOpen, Settings, RotateCw, Edit, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
@@ -45,6 +45,8 @@ const styles = {
 
 const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousContent }) => {
  const navigate = useNavigate()
+ const location=useLocation()
+ console.log("location",location)
   const parsedContent = JSON.parse(previousContent);
   const tableOfContents = parsedContent?.additionalData?.tableOfContents || '';
   const [currentChapterNo, setCurrentChapterNo] = useState(1);
@@ -269,7 +271,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
   // Update the progress calculation
   const calculateProgress = () => {
     const totalChapters = parseTableOfContents().length;
-    return (currentChapterNo / totalChapters) * 100;
+    return ((currentChapterNo-1) / totalChapters) * 100;
   };
 
   // Update where chapter count is displayed
@@ -415,6 +417,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
       // Clear previous content when starting new generation
       setRegeneratedContent('');
       setIsGenerating(true);
+      setShowInsertOption(true); // Show the regenerated content area right away
       
       const actualIndex = selectedContent?.index || index;
       
@@ -468,10 +471,11 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
       const res:any = await createBookChapter(payload).unwrap();
       
       if (res.statusCode === 200) {
-        setShowInsertOption(true);
-        setIsGenerating(false);
         eventSource.close(); // Close the event source after successful completion
       }
+      
+      // Only set isGenerating to false after event source is closed
+      setIsGenerating(false);
 
     } catch (error) {
       console.error('Error regenerating paragraph:', error);
@@ -647,7 +651,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                               <ReactMarkdown>
                                 {regeneratedContent}
                               </ReactMarkdown>
-                              <span className="animate-pulse">|</span>
+                              {isGenerating && <span className="animate-pulse">|</span>}
                             </div>
                           ) : (
                             <div className="flex items-center justify-center h-full text-gray-500">
@@ -663,8 +667,16 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                         <Button
                           className="flex-1 bg-green-500 hover:bg-green-600 text-white"
                           onClick={handleInsertContent}
+                          disabled={isGenerating}
                         >
-                          Insert Content
+                          {isGenerating ? (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Generating...</span>
+                            </div>
+                          ) : (
+                            "Insert Content"
+                          )}
                         </Button>
                         <Button
                           variant="outline"

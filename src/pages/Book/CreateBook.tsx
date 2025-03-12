@@ -333,11 +333,7 @@ const CreateBook = () => {
         addToast("Please check all fields and try again", ToastType.ERROR);
         return;
       }
-//    const wordCounts=   countWords(formData.bookInformation)
-// if(wordCounts>800){
-//   addToast("Idea core should not exceed 800 words", ToastType.ERROR);
-//   return;
-// }
+
       const payload: any = {
         ...formData,
         characters: formData.characters || "",
