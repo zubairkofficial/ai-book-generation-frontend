@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/layout/Layout';
-import { useFetchBooksByTypeQuery, useGeneratePresentationSlidesMutation, BookStatus,useRegeneratePresentationSlidesMutation } from '@/api/bookApi';
+import { useFetchBooksByTypeQuery, useGeneratePresentationSlidesMutation, BookStatus } from '@/api/bookApi';
 import { 
-  Presentation, X, Check, Loader2,  AlertCircle, ArrowLeft, 
+  Presentation, X, Check, Loader2, ChevronDown, AlertCircle, ArrowLeft, 
   Minimize2, Maximize2, ChevronLeft, ChevronRight, Download,
   SkipBack, SkipForward
 } from 'lucide-react';
@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
+import { BASE_URl } from '@/constant';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -263,89 +264,29 @@ const PresentationSlidesPage = () => {
     const currentSlideContent = slides[currentSlide];
     return (
       <div className="flex flex-col h-full">
-        {/* Top Navigation Bar */}
-        <div className="bg-white p-4 rounded-t-lg border-b flex items-center justify-between sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setCurrentSlide(0)}
-              disabled={currentSlide === 0}
-              className="p-2 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <SkipBack className="h-4 w-4" />
-            </Button>
-            <Button
-              onClick={goToPreviousSlide}
-              disabled={currentSlide === 0}
-              className="p-2 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm font-medium px-3 py-1 bg-gray-50 rounded-md border">
-              {currentSlide + 1} / {slides.length}
-            </span>
-            <Button
-              onClick={goToNextSlide}
-              disabled={currentSlide === slides.length - 1}
-              className="p-2 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              onClick={() => setCurrentSlide(slides.length - 1)}
-              disabled={currentSlide === slides.length - 1}
-              className="p-2 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <SkipForward className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={handleDownloadPDF}
-              className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download PDF
-            </Button>
-            <Button
-              onClick={handleExportPPTX}
-              className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
-            >
-              <Presentation className="mr-2 h-4 w-4" />
-              Export PPTX
-            </Button>
-            <Button 
-              onClick={toggleFullscreen}
-              className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
-            >
-              <Maximize2 className="mr-2 h-4 w-4" />
-              Present
-            </Button>
-          </div>
-        </div>
-
         {/* Slide Content */}
-        <div className="flex-1 p-6 bg-gray-50 overflow-auto">
-          <div className="aspect-[16/9] mx-auto transform transition-all duration-300 hover:scale-[1.02]">
+        <div className="flex-1 px-4 py-6 bg-gray-50 overflow-auto rounded-lg">
+          <div className="aspect-[16/9] mx-auto transform transition-all duration-300 hover:scale-[1.01]">
             {renderSlideContent(currentSlideContent)}
           </div>
         </div>
 
         {/* Carousel Thumbnails */}
-        <div className="bg-white p-4 border-t overflow-x-auto shadow-inner">
-          <div className="flex gap-4">
+        <div className="bg-white p-3 border-t overflow-x-auto shadow-inner">
+          <div className="flex gap-3">
             {slides.map((s, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`flex-shrink-0 w-32 h-24 rounded-lg border-2 transition-all transform hover:scale-105 ${
+                className={`flex-shrink-0 w-28 h-16 rounded-lg border-2 transition-all transform hover:scale-105 ${
                   currentSlide === index
-                    ? 'border-blue-500 shadow-lg scale-105'
+                    ? 'border-amber-500 shadow-lg scale-105'
                     : 'border-gray-200'
                 }`}
               >
-                <div className="w-full h-full p-3 text-xs overflow-hidden bg-white">
-                  <div className="font-medium truncate mb-2">{s.title}</div>
-                  <div className="text-gray-500 line-clamp-2">
+                <div className="w-full h-full p-2 text-xs overflow-hidden bg-white">
+                  <div className="font-medium truncate">{s.title}</div>
+                  <div className="text-gray-500 line-clamp-1 text-[10px] mt-0.5">
                     {s.content.replace(/[#\-*]/g, '').split('\n').filter(Boolean)[1]}
                   </div>
                 </div>
@@ -369,51 +310,50 @@ const PresentationSlidesPage = () => {
     );
   };
 
-  // Update handleDownloadPDF function
   const handleDownloadPDF = async () => {
     if (!completedSlides.length) {
       addToast("No slides available to download", "error");
       return;
     }
-
+  
     try {
       // Create a temporary container for all slides
       const tempContainer = document.createElement('div');
       tempContainer.style.width = '1920px'; // Full HD width for better quality
       tempContainer.style.backgroundColor = 'rgb(243 244 246)'; // bg-gray-50
       tempContainer.style.padding = '24px';
-
-      // Save current slide
+  
+      // Save current slide index to restore later
       const currentSlideIndex = currentSlide;
-
+  
       // Create slides container
       const slidesContainer = document.createElement('div');
       slidesContainer.style.display = 'flex';
       slidesContainer.style.flexDirection = 'column';
       slidesContainer.style.gap = '24px';
-
+  
       // Add each slide
       for (let i = 0; i < completedSlides.length; i++) {
         // Set current slide to render
         setCurrentSlide(i);
         
-        // Wait for render
+        // Wait for React to render the slide
         await new Promise(resolve => setTimeout(resolve, 100));
-
+  
         if (!slidesContainerRef.current) continue;
-
-        // Find the actual slide content by looking for the prose element
+  
+        // Find the slide content (prose class contains markdown content)
         const slideContent = slidesContainerRef.current.querySelector('.prose');
         if (!slideContent) continue;
-
-        // Clone only the slide content
+  
+        // Clone the slide content
         const slideClone = slideContent.cloneNode(true) as HTMLElement;
-        
-        // Remove any navigation elements if they exist
+  
+        // Remove navigation elements if present
         const navigationElements = slideClone.querySelectorAll('button, .navigation');
         navigationElements.forEach(el => el.remove());
-        
-        // Style the slide container
+  
+        // Create and style the slide div
         const slideDiv = document.createElement('div');
         slideDiv.style.pageBreakAfter = 'always';
         slideDiv.style.backgroundColor = 'white';
@@ -424,8 +364,8 @@ const PresentationSlidesPage = () => {
         slideDiv.style.height = '1080px'; // 16:9 aspect ratio
         slideDiv.style.position = 'relative';
         slideDiv.style.padding = '2rem';
-
-        // Create content wrapper to center the content
+  
+        // Center the content
         const contentWrapper = document.createElement('div');
         contentWrapper.style.display = 'flex';
         contentWrapper.style.flexDirection = 'column';
@@ -434,10 +374,9 @@ const PresentationSlidesPage = () => {
         contentWrapper.style.height = '100%';
         contentWrapper.style.width = '100%';
         contentWrapper.appendChild(slideClone);
-
-        // Add content wrapper to slide
+  
         slideDiv.appendChild(contentWrapper);
-        
+  
         // Add slide number
         const slideNumber = document.createElement('div');
         slideNumber.style.position = 'absolute';
@@ -447,16 +386,16 @@ const PresentationSlidesPage = () => {
         slideNumber.style.color = 'rgb(75 85 99)';
         slideNumber.textContent = `Slide ${i + 1} of ${completedSlides.length}`;
         slideDiv.appendChild(slideNumber);
-
+  
         slidesContainer.appendChild(slideDiv);
       }
-
-      // Restore original slide
+  
+      // Restore the original slide
       setCurrentSlide(currentSlideIndex);
-
+  
       tempContainer.appendChild(slidesContainer);
       document.body.appendChild(tempContainer);
-
+  
       // Configure html2pdf options
       const opt = {
         margin: 0.5,
@@ -478,10 +417,10 @@ const PresentationSlidesPage = () => {
           compress: false
         }
       };
-
-      // Generate PDF
+  
+      // Generate and save the PDF
       await html2pdf().set(opt).from(tempContainer).save();
-      
+  
       // Cleanup
       document.body.removeChild(tempContainer);
       addToast("Slides downloaded successfully", "success");
@@ -497,19 +436,19 @@ const PresentationSlidesPage = () => {
       addToast("No slides available to export", "error");
       return;
     }
-
+  
     try {
-      // Create a new PowerPoint presentation
+      // Initialize a new PowerPoint presentation
       const pres = new pptxgen();
-
+  
       // Set presentation properties
       pres.layout = 'LAYOUT_16x9';
       pres.author = selectedBook?.authorName || 'Author';
       pres.title = selectedBook?.bookTitle || 'Presentation';
-
-      // Save current slide
+  
+      // Save current slide index
       const currentSlideIndex = currentSlide;
-
+  
       // Add each slide
       for (let i = 0; i < completedSlides.length; i++) {
         // Set current slide to render
@@ -517,16 +456,16 @@ const PresentationSlidesPage = () => {
         
         // Wait for render
         await new Promise(resolve => setTimeout(resolve, 100));
-
+  
         if (!slidesContainerRef.current) continue;
-
-        // Find the actual slide content
+  
+        // Find the slide content
         const slideContent = slidesContainerRef.current.querySelector('.prose');
         if (!slideContent) continue;
-
+  
         // Create a new slide
         const slide = pres.addSlide();
-
+  
         // Add title
         slide.addText(completedSlides[i].title, {
           x: 0.5,
@@ -535,10 +474,10 @@ const PresentationSlidesPage = () => {
           h: 1,
           fontSize: 36,
           bold: true,
-          color: '1a202c'
+          color: '1a202c' // Gray-800
         });
-
-        // Add content (removing the title from content)
+  
+        // Add content, removing the title
         const contentWithoutTitle = completedSlides[i].content.replace(`# ${completedSlides[i].title}`, '').trim();
         slide.addText(contentWithoutTitle, {
           x: 0.5,
@@ -546,10 +485,10 @@ const PresentationSlidesPage = () => {
           w: '90%',
           h: 4,
           fontSize: 18,
-          color: '374151',
+          color: '374151', // Gray-700
           bullet: { type: 'bullet' }
         });
-
+  
         // Add slide number
         slide.addText(`Slide ${i + 1} of ${completedSlides.length}`, {
           x: 'right',
@@ -557,16 +496,16 @@ const PresentationSlidesPage = () => {
           w: 2,
           h: 0.3,
           fontSize: 12,
-          color: '6B7280',
+          color: '6B7280', // Gray-500
           align: 'right'
         });
       }
-
+  
       // Restore original slide
       setCurrentSlide(currentSlideIndex);
-
+  
       // Save the presentation
-      pres.writeFile(`${selectedBook?.bookTitle || 'presentation'}-slides.pptx`);
+      await pres.writeFile(`${selectedBook?.bookTitle || 'presentation'}-slides.pptx`);
       addToast("Slides exported successfully", "success");
     } catch (error) {
       console.error("Error exporting slides:", error);
@@ -576,8 +515,8 @@ const PresentationSlidesPage = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto h-[88vh] p-6">
-        <div className="flex items-center mb-8">
+      <div className="mx-auto p-4">
+        <div className="flex items-center mb-6">
           <Button 
             onClick={() => navigate('/ai-assistant')}
             className="mr-4 px-4 py-2 hover:bg-amber-100 rounded-md flex items-center bg-amber-50 text-amber-500"
@@ -588,9 +527,9 @@ const PresentationSlidesPage = () => {
           <h1 className="text-3xl font-bold">Presentation Slides Generator</h1>
         </div>
         
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           {/* Configuration Panel */}
-          <div className="h-[calc(75vh-2rem)]">
+          <div className="h-[calc(100vh-8rem)]">
             <Card className="h-full">
               <CardHeader>
                 <CardTitle>Configuration</CardTitle>
@@ -747,51 +686,71 @@ const PresentationSlidesPage = () => {
           </div>
           
           {/* Presentation Preview */}
-          <div className="h-[calc(75vh-2rem)] col-span-2">
+          <div className="h-[100vh] col-span-2">
             <Card className="h-full flex flex-col">
-              <CardHeader>
-                <CardTitle>
-                  <div className="flex justify-between items-center">
-                    <span>Presentation Preview</span>
-                    <div className="flex gap-2">
-                      {isGenerated && completedSlides.length > 0 && (
-                        <>
-                          <Button
-                            onClick={handleDownloadPDF}
-                            className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
-                          >
-                            <Download className="mr-2 h-4 w-4" />
-                            Download PDF
-                          </Button>
-                          <Button
-                            onClick={handleExportPPTX}
-                            className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
-                          >
-                            <Presentation className="mr-2 h-4 w-4" />
-                            Export PPTX
-                          </Button>
-                        </>
-                      )}
-                      {isGenerated && slides.length > 0 && (
-                        <Button 
-                          onClick={toggleFullscreen}
-                          className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
-                        >
-                          <Maximize2 className="mr-2 h-4 w-4" />
-                          Present
-                        </Button>
-                      )}
-                    </div>
+              <CardHeader className="py-3 px-4 border-b">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      onClick={() => setCurrentSlide(0)}
+                      disabled={currentSlide === 0 || !isGenerated}
+                      className="p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <SkipBack className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={goToPreviousSlide}
+                      disabled={currentSlide === 0 || !isGenerated}
+                      className="p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-base font-semibold px-2">
+                      Presentation Preview {isGenerated && slides.length > 0 && `(${currentSlide + 1}/${slides.length})`}
+                    </span>
+                    <Button
+                      onClick={goToNextSlide}
+                      disabled={currentSlide === slides.length - 1 || !isGenerated}
+                      className="p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={() => setCurrentSlide(slides.length - 1)}
+                      disabled={currentSlide === slides.length - 1 || !isGenerated}
+                      className="p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <SkipForward className="h-4 w-4" />
+                    </Button>
                   </div>
-                </CardTitle>
-                <CardDescription>
-                  {isGenerated && slides.length > 0
-                    ? `Presentation based on ${selectedChapters.length} chapter${selectedChapters.length > 1 ? 's' : ''} from "${selectedBook?.bookTitle}"`
-                    : "Your presentation preview will appear here"
-                  }
-                </CardDescription>
+                  {isGenerated && completedSlides.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        onClick={handleDownloadPDF}
+                        className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
+                      >
+                        <Download className="mr-1.5 h-4 w-4" />
+                        PDF
+                      </Button>
+                      <Button
+                        onClick={handleExportPPTX}
+                        className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
+                      >
+                        <Presentation className="mr-1.5 h-4 w-4" />
+                        PPTX
+                      </Button>
+                      <Button 
+                        onClick={toggleFullscreen}
+                        className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
+                      >
+                        <Maximize2 className="mr-1.5 h-4 w-4" />
+                        Present
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-hidden">
+              <CardContent className="flex-1 overflow-hidden p-4">
                 <div ref={slidesContainerRef} className="h-full overflow-auto">
                   {renderCurrentSlide()}
                 </div>

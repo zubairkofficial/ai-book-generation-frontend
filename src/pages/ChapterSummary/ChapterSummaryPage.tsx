@@ -475,10 +475,10 @@ const ChapterSummaryPage = () => {
                 )}
               </CardContent>
               <CardFooter>
+                
                 <Button
-                  className="w-full"
-                  variant={"amber"}
-                  onClick={handleGenerateSummary}
+                   className="w-full bg-amber-500 hover:bg-amber-600 text-white"            
+                   onClick={handleGenerateSummary}
                   disabled={
                     !selectedBookId ||
                     selectedChapters.length === 0 ||

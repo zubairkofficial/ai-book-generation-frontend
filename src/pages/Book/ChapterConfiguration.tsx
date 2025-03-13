@@ -669,11 +669,10 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
       ) : (
         <>
         {inComplete?
-         <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="flex mb-3  text-gray-600 hover:text-yellow-600"
-        >
+         <Button 
+                     onClick={() => navigate(-1)}
+                     className="mr-4 px-4 py-2 hover:bg-amber-100 rounded-md flex items-center bg-amber-50 text-amber-500"
+                   >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>:""}
