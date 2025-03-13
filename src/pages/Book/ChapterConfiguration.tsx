@@ -32,23 +32,46 @@ interface TextFormat {
 
 
 const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousContent }) => {
- console.log("previousContent",previousContent)
   const navigate = useNavigate()
+  const location=useLocation()
+  
+  // Safely get book data from either location state or prop
+  const getBooksData = () => {
+    try {
+      // First try to get data from location state (if it exists)
+      if (location.state && location.state.previousContent) {
+        return typeof location.state.previousContent === 'string' 
+          ? JSON.parse(location.state.previousContent) 
+          : location.state.previousContent;
+      }
+      
+      // Fall back to previousContent prop if no location state
+      return typeof previousContent === 'string' 
+        ? JSON.parse(previousContent || '{}') 
+        : (previousContent || {});
+    } catch (error) {
+      console.error('Error parsing book data:', error);
+      return {};
+    }
+  };
 
- 
- console.log("previousContent",previousContent)
-  const parsedContent = JSON.parse(previousContent);
-  const tableOfContents = parsedContent?.additionalData?.tableOfContents || '';
-  const [currentChapterNo, setCurrentChapterNo] = useState(1);
+  const bookData = getBooksData();
+  const tableOfContents = bookData?.additionalData?.tableOfContents || '';
+  
+  // Set initial chapter number from location state or default to 1
+  const [currentChapterNo, setCurrentChapterNo] = useState(() => {
+    return location.state?.initialChapter ? Number(location.state.initialChapter) : 1;
+  });
+  
+  // Set up other state variables
   const [streamedContent, setStreamedContent] = useState<string>('');
   const [chapterImages, setChapterImages] = useState<Array<{ title: string; url: string }>>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const streamContainerRef = useRef<HTMLDivElement>(null);
-  const bookData = JSON.parse(previousContent || '{}');
-
+  
   const [createBookChapter] = useCreateChapterMutation();
   const [updateBookChapter] = useUpdateChapterMutation();
-  const { addToast } = useToast(); // Use custom toast hook
+  const { addToast } = useToast();
 
   const [config, setConfig] = useState<ChapterConfig>({
     numberOfChapters: '',
@@ -128,6 +151,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
     
   };
   const handleRegenerateStreamedContent = (content: string) => {
+   console.log("regeneate",content)
     setRegeneratedContent(prev => {
       // Append new content to existing content
       return prev + content;
@@ -432,7 +456,6 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
         try {
           const data = JSON.parse(event.data);
           console.log("Streaming data:", data);
-          
           if (data.text) {
             // Add new text to existing content
             handleRegenerateStreamedContent(data.text);
@@ -585,6 +608,39 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
 
     };
   }, []);
+
+  // Effect to handle chapter navigation based on initialChapter
+  useEffect(() => {
+    // Check if we have existing chapters and redirect if needed
+    if (bookData && bookData.bookChapter && Array.isArray(bookData.bookChapter)) {
+      // Find chapters that already exist
+      const existingChapters = bookData.bookChapter.map((chapter: { chapterNo: any; }) => chapter.chapterNo);
+      
+      // If we're starting at a specific chapter (from location.state)
+      // and that chapter already exists, we might need to redirect to the next chapter to generate
+      if (location.state?.initialChapter) {
+        const initialChapter = Number(location.state.initialChapter);
+        const nextChapterToGenerate = findNextChapterToGenerate(existingChapters, bookData.numberOfChapters);
+        
+        // If the initial chapter is already generated but there are more chapters to generate,
+        // update to the next chapter that needs generation
+        if (existingChapters.includes(initialChapter) && nextChapterToGenerate !== initialChapter) {
+          setCurrentChapterNo(nextChapterToGenerate);
+          addToast(`Redirecting to chapter ${nextChapterToGenerate} which needs to be generated`, ToastType.INFO);
+        }
+      }
+    }
+  }, [bookData, location.state]);
+
+  // Helper function to find the next chapter that needs to be generated
+  const findNextChapterToGenerate = (existingChapters: number[], totalChapters: number): number => {
+    for (let i = 1; i <= totalChapters; i++) {
+      if (!existingChapters.includes(i)) {
+        return i;
+      }
+    }
+    return 1; // Default to chapter 1 if all chapters exist
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">

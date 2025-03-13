@@ -26,5 +26,5 @@ export interface TextFormat {
 }
 
 export interface ChapterConfigurationProps {
-  previousContent: string|any;
+  previousContent?: string;
 } 

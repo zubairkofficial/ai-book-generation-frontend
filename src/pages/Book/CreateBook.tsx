@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,8 +105,6 @@ interface ApiErrorResponse {
 
 const CreateBook = () => {
   const [generateBook, { isLoading }] = useGenerateBookMutation();
-  const { refetch:refectAllBooks } = useFetchBooksQuery({}); // Fetch books with the hook
-  const [createBookChapter] = useCreateChapterMutation(); // Fetch books with the hook
   const location=useLocation()
   console.log("location",location.state)
  
@@ -187,6 +185,7 @@ const CreateBook = () => {
     }
   };
 
+ 
   const fieldDescriptions: Record<string, string> = {
     // Basic Information
     bookTitle: "The main title of your book",
@@ -975,7 +974,7 @@ const CreateBook = () => {
     return (
       <Layout>
         <ChapterConfiguration
-          previousContent={location?.state??previousContent}
+          previousContent={location?.state?.previousContent??previousContent}
         />
       </Layout>
     );

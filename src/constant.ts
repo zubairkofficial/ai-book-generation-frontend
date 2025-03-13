@@ -1,4 +1,4 @@
-export const BASE_URl="http://localhost:3000/api/v1"
+export const BASE_URl="http://192.168.18.57:3000/api/v1"
 // export const BASE_URl="http://54.167.10.76/backend/api/v1"
 export enum ToastType {
     SUCCESS = 'success',

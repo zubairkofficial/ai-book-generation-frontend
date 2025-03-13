@@ -184,7 +184,7 @@ export default function BookTable() {
                         const nextChapter = (book?.bookChapter?.length ?? 0) + 1;
                         
                         // Navigate to chapter configuration with the book data and next chapter
-                        navigate(`/books/add`, { 
+                        navigate(`/books/chapter-configuration`, { 
                           state: { 
                             previousContent: JSON.stringify(book), 
                             initialChapter: nextChapter 

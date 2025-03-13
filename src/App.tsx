@@ -27,6 +27,7 @@ import 'react-quill/dist/quill.snow.css';
 import './styles/editor.css';
 import ChapterSummaryPage from './pages/ChapterSummary/ChapterSummaryPage';
 import PresentationSlidesPage from './pages/PresentationSlides/PresentationSlidesPage';
+import ChapterConfiguration from './pages/Book/ChapterConfiguration';
 
 function App() {
   const dispatch = useDispatch();
@@ -81,6 +82,7 @@ function App() {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/books/add" element={<CreateBook />} />
+            <Route path="/books/chapter-configuration" element={<ChapterConfiguration />} />
             <Route path="/books" element={<BookTable />} />
             <Route path="/home" element={<HomePage />} />
 

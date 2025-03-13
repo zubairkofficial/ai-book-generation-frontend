@@ -195,7 +195,7 @@ export const bookApi = baseApi.injectEndpoints({
     }),
     fetchBooksByType: builder.query<FetchBooksResponse, { status?: BookStatus }>({
       query: ({ status = BookStatus.DRAFT }) => ({
-        url: `/book-generation/${status}`,
+        url: `/book-generation/search/${status}`,
         method: 'GET',
       }),
     }),
