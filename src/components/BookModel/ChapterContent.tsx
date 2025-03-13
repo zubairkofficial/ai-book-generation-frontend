@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkRehype from 'remark-rehype'
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { markdownComponents } from '@/utils/markdownUtils';
@@ -9,7 +10,11 @@ import { QuillEditor } from './QuillEditor';
 import { useUpdateChapterMutation } from '@/api/bookApi';
 import DOMPurify from 'dompurify';
 import { useToast } from '@/context/ToastContext';
-
+import rehypeStringify from 'rehype-stringify'
+import remarkParse from 'remark-parse'
+import {unified} from 'unified'
+import TurnDownService from 'turndown'
+const turndown = new TurnDownService();
 interface ChapterContentProps {
   chapter: {
     chapterNo: number;
@@ -47,6 +52,22 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
   const [localContent, setLocalContent] = useState(chapter.chapterInfo);
   const [originalContent, setOriginalContent] = useState(chapter.chapterInfo);
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
+  const [quillEditorContent, setQuillEditorContent] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      const file = await unified()
+        .use(remarkParse)
+        .use(remarkRehype, {allowDangerousHtml: true})
+        .use(rehypeRaw)
+        .use(rehypeStringify)
+        .process(chapter.chapterInfo);
+      console.log("HTML content", file.toString())
+      setQuillEditorContent(file.toString());
+    })();
+  }, []);
+
+  console.log("chapter Info", chapter.chapterInfo);
   
   const hasPrevious = chapter.chapterNo > 1;
   const hasNext = chapter.chapterNo < totalChapters;
@@ -110,8 +131,10 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
   };
 
   // Track content changes locally
-  const handleContentUpdate = (content: string) => {
-    setLocalContent(content);
+  const handleContentUpdate = async (content: string) => {
+    const markdownContent = turndown.turndown(content);
+    console.log("Editor content", markdownContent);
+    setLocalContent(markdownContent);
     const hasChanged = content !== originalContent;
     setHasLocalChanges(hasChanged);
     setHasChanges(hasChanged);
@@ -130,6 +153,14 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
         chapterNo: chapter.chapterNo,
         updateContent: localContent
       }).unwrap();
+      const file = await unified()
+        .use(remarkParse)
+        .use(remarkRehype, {allowDangerousHtml: true})
+        .use(rehypeRaw)
+        .use(rehypeStringify)
+        .process(localContent);
+      console.log("HTML content", file.toString())
+      setQuillEditorContent(file.toString());
       
       // Update parent state
       onUpdate(localContent, chapter.chapterNo.toString());
@@ -158,7 +189,7 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
     <div className="min-h-[800px] relative">
       {/* Save/Cancel buttons when in edit mode */}
       {editMode && (
-        <div className="sticky top-4 z-10 flex justify-end mb-4 px-4">
+        <div className="sticky w-fit ml-auto top-4 z-10 flex justify-end mb-4 px-4">
           <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-gray-100 p-2 flex gap-2">
             {hasLocalChanges && (
               <Button
@@ -203,7 +234,7 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
       {/* Chapter Content */}
       {editMode ? (
         <QuillEditor
-          content={chapter.chapterInfo}
+          content={quillEditorContent}
           editMode={true}
           onUpdate={handleContentUpdate}
           className="prose max-w-none"
@@ -211,20 +242,21 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
         />
       ) : (
         <div className="prose max-w-none">
-          {chapter.chapterInfo.trim().startsWith('<') ? (
-            <div 
-              className="chapter-content" 
-              dangerouslySetInnerHTML={{ __html: formattedContent }}
-            />
-          ) : (
+            {/* {chapter.chapterInfo.trim().startsWith('<') ? (            // 
+          // ) : ( */}
+{/* <div 
+                className="chapter-content" 
+                dangerouslySetInnerHTML={{ __html: quillEditorContent }}
+              /> */}
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={[remarkRehype, remarkGfm]}
               rehypePlugins={[rehypeRaw]}
+              remarkRehypeOptions={{ allowDangerousHtml: true }}
               components={markdownComponents}
             >
               {chapter.chapterInfo}
             </ReactMarkdown>
-          )}
+          {/* )} */}
         </div>
       )}
 

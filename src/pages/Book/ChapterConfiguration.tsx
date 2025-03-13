@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BASE_URl, ToastType } from '@/constant';
-import { UpdateBookGenerateRequest, useCreateChapterMutation, useUpdateChapterMutation } from '@/api/bookApi';
+import { UpdateBookGenerateRequest, useCreateChapterMutation, useFetchBooksQuery, useUpdateChapterMutation } from '@/api/bookApi';
 import { useToast } from '@/context/ToastContext';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -35,6 +35,8 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
   const navigate = useNavigate()
   const location=useLocation()
   const inComplete=location.pathname==="/books/chapter-configuration"
+    const {  refetch: refetchAllBooks }:any = useFetchBooksQuery({});
+  
   // Safely get book data from either location state or prop
   const getBooksData = () => {
     try {
@@ -67,6 +69,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
   const [streamedContent, setStreamedContent] = useState<string>('');
   const [chapterImages, setChapterImages] = useState<Array<{ title: string; url: string }>>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isInserting, setIsInserting] = useState(false);
   const streamContainerRef = useRef<HTMLDivElement>(null);
   
   const [createBookChapter] = useCreateChapterMutation();
@@ -553,7 +556,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
   const handleInsertContent = async () => {
     if (selectedContent && regeneratedContent) {
       try {
-        setIsGenerating(true);        
+        setIsInserting(true);        
         // Update local content first
         const updatedContent = (() => {
           const paragraphs = streamedContent.split('\n');
@@ -598,7 +601,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
         addToast(error.message || "Failed to update content", ToastType.ERROR);
       } finally {
         // Reset states after operation
-        setIsGenerating(false);
+        setIsInserting(false);
         setShowInsertOption(false);
         setSelectedContent(null);
         setShowEditPanel(false);
@@ -649,6 +652,10 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
     return 1; // Default to chapter 1 if all chapters exist
   };
 
+  const handleChapterBack=async()=>{
+   await refetchAllBooks()
+    navigate(-1)
+  }
   return (
     <div className="container mx-auto px-4 py-8">
       {isBookCompleted ? (
@@ -670,7 +677,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
         <>
         {inComplete?
          <Button 
-                     onClick={() => navigate(-1)}
+                     onClick={handleChapterBack}
                      className="mr-4 px-4 py-2 hover:bg-amber-100 rounded-md flex items-center bg-amber-50 text-amber-500"
                    >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -726,7 +733,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                       </div>
                       <div className="flex gap-2">
                         <Button
-                          className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                           className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
                           onClick={handleInsertContent}
                           disabled={isGenerating}
                         >
@@ -735,7 +742,12 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                               <Loader2 className="w-4 h-4 animate-spin" />
                               <span>Generating...</span>
                             </div>
-                          ) : (
+                          ):isInserting?
+                          <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Inserting...</span>
+                        </div>
+                           : (
                             "Insert Content"
                           )}
                         </Button>

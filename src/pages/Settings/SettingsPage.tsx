@@ -51,20 +51,14 @@ const apiKeysSchema = yup.object({
       if (!value) return true;
       return /^sk-[a-zA-Z0-9_-]+$/i.test(value);
     }),
-  dalleKey: yup.string()
+  
+    falKey: yup.string()
     .nullable()
     .transform((value) => value || null)
-    .test('is-empty-or-valid', 'Invalid DALL-E API key format', function(value) {
-      if (!value) return true;
-      return /^sk-[a-zA-Z0-9_-]+$/i.test(value);
-    }),
-  falKey: yup.string()
-    .nullable()
-    .transform((value) => value || null)
-    .test('is-empty-or-valid', 'Invalid Fal AI key format', function(value) {
-      if (!value) return true;
-      return /^fal_[a-zA-Z0-9_-]+$/i.test(value);
-    }),
+    .test('is-string', 'Fal AI key must be a string', function(value) {
+      if (!value) return true; // Allow null or undefined
+      return typeof value === 'string';
+    }),  
   llmModel: yup.string()
     .nullable()
     .transform((value) => value || null),
@@ -100,7 +94,6 @@ interface PasswordFormData {
 interface ApiKeysFormData {
   id?: string | null;
   openaiKey?: string | null;
-  dalleKey?: string | null;
   falKey?: string | null;
   llmModel?: string | null;
 }
@@ -108,11 +101,10 @@ interface ApiKeysFormData {
 
 // Add interface for API keys payload
 interface UpdateApiKeysPayload {
-  id?: number;
+  id: number;
   model?: string;
   openai_key?: string;
-  dalle_key?: string;
-  fal_key?: string;
+  fal_ai?: string;
 }
 
 const SettingsPage = () => {
@@ -144,7 +136,6 @@ const SettingsPage = () => {
     defaultValues: {
       id: '',
       openaiKey: '',
-      dalleKey: '',
       falKey: '',
       llmModel: ''
     }
@@ -171,7 +162,7 @@ const SettingsPage = () => {
   useEffect(() => {
     if (apiKeyInfo) {
       resetApiKeys({
-        id: apiKeyInfo.id || '',
+        id: apiKeyInfo.id ,
         openaiKey: '',
         dalleKey: '',
         falKey: '',
@@ -246,15 +237,13 @@ useEffect(()=>{userRefetch()},[])
         id: Number(apiKeyInfo?.id) || Number(data.id), // Always include ID if it exists in apiKeyInfo
         ...(data.llmModel && { model: data.llmModel }),
         ...(data.openaiKey && { openai_key: data.openaiKey }),
-        ...(data.dalleKey && { dalle_key: data.dalleKey }),
-        ...(data.falKey && { fal_key: data.falKey }),
+        ...(data.falKey && { fal_ai: data.falKey }),
       };
 
       await updateApiKeys(payload).unwrap();
       resetApiKeys({
-        id: apiKeyInfo?.id || '',
+        id: apiKeyInfo?.id,
         openaiKey: '',
-        dalleKey: '',
         falKey: '',
         llmModel: apiKeyInfo?.model || ''
       });
@@ -524,8 +513,8 @@ useEffect(()=>{userRefetch()},[])
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-600">Fal AI Key:</span>
                                 <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                                  {apiKeyInfo.fal_key ? 
-                                    `${apiKeyInfo.fal_key.substring(0, 4)}...${apiKeyInfo.fal_key.slice(-4)}` : 
+                                  {apiKeyInfo.fal_ai ? 
+                                    `${apiKeyInfo.fal_ai.substring(0, 4)}...${apiKeyInfo.fal_ai.slice(-4)}` : 
                                     'Not set'}
                                 </code>
                               </div>
@@ -592,43 +581,7 @@ useEffect(()=>{userRefetch()},[])
                               </p>
                             </div>
 
-                            <div className="space-y-2">
-                              <Label htmlFor="dalleKey">New DALL-E API Key</Label>
-                              <div className="relative">
-                                <Input
-                                  {...registerApiKeys('dalleKey')}
-                                  type="password"
-                                  id="dalleKey"
-                                  placeholder="Leave empty to keep current key"
-                                  className={`w-full pr-20 ${apiKeyErrors.dalleKey ? 'border-red-500' : ''}`}
-                                />
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                                  {apiKeyErrors.dalleKey && (
-                                    <svg 
-                                      className="h-5 w-5 text-red-500" 
-                                      fill="none" 
-                                      viewBox="0 0 24 24" 
-                                      stroke="currentColor"
-                                    >
-                                      <path 
-                                        strokeLinecap="round" 
-                                        strokeLinejoin="round" 
-                                        strokeWidth={2} 
-                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
-                                      />
-                                    </svg>
-                                  )}
-                                </div>
-                              </div>
-                              {apiKeyErrors.dalleKey && (
-                                <p className="text-sm text-red-500 mt-1">
-                                  {apiKeyErrors.dalleKey.message}
-                                </p>
-                              )}
-                              <p className="text-xs text-gray-500 mt-1">
-                                Format: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (51 characters)
-                              </p>
-                            </div>
+                            
 
                             <div className="space-y-2">
                               <Label htmlFor="falKey">New Fal AI Key</Label>

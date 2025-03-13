@@ -1,4 +1,4 @@
-import { Dispatch, FormEvent, SetStateAction, useState } from 'react';
+import { Dispatch, FormEvent, SetStateAction, useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -23,6 +23,8 @@ import {  markdownComponents } from '@/utils/markdownUtils.tsx';
 import { ChapterContent } from './ChapterContent';
 import { IntroductionContent } from './IntroductionContent';
 import { useToast } from '@/context/ToastContext';
+import TurnDownService from 'turndown'
+const turndown = new TurnDownService();
 
 // Define types for pages and content
 interface PageContent {
@@ -158,10 +160,6 @@ const BookModel = () => {
       addToast(`Failed to update ${pageType || 'content'}`, "error");
     }
   };
-
-
-
-
 
   // Add these styles at the top of your file
   const navStyles = {
@@ -355,7 +353,7 @@ const BookModel = () => {
 
       {/* Book Content */}
       <div className="container mx-auto p-8">
-        <div className="bg-white rounded-xl shadow-xl max-w-4xl mx-auto min-h-[800px] p-8">
+        <div className="bg-white rounded-xl shadow-xl max-w-4xl ml-auto min-h-[800px] p-8">
           <div
             className="prose max-w-none"
             style={{
@@ -536,9 +534,14 @@ const renderCurrentPageContent = (
     default:
       if (currentPage.startsWith('chapter-')) {
         const chapterNum = parseInt(currentPage.split('-')[1]);
-        const chapter = bookData.bookChapter.find(
+        const chapter = JSON.parse(JSON.stringify(bookData.bookChapter.find(
           (c: any) => c.chapterNo === chapterNum
-        );
+        )));
+
+        if (chapter && chapter.chapterInfo?.startsWith("<")) {
+          const markdown = turndown.turndown(chapter.chapterInfo).replace(/ \#/gm, '\n\n#').replace("\\#", '\n\n#');
+          chapter.chapterInfo = markdown;
+        }
         
         return chapter ? (
           <ChapterContent

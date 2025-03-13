@@ -6,6 +6,7 @@ import rehypeRaw from 'rehype-raw';
 import DOMPurify from 'dompurify';
 import 'react-quill/dist/quill.snow.css';
 import './quill-custom.css'; // Create this file for custom styling
+import Quill from 'quill';
 
 interface QuillEditorProps {
   title?: string;
@@ -121,13 +122,13 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   const modules = {
     toolbar: editMode ? {
       container: [
-        [{ 'header': [1, 2, 3, false] }],
-        // [{ 'font': ['', 'Times New Roman', 'Arial', 'Helvetica', 'Courier New'] }],
-        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'header': [1, 2, 3,4,, false] }],
+        // [{ 'font': [] }],
+        ['bold', 'italic'],
         [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }],
-        [{ 'align': [] }],
-        [{ 'color': [] }, { 'background': [] }],
+        // [{ 'indent': '-1'}, { 'indent': '+1' }],
+        // [{ 'align': [] }],
+        // [{ 'color': [] }, { 'background': [] }],
         ['link'],
         ['clean']
       ],

@@ -315,11 +315,10 @@
 
 .quill-content-view.index-content strong,
 .quill-container .ql-editor strong {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 700;
     margin-top: 1.5rem;
     margin-bottom: 0.5rem;
-    display: block;
     color: #1f2937;
 }
 

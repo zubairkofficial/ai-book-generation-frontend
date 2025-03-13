@@ -1,11 +1,9 @@
 import { ChangeEvent, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { toast, ToastContainer } from 'react-toastify';
 import { motion } from 'framer-motion';
 import { Loader2, Eye, Search,  Plus, BookOpen, Trash2 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { useFetchBooksQuery, useDeleteBookMutation, BookStatus, useFetchBooksByTypeQuery } from '@/api/bookApi';
-import BookModal from '@/components/BookModel/BookModel';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { BASE_URl, ToastType } from '@/constant';
@@ -54,7 +52,12 @@ export default function BookTable() {
     if (selectedStatus === BookStatus.ALL) {
       refetchAllBooks();
     }
+    
   }, [selectedStatus]);
+
+  useEffect(() => {
+      refetchAllBooks();
+  },[]);
 
   // Pagination logic
 
@@ -98,7 +101,6 @@ export default function BookTable() {
         className="min-h-screen bg-gradient-to-b from-gray-50 to-white"
       >
         <div className="p-4 md:p-8 max-w-[1400px] mx-auto">
-          <ToastContainer />
           
           {/* Enhanced Header Section */}
           <div className="mb-8 space-y-6">

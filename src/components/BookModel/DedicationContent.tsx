@@ -131,7 +131,7 @@ export const DedicationContent: React.FC<DedicationContentProps> = ({
         onUpdate={handleContentChange} // Now just updates local state
         className="flex flex-col items-center justify-center px-4 sm:px-8 py-6 sm:py-12"
         titleClassName="text-2xl sm:text-3xl font-serif text-center mb-6 sm:mb-8 text-gray-900"
-        contentClassName="prose max-w-none text-gray-700 min-h-[200px] italic"
+        contentClassName="prose max-w-none text-gray-700 min-h-[200px]"
         placeholder="To whom would you like to dedicate this book?"
       />
     </div>
