@@ -8,7 +8,7 @@ import { UpdateBookGenerateRequest, useCreateChapterMutation, useUpdateChapterMu
 import { useToast } from '@/context/ToastContext';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, BookOpen, Settings, RotateCw, Edit, Loader2, Circle } from 'lucide-react';
+import { ArrowRight, BookOpen, Settings, RotateCw, Edit, Loader2, Circle, ArrowLeft } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import { ChapterConfigurationProps, ChapterConfig } from './types/chapter.types';
@@ -34,7 +34,7 @@ interface TextFormat {
 const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousContent }) => {
   const navigate = useNavigate()
   const location=useLocation()
-  
+  const inComplete=location.pathname==="/books/chapter-configuration"
   // Safely get book data from either location state or prop
   const getBooksData = () => {
     try {
@@ -150,12 +150,14 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
       setStreamedContent(prev => prev + content);
     
   };
-  const handleRegenerateStreamedContent = (content: string) => {
-   console.log("regeneate",content)
-    setRegeneratedContent(prev => {
-      // Append new content to existing content
-      return prev + content;
-    });
+  const handleRegenerateStreamedContent = (content: string, isNewChunk = true) => {
+    if (isNewChunk) {
+      // Store complete content as it comes in chunks
+      setRegeneratedContent(prev => prev + content);
+    } else {
+      // Replace content entirely (for error cases or resets)
+      setRegeneratedContent(content);
+    }
   };
 
   // Add a ref to track seen content
@@ -428,10 +430,10 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
 
   const handleRegenerateParagraph = async (index: number, instruction: string) => {
     try {
-      // Clear previous content when starting new generation
+      // Clear regenerated content at the start
       setRegeneratedContent('');
       setIsGenerating(true);
-      setShowInsertOption(true); // Show the regenerated content area right away
+      setShowInsertOption(true);
       
       const actualIndex = selectedContent?.index || index;
       
@@ -450,16 +452,21 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
 
       const eventSource = new EventSource(`${BASE_URl}/book-chapter/chapter-stream?token=${token}`);
       
-      let accumulatedContent = ''; // Track accumulated content
+      // Create a variable to track full content outside the event handler
+      let fullStreamContent = '';
 
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           console.log("Streaming data:", data);
+          
           if (data.text) {
-            // Add new text to existing content
-            handleRegenerateStreamedContent(data.text);
+            // Update our tracking variable
+            fullStreamContent += data.text;
+            // Replace entire content rather than appending
+            setRegeneratedContent(fullStreamContent);
           } else if (data.type === 'image') {
+            // Image handling stays the same
             setChapterImages(prev => {
               const exists = prev.some(img => img.url === data.url);
               if (!exists) {
@@ -469,9 +476,9 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
             });
           }
         } catch (error) {
-          // Handle raw text
-          accumulatedContent = event.data;
-          handleRegenerateStreamedContent(accumulatedContent);
+          // For raw text or parsing errors
+          fullStreamContent += event.data;
+          setRegeneratedContent(fullStreamContent);
         }
       };
 
@@ -661,6 +668,15 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
         </Card>
       ) : (
         <>
+        {inComplete?
+         <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className="flex mb-3  text-gray-600 hover:text-yellow-600"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>:""}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Chapter Generation
