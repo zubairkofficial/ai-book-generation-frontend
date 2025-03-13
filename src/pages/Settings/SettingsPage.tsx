@@ -502,14 +502,7 @@ useEffect(()=>{userRefetch()},[])
                                     'Not set'}
                                 </code>
                               </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">DALL-E API Key:</span>
-                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                                  {apiKeyInfo.dalle_key ? 
-                                    `${apiKeyInfo.dalle_key.substring(0, 4)}...${apiKeyInfo.dalle_key.slice(-4)}` : 
-                                    'Not set'}
-                                </code>
-                              </div>
+                             
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-600">Fal AI Key:</span>
                                 <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
