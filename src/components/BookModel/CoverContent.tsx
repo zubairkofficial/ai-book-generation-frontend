@@ -1,132 +1,259 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
+import { Book, Globe, User, BookOpen, Bookmark, PenTool, Save, X } from 'lucide-react';
 import { useUpdateBookCoverMutation } from '@/api/bookApi';
+import { useToast } from '@/context/ToastContext';
 
 interface CoverContentProps {
   bookData: any;
   editMode: boolean;
+   setEditMode: Dispatch<SetStateAction<boolean>>;
+  refetchBook: any
 }
 
-interface CoverData {
-  bookTitle: string;
-  authorName: string;
-  publisher: string;
-  language: string;
-  genre: string;
-  numberOfChapters: string;
-  ideaCore: string;
-  authorBio: string;
-}
-
-export const CoverContent = ({ bookData, editMode }: CoverContentProps) => {
-  const [localContent, setLocalContent] = useState<CoverData>({
-    bookTitle: '',
-    authorName: '',
-    publisher: '',
-    language: '',
-    genre: '',
-    numberOfChapters: '',
-    ideaCore: '',
-    authorBio: ''
+export const CoverContent: React.FC<CoverContentProps> = ({ bookData, editMode, refetchBook ,setEditMode}) => {
+  const [updateBookCover, { isLoading: isUpdating }] = useUpdateBookCoverMutation();
+  const { addToast } = useToast();
+  
+  const [editValues, setEditValues] = useState({
+    bookTitle: bookData.bookTitle || '',
+    authorName: bookData.authorName || '',
+    publisher: bookData.publisher || 'AiBookPublisher',
+    language: bookData.language || 'English',
+    genre: bookData.genre || 'Fiction',
+    numberOfChapters: bookData.numberOfChapters || 'TBD',
+    ideaCore: bookData.ideaCore || 'A compelling narrative that explores themes of human connection and growth.',
+    authorBio: bookData.authorBio || `${bookData.authorName || 'The author'} is a talented writer with a unique perspective on storytelling.`
   });
 
-  const [updateBookCover] = useUpdateBookCoverMutation();
-
   useEffect(() => {
-    if (bookData) {
-      setLocalContent({
-        bookTitle: bookData.bookTitle || '',
-        authorName: bookData.authorName || '',
-        publisher: bookData.authorName || "AiBookPublisher",
-        language: bookData.language || "English",
-        genre: bookData.genre || '',
-        numberOfChapters: bookData.numberOfChapters || '',
-        ideaCore: bookData.ideaCore || '',
-        authorBio: bookData.authorBio || ''
-      });
-    }
+    setEditValues({
+      bookTitle: bookData.bookTitle || '',
+      authorName: bookData.authorName || '',
+      publisher: bookData.publisher || 'AiBookPublisher',
+      language: bookData.language || 'English',
+      genre: bookData.genre || 'Fiction',
+      numberOfChapters: bookData.numberOfChapters || 'TBD',
+      ideaCore: bookData.ideaCore || 'A compelling narrative that explores themes of human connection and growth.',
+      authorBio: bookData.authorBio || `${bookData.authorName || 'The author'} is a talented writer with a unique perspective on storytelling.`
+    });
   }, [bookData]);
 
-  const handleContentChange = async (element: HTMLElement) => {
-    console.log("element.querySelector('h1')?.textContent ",element.querySelector('h1')?.textContent )
-    const newContent = {
-      bookTitle: element.querySelector('h1')?.textContent || localContent.bookTitle,
-      authorName: element.querySelector('.text-3xl')?.textContent || localContent.authorName,
-      publisher: element.querySelector('.grid-cols-2 > div:nth-child(1) > p:last-child')?.textContent || localContent.publisher,
-      language: element.querySelector('.grid-cols-2 > div:nth-child(2) > p:last-child')?.textContent || localContent.language,
-      genre: element.querySelector('.grid-cols-2 > div:nth-child(3) > p:last-child')?.textContent || localContent.genre,
-      numberOfChapters: element.querySelector('.grid-cols-2 > div:nth-child(4) > p:last-child')?.textContent || localContent.numberOfChapters,
-      ideaCore: element.querySelector('.mt-8 .leading-relaxed')?.textContent || localContent.ideaCore,
-      authorBio: element.querySelector('.mt-8:last-child p:last-child')?.textContent || localContent.authorBio
-    };
+  const handleChange = (field: string, value: string) => {
+    setEditValues(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
-    setLocalContent(newContent);
-
+  const saveField = async (field: string, value: string) => {
     try {
+      const newContent = {
+        [field]: value
+      };
+      
       await updateBookCover({
         bookGenerationId: bookData.id,
         ...newContent
       }).unwrap();
       
+      addToast(`Updated ${field} successfully`, "success");
+      setEditMode(false)
+      if (refetchBook) {
+        refetchBook();
+      }
     } catch (error) {
-      console.error('Failed to update cover content:', error);
+      console.error(`Error updating ${field}:`, error);
+      addToast(`Failed to update ${field}`, "error");
     }
   };
 
+  const EditableField = ({ 
+    fieldName, 
+    value, 
+    isMultiline = false,
+    placeholder = 'Enter value...'
+  }: { 
+    fieldName: string, 
+    value: string, 
+    isMultiline?: boolean,
+    placeholder?: string
+  }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [localValue, setLocalValue] = useState(value);
+    
+    useEffect(() => {
+      setLocalValue(value);
+    }, [value]);
+    
+    const handleLocalChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setLocalValue(e.target.value);
+    };
+    
+    const handleSave = async () => {
+      if (localValue !== value) {
+        handleChange(fieldName, localValue);
+        await saveField(fieldName, localValue);
+      }
+      setIsEditing(false);
+    };
+    
+    const handleCancel = () => {
+      setLocalValue(value);
+      setIsEditing(false);
+    };
+    
+    if (editMode && isEditing) {
+      return (
+        <div className="relative">
+          {isMultiline ? (
+            <textarea
+              value={localValue}
+              onChange={handleLocalChange}
+              className="w-full p-2 border border-blue-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              rows={4}
+              placeholder={placeholder}
+              disabled={isUpdating}
+            />
+          ) : (
+            <input
+              type="text"
+              value={localValue}
+              onChange={handleLocalChange}
+              className="w-full p-2 border border-blue-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              placeholder={placeholder}
+              disabled={isUpdating}
+            />
+          )}
+          <div className="absolute right-2 top-2 flex space-x-2">
+            <button 
+              onClick={handleSave}
+              className={`${isUpdating ? 'bg-green-400' : 'bg-green-500 hover:bg-green-600'} text-white p-1 rounded-md transition-colors`}
+              title="Save"
+              disabled={isUpdating}
+            >
+              <Save className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={handleCancel}
+              className="bg-red-500 text-white p-1 rounded-md hover:bg-red-600 transition-colors"
+              title="Cancel"
+              disabled={isUpdating}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div 
+        onClick={() => editMode && !isUpdating && setIsEditing(true)} 
+        className={editMode && !isUpdating ? "cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors group" : ""}
+      >
+        {value || placeholder}
+        {editMode && !isUpdating && (
+          <span className="ml-2 text-xs text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
+            (Click to edit)
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div 
-      className="space-y-6 max-w-2xl bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-lg"
-      contentEditable={editMode}
-      onBlur={(e) => handleContentChange(e.currentTarget)}
-      suppressContentEditableWarning={true}
-    >
-      <h1 className="text-4xl font-bold text-gray-900 leading-tight">
-        {localContent.bookTitle}
+    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 md:px-8 flex flex-col items-center">
+      <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-tight mb-4 sm:mb-6 text-center break-words">
+        <EditableField fieldName="bookTitle" value={editValues.bookTitle} placeholder="Enter book title..." />
       </h1>
       
-      <div className="space-y-2">
-        <p className="text-2xl text-gray-700">by</p>
-        <p className="text-3xl font-semibold text-gray-800">
-          {localContent.authorName}
+      <div className="flex items-center justify-center mb-6 sm:mb-8">
+        <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
+        <p className="text-xl sm:text-2xl font-semibold text-gray-800 px-4 sm:px-6">
+          <EditableField fieldName="authorName" value={editValues.authorName} placeholder="Enter author name..." />
+        </p>
+        <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mb-8 text-left">
+        <div className="flex items-start space-x-3">
+          <div className="bg-amber-100 p-2 rounded-lg">
+            <Book className="w-5 h-5 text-amber-700" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Publisher</p>
+            <p className="text-base text-gray-800">
+              <EditableField fieldName="publisher" value={editValues.publisher} placeholder="Enter publisher..." />
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start space-x-3">
+          <div className="bg-blue-100 p-2 rounded-lg">
+            <Globe className="w-5 h-5 text-blue-700" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Language</p>
+            <p className="text-base text-gray-800">
+              <EditableField fieldName="language" value={editValues.language} placeholder="Enter language..." />
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start space-x-3">
+          <div className="bg-purple-100 p-2 rounded-lg">
+            <Bookmark className="w-5 h-5 text-purple-700" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Genre</p>
+            <p className="text-base text-gray-800">
+              <EditableField fieldName="genre" value={editValues.genre} placeholder="Enter genre..." />
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start space-x-3">
+          <div className="bg-green-100 p-2 rounded-lg">
+            <BookOpen className="w-5 h-5 text-green-700" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Chapters</p>
+            <p className="text-base text-gray-800">
+              <EditableField fieldName="numberOfChapters" value={editValues.numberOfChapters} placeholder="Enter number of chapters..." />
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 w-full">
+        <div className="flex items-center mb-3">
+          <PenTool className="w-5 h-5 text-gray-600 mr-2" />
+          <h3 className="text-lg font-semibold text-gray-800">Core Concept</h3>
+        </div>
+        <p className="text-base text-gray-700 leading-relaxed text-left">
+          <EditableField 
+            fieldName="ideaCore" 
+            value={editValues.ideaCore} 
+            isMultiline={true} 
+            placeholder="Enter the core concept of your book..."
+          />
         </p>
       </div>
 
-      {/* Additional Book Information */}
-      <div className="grid grid-cols-2 gap-4 text-left mt-8 text-gray-600">
-        <div>
-          <p className="font-semibold">Publisher</p>
-          <p>{localContent.publisher}</p>
+      <div className="mt-8 w-full">
+        <div className="flex items-center mb-3">
+          <User className="w-5 h-5 text-gray-600 mr-2" />
+          <h3 className="text-lg font-semibold text-gray-800">About the Author</h3>
         </div>
-        <div>
-          <p className="font-semibold">Language</p>
-          <p>{localContent.language}</p>
-        </div>
-        <div>
-          <p className="font-semibold">Genre</p>
-          <p>{localContent.genre}</p>
-        </div>
-        <div>
-          <p className="font-semibold">Chapters</p>
-          <p>{localContent.numberOfChapters}</p>
-        </div>
-      </div>
-
-      {/* Core Idea / Book Description */}
-      <div className="mt-8 text-left">
-        <p className="font-semibold text-gray-700">About this book:</p>
-        <p className="text-gray-600 mt-2 leading-relaxed">
-          {localContent.ideaCore}
+        <p className="text-base text-gray-700 leading-relaxed text-left">
+          <EditableField 
+            fieldName="authorBio" 
+            value={editValues.authorBio} 
+            isMultiline={true}
+            placeholder="Enter information about the author..."
+          />
         </p>
       </div>
-
-      {/* Author Bio if available */}
-      {(localContent.authorBio || editMode) && (
-        <div className="mt-8 text-left">
-          <p className="font-semibold text-gray-700">About the Author:</p>
-          <p className="text-gray-600 mt-2">
-            {localContent.authorBio}
-          </p>
-        </div>
-      )}
     </div>
   );
 }; 

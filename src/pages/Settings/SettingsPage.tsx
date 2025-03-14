@@ -379,6 +379,7 @@ useEffect(()=>{userRefetch()},[])
                                 id="email"
                                 type="email"
                                 className="pl-10"
+                                disabled={true}
                                 placeholder="Enter your email"
                               />
                               <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />

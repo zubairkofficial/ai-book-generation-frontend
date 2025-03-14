@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { QuillEditor } from './QuillEditor';
 import { useUpdateBookGeneratedMutation } from '@/api/bookApi';
 import { Button } from '@/components/ui/button';
 import { Save, X } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { convertMDtoHTML, convertHTMLtoMD } from '@/lib/utils';
 import { useToast } from '@/context/ToastContext';
 
 interface ReferencesContentProps {
@@ -26,106 +26,102 @@ export const ReferencesContent: React.FC<ReferencesContentProps> = ({
   const { addToast } = useToast();
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
   
-  // Get all references content from all chapters or from the book data directly
-  const getAllReferencesContent = () => {
-    // Check if we have the reference directly on the book data first
-    if (bookData?.reference) {
-      return bookData.reference;
-    }
-  };
-  
-  const referencesContent = getAllReferencesContent();
   const [formattedContent, setFormattedContent] = useState('');
-  const [localContent, setLocalContent] = useState(referencesContent);
-  const [originalContent, setOriginalContent] = useState(referencesContent);
+  const [localContent, setLocalContent] = useState(bookData?.reference);
+  const [originalContent, setOriginalContent] = useState(bookData?.reference);
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   // Reset local content when source changes
   useEffect(() => {
-    const newReferencesContent = getAllReferencesContent();
-    setLocalContent(newReferencesContent);
-    setOriginalContent(newReferencesContent);
+    setLocalContent(bookData?.reference);
+    setOriginalContent(bookData?.reference);
     setHasLocalChanges(false);
-  }, [bookData]);
+  }, [bookData?.reference]);
   
   // Process markdown to HTML when content changes
   useEffect(() => {
-    if (referencesContent) {
-      // Format the content to properly display references
-      let processed = referencesContent;
+    if (bookData?.reference) {
+      // // Format the content to properly display references
+      // let processed = referencesContent;
       
-      // Format chapter headers
-      processed = processed.replace(/##\s+([^\n]+)/g, 
-        '<h2 class="chapter-reference-header">$1</h2>');
+      // // Format chapter headers
+      // processed = processed.replace(/##\s+([^\n]+)/g, 
+      //   '<h2 class="chapter-reference-header">$1</h2>');
       
-      // Format section headers (like **Books:**)
-      processed = processed.replace(/\*\*([^*]+):\*\*/g, '<h3 class="reference-section-header">$1</h3>');
+      // // Format section headers (like **Books:**)
+      // processed = processed.replace(/\*\*([^*]+):\*\*/g, '<h3 class="reference-section-header">$1</h3>');
       
-      // Format book/article titles in italics
-      processed = processed.replace(/\*(.*?)\*/g, '<em class="reference-title">$1</em>');
+      // // Format book/article titles in italics
+      // processed = processed.replace(/\*(.*?)\*/g, '<em class="reference-title">$1</em>');
       
-      // Format numbered references
-      processed = processed.replace(/(\d+)\.\s+(.*?)(?=(\d+)\.|$|##)/gs, 
-        '<p class="reference-entry"><span class="reference-number">$1.</span> $2</p>');
+      // // Format numbered references
+      // processed = processed.replace(/(\d+)\.\s+(.*?)(?=(\d+)\.|$|##)/gs, 
+      //   '<p class="reference-entry"><span class="reference-number">$1.</span> $2</p>');
       
-      // Format reference entries starting with a dash
-      processed = processed.replace(/- (.*?)(?=\n- |\n\n|$|##)/gs,
-        '<p class="reference-entry"><span class="reference-bullet">•</span> $1</p>');
+      // // Format reference entries starting with a dash
+      // processed = processed.replace(/- (.*?)(?=\n- |\n\n|$|##)/gs,
+      //   '<p class="reference-entry"><span class="reference-bullet">•</span> $1</p>');
       
-      // Add styles
-      const style = `
-        <style>
-          .chapter-reference-header {
-            margin-top: 32px;
-            margin-bottom: 24px;
-            color: #1a202c;
-            font-size: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 8px;
-          }
-          .reference-section-header {
-            margin-top: 24px;
-            margin-bottom: 16px;
-            color: #2d3748;
-            font-size: 1.25rem;
-          }
-          .reference-entry {
-            margin-bottom: 12px;
-            line-height: 1.5;
-            display: flex;
-          }
-          .reference-number {
-            min-width: 20px;
-            margin-right: 8px;
-            font-weight: 600;
-          }
-          .reference-bullet {
-            min-width: 16px;
-            margin-right: 8px;
-          }
-          .reference-title {
-            font-style: italic;
-          }
-        </style>
-      `;
+      // // Add styles
+      // const style = `
+      //   <style>
+      //     .chapter-reference-header {
+      //       margin-top: 32px;
+      //       margin-bottom: 24px;
+      //       color: #1a202c;
+      //       font-size: 1.5rem;
+      //       border-bottom: 1px solid #e2e8f0;
+      //       padding-bottom: 8px;
+      //     }
+      //     .reference-section-header {
+      //       margin-top: 24px;
+      //       margin-bottom: 16px;
+      //       color: #2d3748;
+      //       font-size: 1.25rem;
+      //     }
+      //     .reference-entry {
+      //       margin-bottom: 12px;
+      //       line-height: 1.5;
+      //       display: flex;
+      //     }
+      //     .reference-number {
+      //       min-width: 20px;
+      //       margin-right: 8px;
+      //       font-weight: 600;
+      //     }
+      //     .reference-bullet {
+      //       min-width: 16px;
+      //       margin-right: 8px;
+      //     }
+      //     .reference-title {
+      //       font-style: italic;
+      //     }
+      //   </style>
+      // `;
       
-      processed = style + processed;
+      // processed = style + processed;
       
-      // Sanitize and set content
-      const sanitizedContent = DOMPurify.sanitize(processed, {
-        ADD_TAGS: ['style'],
-        ADD_ATTR: ['class'],
-      });
+      // // Sanitize and set content
+      // const sanitizedContent = DOMPurify.sanitize(processed, {
+      //   ADD_TAGS: ['style'],
+      //   ADD_ATTR: ['class'],
+      // });
       
-      setFormattedContent(sanitizedContent);
+      // setFormattedContent(sanitizedContent);
+      (async () => {
+        const html = await convertMDtoHTML(bookData?.reference || "");
+      setFormattedContent(html);
+      })();
     }
-  }, [referencesContent]);
+  }, [bookData?.reference]);
 
-  const handleContentUpdate = (content: string) => {
-    setLocalContent(content);
+  const handleContentUpdate = useCallback((content: string) => {
+    const md = convertHTMLtoMD(content);
+    console.log('Updated content:', md);
+    setLocalContent(md);
     setHasLocalChanges(true);
-  };
+  }, []);
 
   // Save changes
   const saveChanges = async () => {
@@ -165,7 +161,7 @@ export const ReferencesContent: React.FC<ReferencesContentProps> = ({
     <div className="min-h-[800px] relative">
       {/* Save/Cancel buttons when in edit mode and changes exist */}
       {editMode && (
-        <div className="sticky top-4 z-10 flex justify-end mb-4 px-4">
+        <div className="sticky w-fit ml-auto top-4 z-10 flex justify-end mb-4 px-4">
           <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-gray-100 p-2 flex gap-2">
             {hasLocalChanges && (
               <Button
@@ -211,7 +207,7 @@ export const ReferencesContent: React.FC<ReferencesContentProps> = ({
         <div className="quill-container editing">
           <QuillEditor
             title="References"
-            content={localContent??""}
+            content={formattedContent??""}
             editMode={true}
             onUpdate={handleContentUpdate}
             className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12"

@@ -181,7 +181,7 @@ ${sections.acknowledgments}
         
         {/* Save/Cancel buttons when in edit mode and changes exist */}
         {editMode && (
-          <div className="sticky top-4 z-10 flex justify-end mb-4">
+          <div className="sticky w-fit ml-auto top-4 z-10 flex justify-end mb-4 px-4">
             <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-gray-100 p-2 flex gap-2">
               {hasLocalChanges && (
                 <Button

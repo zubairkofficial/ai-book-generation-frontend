@@ -134,14 +134,14 @@ interface RegenerateImageRequest {
 // Add new interface for cover content update
 interface UpdateBookCoverDto {
   bookGenerationId: number;
-  bookTitle: string;
-  authorName: string;
-  publisher: string;
-  language: string;
-  genre: string;
-  numberOfChapters: string;
-  ideaCore: string;
-  authorBio: string;
+  bookTitle?: string;
+  authorName?: string;
+  publisher?: string;
+  language?: string;
+  genre?: string;
+  numberOfChapters?: string;
+  ideaCore?: string;
+  authorBio?: string;
 }
 
 // Add this interface

@@ -27,7 +27,7 @@ export const DedicationContent: React.FC<DedicationContentProps> = ({
   // Initialize local content when component mounts or when source content changes
   useEffect(() => {
     setLocalContent(dedicationContent);
-  }, [dedicationContent]);
+  }, []);
   
   // Process content to replace [Your Name] with actual author name
   const processedContent = useMemo(() => {

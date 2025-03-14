@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkRehype from 'remark-rehype'
 import remarkGfm from 'remark-gfm';
+import rehypeStringify from 'rehype-stringify'
+import remarkParse from 'remark-parse'
 import rehypeRaw from 'rehype-raw';
 import { markdownComponents } from '@/utils/markdownUtils';
 import { AlignLeft, BookMarked, Loader2, Save, X } from 'lucide-react';
@@ -10,8 +12,6 @@ import { QuillEditor } from './QuillEditor';
 import { useUpdateChapterMutation } from '@/api/bookApi';
 import DOMPurify from 'dompurify';
 import { useToast } from '@/context/ToastContext';
-import rehypeStringify from 'rehype-stringify'
-import remarkParse from 'remark-parse'
 import {unified} from 'unified'
 import TurnDownService from 'turndown'
 const turndown = new TurnDownService();

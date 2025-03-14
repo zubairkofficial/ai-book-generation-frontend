@@ -2,7 +2,7 @@ import { Dispatch,  SetStateAction,  useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Loader2, Edit2, Image,
-  BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft
+  BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft, ChevronRight, Check, Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFetchBookByIdQuery,   useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
@@ -10,14 +10,12 @@ import { BASE_URl } from '@/constant';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { RegenerateImageModal } from './RegenerateImageModal';
 import { CoverContent } from './CoverContent';
-import { DedicationContent } from './DedicationContent';
-import { PrefaceContent } from './PrefaceContent';
+import { Content, BookSection } from './Content';
 import { GlossaryContent } from './GlossaryContent';
 import { IndexContent } from './IndexContent';
 import { ReferencesContent } from './ReferencesContent';
 import { TableOfContentsContent } from './TableOfContentsContent';
 import { ChapterContent } from './ChapterContent';
-import { IntroductionContent } from './IntroductionContent';
 import { useToast } from '@/context/ToastContext';
 import TurnDownService from 'turndown'
 const turndown = new TurnDownService();
@@ -40,8 +38,6 @@ interface TextStyle {
   lineHeight: string;
   letterSpacing: string;
 }
-
-
 
 // Add proper type definitions
 const BookModel = () => {
@@ -77,18 +73,13 @@ const BookModel = () => {
       { id: 'index', icon: <List className="w-4 h-4" />, label: 'Index' },
       { id: 'references', icon: <BookmarkIcon className="w-4 h-4" />, label: 'References' },
     ] : []),
-     { id: 'edit', icon: <Edit2 className="w-4 h-4" />, label: 'Edit', isAction: true }
-  ];
+     ];
 
   const [updateImage] = useUpdateImageMutation();
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
 
   // Add navigate function
   const navigate = useNavigate();
-
-  // Updated handleFormat function for better text formatting
- 
-
 
   // Handle image update
   const handleImageUpdate = async (file: File, type: 'cover' | 'backCover') => {
@@ -100,8 +91,11 @@ const BookModel = () => {
         imageType: type,
         image: file
       }).unwrap();
-    } catch (error) {
-      console.error('Failed to update image:', error);
+     await refetchBook()
+     addToast("Image updated successfully", "success");
+
+    } catch (error:any) {
+      addToast("Failed to update image", "error");
     }
   };
 
@@ -197,10 +191,7 @@ const BookModel = () => {
     <>
       {/* Desktop Navigation */}
       <div className={navStyles.desktop}>
-        <div className="mb-4 px-2">
-          <div className="h-1 w-8 bg-amber-500 rounded-full mb-1" />
-          <div className="h-1 w-6 bg-amber-300 rounded-full" />
-        </div>
+       
         
         {PAGES.map((page) => {
           // Special handling for edit button
@@ -254,10 +245,7 @@ const BookModel = () => {
           );
         })}
         
-        <div className="mt-4 px-2">
-          <div className="h-1 w-6 bg-amber-300 rounded-full mb-1" />
-          <div className="h-1 w-8 bg-amber-500 rounded-full" />
-        </div>
+        
       </div>
 
       {/* Mobile Navigation */}
@@ -333,24 +321,61 @@ const BookModel = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Add Back Button above the Navigation Buttons */}
-      <div className="mx-auto ">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="flex  text-gray-600 hover:text-yellow-600"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-      </div>
-      
+    <div className="min-h-screen bg-gray-50">
+      {/* Professional Header with Breadcrumbs */}
+      <header className="sticky top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          {/* Left section: Back button and breadcrumb */}
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              className="text-gray-600 hover:text-amber-600 p-2"
+              size="sm"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="h-4 w-px bg-gray-200 mx-1"></div>
+            
+            <nav className="flex items-center text-sm">
+              <span className="text-gray-500">Books</span>
+              <ChevronRight className="h-3 w-3 mx-1 text-gray-400" />
+              <span className="text-gray-700 font-medium truncate max-w-[150px]">{book?.data?.bookTitle || "Book"}</span>
+              <ChevronRight className="h-3 w-3 mx-1 text-gray-400" />
+              <span className="text-amber-600 font-medium">{PAGES.find(p => p.id === currentPage)?.label || "Preview"}</span>
+            </nav>
+          </div>
+          
+          {/* Right section: Edit mode toggle with status indicator */}
+          <div className="flex items-center">
+            <div className="hidden sm:flex items-center mr-3">
+              <div className={`w-2 h-2 rounded-full mr-2 ${editMode ? "bg-amber-500" : "bg-gray-300"}`}></div>
+              <span className="text-sm font-medium text-gray-600">
+                {editMode ? "Editing Mode" : "View Mode"}
+              </span>
+            </div>
+            {!editMode ? (
+            <Button
+              variant={editMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setEditMode(!editMode)}
+              className={`flex items-center gap-1 ${editMode ? "bg-amber-500 hover:bg-amber-600 text-white" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}
+            >
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span className="font-medium">Edit</span>
+                
+            </Button>
+              ):""}
+          </div>
+        </div>
+      </header>
+
       <NavigationButtons />
 
       {/* Book Content */}
-      <div className="container mx-auto p-8">
-        <div className="bg-white rounded-xl shadow-xl max-w-4xl ml-auto min-h-[800px] p-8">
+      <div className="container mx-auto p-4 sm:p-8 pt-6">
+        <div className="bg-white rounded-xl shadow-xl max-w-4xl ml-auto min-h-[800px] p-6 sm:p-8">
           <div
             className="prose max-w-none"
             style={{
@@ -377,13 +402,9 @@ const BookModel = () => {
           </div>
         </div>
       </div>
-
-
     </div>
   );
 };
-
-
 
 // Helper function to render current page content
 const renderCurrentPageContent = (
@@ -396,8 +417,6 @@ const renderCurrentPageContent = (
   onImageUpdate: (file: File, type: 'cover' | 'backCover') => void,
   refetchBook: unknown
 ): JSX.Element => {
- ;
-
   switch (currentPage) {
     case 'cover':
       return (
@@ -415,6 +434,8 @@ const renderCurrentPageContent = (
           <CoverContent
             bookData={bookData}
             editMode={editMode}
+            refetchBook={refetchBook}
+            setEditMode={setEditMode}
           />
           {/* Copyright Notice */}
           <div className="text-sm text-gray-500 mt-4">
@@ -425,32 +446,34 @@ const renderCurrentPageContent = (
 
     case 'dedication':
       return (
-        <DedicationContent
+        <Content
+          section={BookSection.DEDICATION}
           bookData={bookData}
           editMode={editMode}
-          onUpdate={(content) => onUpdate(content, 'dedication')}
-         
+          refetchBook={refetchBook}
+          setEditMode={setEditMode}
         />
       );
 
    
-   case 'introduction':
-      return (
-        <IntroductionContent
-          bookData={bookData}
-          editMode={editMode}
-          refetchBook={refetchBook}
-          setEditMode={setEditMode}
-        />
-      );
+    case 'introduction':
+        return (
+          <Content
+            section={BookSection.INTRODUCTION}
+            bookData={bookData}
+            editMode={editMode}
+            refetchBook={refetchBook}
+            setEditMode={setEditMode}
+          />
+        );
     case 'preface':
       return (
-        <PrefaceContent
+        <Content
+          section={BookSection.PREFACE}
           bookData={bookData}
           editMode={editMode}
           refetchBook={refetchBook}
           setEditMode={setEditMode}
-
         />
       );
 
@@ -467,8 +490,9 @@ const renderCurrentPageContent = (
 
     case 'glossary':
       return (
-        <GlossaryContent 
-          bookData={bookData} 
+        <Content 
+        section={BookSection.GLOSSARY}  
+        bookData={bookData} 
           editMode={editMode}
           setEditMode={setEditMode}
           refetchBook={refetchBook}
@@ -477,8 +501,9 @@ const renderCurrentPageContent = (
 
     case 'index':
       return (
-        <IndexContent 
-          bookData={bookData} 
+        <Content 
+        section={BookSection.INDEX}  
+        bookData={bookData} 
           editMode={editMode}
           refetchBook={refetchBook}
           setEditMode={setEditMode}
@@ -487,7 +512,8 @@ const renderCurrentPageContent = (
 
     case 'references':
       return (
-        <ReferencesContent 
+        <Content 
+        section={BookSection.REFERENCES}  
         bookData={bookData} 
         editMode={editMode}
         refetchBook={refetchBook}
@@ -543,13 +569,29 @@ interface ImageUploadProps {
 // Updated ImageUpload component
 const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing, bookId, imageType }: ImageUploadProps) => {
   const [isRegenerateModalOpen, setIsRegenerateModalOpen] = useState(false);
+  const [imageVersion, setImageVersion] = useState(Date.now()); // Add this for cache busting
+
+  // Helper function to refresh the image
+  const refreshImage = () => {
+    setImageVersion(Date.now());
+  };
+
+  // Handle successful image update
+  const handleImageUpdate = (file: File) => {
+    onImageUpdate(file);
+    // Schedule a refresh after a short delay to allow the server to process
+    setTimeout(refreshImage, 1000);
+  };
 
   return (
     <div className="relative group">
       <img
-        src={`${BASE_URl}/uploads/${currentImage}`}
+        src={`${BASE_URl}/uploads/${currentImage}?v=${imageVersion}`} // Add cache busting parameter
         alt={label}
         className="w-full h-auto rounded-lg shadow-2xl"
+        onError={(e) => {
+          e.currentTarget.src = 'https://placehold.co/400x600/f59e0b/ffffff?text=No+Cover';
+        }}
       />
       {isEditing && (
         <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
@@ -561,7 +603,7 @@ const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing, bookId, im
               accept="image/*"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) onImageUpdate(file);
+                if (file) handleImageUpdate(file);
               }}
             />
             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg">
@@ -583,20 +625,16 @@ const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing, bookId, im
 
       <RegenerateImageModal
         isOpen={isRegenerateModalOpen}
-        onClose={() => setIsRegenerateModalOpen(false)}
+        onClose={() => {
+          setIsRegenerateModalOpen(false);
+          refreshImage(); // Refresh image after modal closes
+        }}
         bookId={bookId}
         imageType={imageType}
       />
     </div>
   );
 };
-
-// Add this to your types
-interface ContentEditorProps {
-  content: string;
-  onChange: (content: string) => void;
-  isEditing: boolean;
-}
 
 // Update the ContentEditor component to use modern clipboard API
 
