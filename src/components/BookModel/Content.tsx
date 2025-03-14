@@ -113,7 +113,7 @@ export const Content: React.FC<ContentProps> = ({
     <div className="min-h-[800px] relative">
       {/* Save/Cancel buttons when in edit mode */}
       {editMode && (
-        <div className="sticky w-fit ml-auto top-4 z-50 flex justify-end mb-4 px-4">
+        <div className="sticky w-fit ml-auto top-12 z-50 flex justify-end mb-4 px-4">
           <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-gray-100 p-2 flex gap-2">
             {hasLocalChanges && (
               <Button
@@ -162,7 +162,7 @@ export const Content: React.FC<ContentProps> = ({
             content={formattedContent??""}
             editMode={true}
             onUpdate={handleContentUpdate}
-            className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12"
+            className="w-full min-h-[800px] px-4 sm:px-8 py-6 sm:py-12"
             titleClassName="text-3xl sm:text-4xl text-center mb-6 sm:mb-8 text-gray-900"
             contentClassName="prose max-w-none glossary-content"
             placeholder={`Add ${section} here...`}

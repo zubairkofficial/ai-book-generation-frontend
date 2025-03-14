@@ -1,7 +1,7 @@
 import { Dispatch,  SetStateAction,  useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
-  Loader2, Edit2, Image,
+  Loader2,  Image,
   BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft, ChevronRight, Check, Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,6 @@ import { ReloadIcon } from '@radix-ui/react-icons';
 import { RegenerateImageModal } from './RegenerateImageModal';
 import { CoverContent } from './CoverContent';
 import { Content, BookSection } from './Content';
-import { GlossaryContent } from './GlossaryContent';
-import { IndexContent } from './IndexContent';
-import { ReferencesContent } from './ReferencesContent';
 import { TableOfContentsContent } from './TableOfContentsContent';
 import { ChapterContent } from './ChapterContent';
 import { useToast } from '@/context/ToastContext';
@@ -373,9 +370,9 @@ const BookModel = () => {
 
       <NavigationButtons />
 
-      {/* Book Content */}
-      <div className="container mx-auto p-4 sm:p-8 pt-6">
-        <div className="bg-white rounded-xl shadow-xl max-w-4xl ml-auto min-h-[800px] p-6 sm:p-8">
+      {/* Book Content - Updated for consistent, responsive layout */}
+      <div className="container mx-auto p-4 sm:p-6">
+        <div className="md:pl-16 lg:pl-20 xl:pl-24 max-w-4xl mx-auto">
           <div
             className="prose max-w-none"
             style={{
@@ -420,7 +417,7 @@ const renderCurrentPageContent = (
   switch (currentPage) {
     case 'cover':
       return (
-        <div className="flex flex-col items-center justify-center min-h-[800px] text-center space-y-8 relative">
+        <div className="flex flex-col items-center justify-center min-h-[800px] text-center space-y-8 relative bg-white">
           <div className="relative w-full max-w-2xl">
             <ImageUpload
               currentImage={bookData.additionalData.coverImageUrl}
@@ -636,8 +633,4 @@ const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing, bookId, im
   );
 };
 
-// Update the ContentEditor component to use modern clipboard API
-
-
 export default BookModel;
-

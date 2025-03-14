@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import DOMPurify from 'dompurify';
+import {cn} from '@/lib/utils';
 import 'react-quill/dist/quill.snow.css';
 import './quill-custom.css'; // Create this file for custom styling
 import Quill from 'quill';
@@ -174,8 +175,8 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   };
 
   return (
-    <div className={className}>
-      <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg">
+    <div className={cn("max-w-4xl ", className)}>
+      <div className="mx-auto bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg">
         {title && <h1 className={titleClassName}>{title}</h1>}
         
         {editMode ? (

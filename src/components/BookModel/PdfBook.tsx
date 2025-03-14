@@ -1,11 +1,7 @@
 import React from 'react'
-import { Document, Page, Text, View, StyleSheet, pdf, Image, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet,  Image, Font } from '@react-pdf/renderer';
 import { BASE_URl } from '@/constant';
-import remarkGfm from 'remark-gfm';
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
-import remarkRehype from 'remark-rehype';
-import rehypeStringify from 'rehype-stringify';
+
 
 // Define interfaces for better type safety
 interface Chapter {
@@ -73,17 +69,7 @@ const cleanMarkdown = (text: string) => {
     .trim();
 };
 
-// Function to process markdown content
-const processMarkdown = async (content: string) => {
-  const processor = unified()
-    .use(remarkParse)
-    .use(remarkGfm)
-    .use(remarkRehype)
-    .use(rehypeStringify);
 
-  const result = await processor.process(content);
-  return result.toString();
-};
 
 const PdfBook: React.FC<BookPDFProps> = ({ 
   selectedBook,
@@ -92,7 +78,6 @@ const PdfBook: React.FC<BookPDFProps> = ({
   backCoverImageUrl,
    
 }) => {
-console.log("selectedBook============",selectedBook,content)
   const bookInfo = selectedBook;
   const chapters = selectedBook.bookChapter || [];
   const fullContent = selectedBook.additionalData?.fullContent || '';
@@ -121,7 +106,6 @@ console.log("selectedBook============",selectedBook,content)
   // Parse different sections
   const dedication = parseSection(fullContent, 'Dedication');
   const preface = parseSection(fullContent, 'Preface');
-  const glossary = parseSection(fullContent, 'Glossary');
   const references = parseSection(fullContent, 'References');
 
   // Helper function to fix image URLs

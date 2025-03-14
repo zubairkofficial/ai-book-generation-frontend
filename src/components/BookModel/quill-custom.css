@@ -3,6 +3,7 @@
 .quill-container {
     font-family: 'Times New Roman', Times, serif;
     margin-top: 1.5rem;
+    width: 100%;
 }
 
 .quill-container .ql-editor {
