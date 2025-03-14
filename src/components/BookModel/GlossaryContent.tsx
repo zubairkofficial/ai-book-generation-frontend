@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { QuillEditor } from './QuillEditor';
 import { useUpdateBookGeneratedMutation } from '@/api/bookApi';
 import { Button } from '@/components/ui/button';
 import { Save, X } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { useToast } from '@/context/ToastContext';
 
 interface GlossaryContentProps {
   bookData: {
     id: number;
-    additionalData: {
-      glossary?: string;
-    };
+    glossary?: string;
   };
   editMode: boolean;
-  setHasChanges: (value: boolean) => void;
   refetchBook: any;
   setEditMode: (value: boolean) => void;
 }
@@ -21,36 +19,97 @@ interface GlossaryContentProps {
 export const GlossaryContent: React.FC<GlossaryContentProps> = ({
   bookData,
   editMode,
-  setHasChanges,
   refetchBook,
   setEditMode,
-
 }) => {
   const { addToast } = useToast();
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
   const [isSaving, setIsSaving] = useState(false);
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
   
-  // Get content safely with fallback to empty string
-  const glossaryContent = bookData?.additionalData?.glossary || '';
+  // Get all glossary content from the book data directly or from chapters
+  const getAllGlossaryContent = () => {
+    // Check if we have the glossary directly on the book data first
+    if (bookData?.glossary) {
+      return bookData.glossary;
+    }
+    
+  };
+  
+  const glossaryContent = getAllGlossaryContent();
   const [localContent, setLocalContent] = useState(glossaryContent);
   const [originalContent, setOriginalContent] = useState(glossaryContent);
   
+  // Format the glossary content for display
+  const [formattedContent, setFormattedContent] = useState('');
+  
   // Reset local content when source changes
   useEffect(() => {
-    setLocalContent(glossaryContent);
-    setOriginalContent(glossaryContent);
+    const newGlossaryContent = getAllGlossaryContent();
+    setLocalContent(newGlossaryContent);
+    setOriginalContent(newGlossaryContent);
     setHasLocalChanges(false);
+  }, [bookData]);
+  
+  // Process content for display
+  useEffect(() => {
+    if (glossaryContent) {
+      let processed = glossaryContent;
+      
+      // Format chapter headers
+      processed = processed.replace(/##\s+([^\n]+)/g, 
+        '<h2 class="chapter-glossary-header">$1</h2>');
+      
+      // Format term definitions
+      processed = processed.replace(/(\*\*[^*]+\*\*):\s*(.*?)(?=\*\*|$|##)/gs, 
+        '<div class="glossary-entry"><h3 class="glossary-term">$1</h3><p class="glossary-definition">$2</p></div>');
+      
+      // Clean up bold formatting for terms
+      processed = processed.replace(/\*\*([^*]+)\*\*/g, '$1');
+      
+      // Add styles
+      const style = `
+        <style>
+          .glossary-entry {
+            margin-bottom: 20px;
+          }
+          .glossary-term {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+          }
+          .glossary-definition {
+            margin-top: 4px;
+            color: #4a5568;
+            line-height: 1.5;
+          }
+          .chapter-glossary-header {
+            margin-top: 32px;
+            margin-bottom: 20px;
+            color: #1a202c;
+            font-size: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+          }
+        </style>
+      `;
+      
+      processed = style + processed;
+      
+      // Sanitize and set content
+      const sanitizedContent = DOMPurify.sanitize(processed, {
+        ADD_TAGS: ['style'],
+        ADD_ATTR: ['class'],
+      });
+      
+      setFormattedContent(sanitizedContent);
+    }
   }, [glossaryContent]);
-
+  
   // Handle content changes from the editor
-  const handleUpdate = (content: string) => {
+  const handleContentUpdate = (content: string) => {
     setLocalContent(content);
-    
-    // Only mark as changed if the content is different from original
-    const hasChanged = content !== originalContent;
-    setHasLocalChanges(hasChanged);
-    setHasChanges(hasChanged);
+    setHasLocalChanges(true);
   };
   
   // Save changes
@@ -60,16 +119,15 @@ export const GlossaryContent: React.FC<GlossaryContentProps> = ({
     try {
       setIsSaving(true);
       
-      await updateBookGenerated({
-        bookGenerationId: bookData.id,
-        glossary: localContent
-      }).unwrap();
+       await updateBookGenerated({
+          bookGenerationId: bookData.id,
+          glossary: localContent
+        }).unwrap();
       
-      setEditMode(false);
-      await refetchBook();
-      setHasChanges(false);
+      
+      if (setEditMode) setEditMode(false);
+      if (refetchBook) await refetchBook();
       setHasLocalChanges(false);
-      setOriginalContent(localContent);
       addToast("Glossary saved successfully", "success");
     } catch (error) {
       console.error('Failed to save glossary:', error);
@@ -78,12 +136,11 @@ export const GlossaryContent: React.FC<GlossaryContentProps> = ({
       setIsSaving(false);
     }
   };
-
+  
   // Discard changes
   const handleCancelChanges = () => {
     setLocalContent(originalContent);
     setHasLocalChanges(false);
-    setHasChanges(false);
   };
 
   return (
@@ -132,16 +189,30 @@ export const GlossaryContent: React.FC<GlossaryContentProps> = ({
         </div>
       )}
 
-      <QuillEditor
-        title="Glossary"
-        content={localContent}
-        editMode={editMode}
-        onUpdate={handleUpdate}
-        className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12"
-        titleClassName="text-3xl sm:text-4xl text-center mb-6 sm:mb-8 text-gray-900"
-        contentClassName="prose max-w-none"
-        placeholder="Add glossary terms and definitions here..."
-      />
+      {editMode ? (
+        <div className="quill-container editing">
+          <QuillEditor
+            title="Glossary"
+            content={localContent??""}
+            editMode={true}
+            onUpdate={handleContentUpdate}
+            className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12"
+            titleClassName="text-3xl sm:text-4xl text-center mb-6 sm:mb-8 text-gray-900"
+            contentClassName="prose max-w-none glossary-content"
+            placeholder="Add glossary terms and definitions here..."
+          />
+        </div>
+      ) : (
+        <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12">
+          <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm p-6 sm:p-12 rounded-lg shadow-lg">
+            <h1 className="text-3xl sm:text-4xl text-center mb-6 sm:mb-8 text-gray-900">Glossary</h1>
+            
+            <div className="quill-content-view">
+              <div dangerouslySetInnerHTML={{ __html: formattedContent }} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 

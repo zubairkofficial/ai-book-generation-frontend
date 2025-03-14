@@ -13,7 +13,6 @@ import { useToast } from '@/context/ToastContext';
 interface IntroductionContentProps {
   bookData: any;
   editMode: boolean;
-  setHasChanges: (value: boolean) => void;
   refetchBook: any;
   setEditMode: any;
 }
@@ -25,7 +24,6 @@ interface IntroductionSections {
 export const IntroductionContent: React.FC<IntroductionContentProps> = ({
   bookData,
   editMode,
-  setHasChanges,
   refetchBook,
   setEditMode
 }) => {
@@ -90,7 +88,6 @@ export const IntroductionContent: React.FC<IntroductionContentProps> = ({
       [section]: content
     }));
     setHasLocalChanges(true);
-    setHasChanges(true);
   };
 
   // Save changes
@@ -108,7 +105,6 @@ export const IntroductionContent: React.FC<IntroductionContentProps> = ({
       
       setEditMode(false);
       await refetchBook();
-      setHasChanges(false);
       setHasLocalChanges(false);
       addToast("Introduction saved successfully", "success");
     } catch (error) {
@@ -125,7 +121,6 @@ export const IntroductionContent: React.FC<IntroductionContentProps> = ({
       overview: introductionContent,
     });
     setHasLocalChanges(false);
-    setHasChanges(false);
   };
 
   // Render a section with title

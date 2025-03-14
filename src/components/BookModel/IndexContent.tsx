@@ -8,153 +8,127 @@ import { htmlToMarkdown, markdownToHtml } from '@/utils/quillConversion';
 import { useToast } from '@/context/ToastContext';
 
 interface IndexContentProps {
-  bookData: any;
+  bookData: {
+    id: number;
+    index?: string;
+  };
   editMode: boolean;
-  setHasChanges: (value: boolean) => void;
   refetchBook: any;
-  setEditMode: any;
+  setEditMode: (value: boolean) => void;
 }
 
 export const IndexContent: React.FC<IndexContentProps> = ({
   bookData,
   editMode,
-  setHasChanges,
   refetchBook,
   setEditMode
 }) => {
   const { addToast } = useToast();
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
-  const indexContent = bookData?.additionalData?.index || '';
+  
+  // Get all index content from the book data directly or from chapters
+  const getAllIndexContent = () => {
+    // Check if we have the index directly on the book data first
+    if (bookData?.index) {
+      return bookData.index;
+    }
+  };
+  
+  const indexContent = getAllIndexContent();
   const [formattedContent, setFormattedContent] = useState('');
   const [localContent, setLocalContent] = useState(indexContent);
+  const [originalContent, setOriginalContent] = useState(indexContent);
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   // Reset local content when source changes
   useEffect(() => {
-    setLocalContent(indexContent);
+    const newIndexContent = getAllIndexContent();
+    setLocalContent(newIndexContent);
+    setOriginalContent(newIndexContent);
     setHasLocalChanges(false);
-  }, [indexContent]);
+  }, [bookData]);
   
   // Process markdown to HTML when content changes
   useEffect(() => {
     if (indexContent) {
-      // Format the content to properly display index entries
+      // Special handling for index content: remove ** markdown and format properly
       let processed = indexContent;
       
-      // Format the Index header first (like **Index for "The Book"**)
-      processed = processed.replace(/\*\*([^*]+?)\*\*/g, (match: any, title: string) => {
-        if (title.toLowerCase().includes('index')) {
-          return `<h1 class="index-title">${title}</h1>`;
-        }
-        return match;
+      // Replace plain markdown index format with proper HTML
+      processed = processed.replace(/\*\*([^*]+)\*\*\s*-\s*(\d+)/g, 
+        '<div class="index-entry"><span class="index-term">$1</span> <span class="index-page">$2</span></div>');
+      
+      // Format chapter headers
+      processed = processed.replace(/##\s+([^\n]+)/g, 
+        '<h2 class="chapter-index-header">$1</h2>');
+        
+      // Format index headers
+      processed = processed.replace(/\*\*([^:*]+):\*\*/g, 
+        '<h3 class="index-section-header">$1:</h3>');
+      
+      // Format the remaining terms with dash-number pattern (Term - PageNumber)
+      processed = processed.replace(/([^>])\s*-\s*(\d+)/g, 
+        '$1 <span class="index-page">$2</span>');
+      
+      // Add styling for the index entries
+      const style = `
+        <style>
+          .index-entry {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+          }
+          .index-term {
+            font-weight: normal;
+            color: #1a202c;
+          }
+          .index-page {
+            color: #4a5568;
+            font-weight: 500;
+            margin-left: 8px;
+          }
+          .chapter-index-header {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            color: #2d3748;
+            font-size: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+          }
+          .index-section-header {
+            font-weight: 600;
+            margin-top: 16px;
+            margin-bottom: 12px;
+            color: #4a5568;
+          }
+        </style>
+      `;
+      
+      processed = style + processed;
+      
+      // Sanitize and set content
+      const sanitizedContent = DOMPurify.sanitize(processed, {
+        ADD_TAGS: ['style'],
+        ADD_ATTR: ['class'],
       });
       
-      // Format section headers (like **A**) to proper HTML
-      processed = processed.replace(/\*\*([A-Z])\*\*/g, '<h2 class="index-section-header">$1</h2>');
-      
-      // Format entry items with proper indentation
-      processed = processed.replace(/- (.*?), ([0-9, -]+)/g, 
-        '<p class="index-entry"><span class="index-term">$1</span>, <span class="index-pages">$2</span></p>');
-      
-      // Format subentries with more indentation
-      processed = processed.replace(/  - (.*?), ([0-9, -]+)/g, 
-        '<p class="index-subentry"><span class="index-term">$1</span>, <span class="index-pages">$2</span></p>');
-      
-      // Sanitize the HTML
-      processed = DOMPurify.sanitize(processed);
-    
-      setFormattedContent(processed);
+      setFormattedContent(sanitizedContent);
     }
   }, [indexContent]);
-
-  // Add custom styles for index display
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .index-title {
-        font-size: 1.75rem;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 2rem;
-      }
-      
-      .index-section-header {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #2d3748;
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 0.5rem;
-      }
-      
-      .index-entry {
-        margin-bottom: 0.5rem;
-        padding-left: 1rem;
-        line-height: 1.6;
-      }
-      
-      .index-subentry {
-        margin-bottom: 0.5rem;
-        padding-left: 2rem;
-        font-size: 0.95rem;
-        line-height: 1.5;
-      }
-      
-      .index-term {
-        font-weight: 500;
-        color: #2d3748;
-      }
-      
-      .index-pages {
-        color: #4a5568;
-        margin-left: 0.25rem;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
-
-  // Prepare content for editing to preserve markdown structure but make it user-friendly
-  const prepareContentForEditing = () => {
-    if (editMode) {
-      // For editing, we want to convert the markdown to HTML that Quill can display nicely
-      // First convert the title to a nice H1 element
-      let editorContent = localContent
-        .replace(/\*\*([^*]+?for "[^*]+?")\*\*/g, '<h1>$1</h1>')
-        .replace(/\*\*([^*]+?Index[^*]*?)\*\*/g, '<h1>$1</h1>')
-        // Convert section headers (like **A**) to H2
-        .replace(/\*\*([A-Z])\*\*/g, '<h2>$1</h2>');
-      
-      return editorContent;
-    }
-    return formattedContent;
-  };
-
+  
+  // Handle content changes from the editor
   const handleContentUpdate = (content: string) => {
-    // If the content comes from Quill editor (HTML), convert it back to markdown
-    let updatedContent = content;
-    
-    if (content.includes('<')) {
-      // Convert formatted HTML back to markdown
-      updatedContent = htmlToMarkdown(content)
-        // Fix any potential issues with section headers
-        .replace(/<h1[^>]*>([^<]+)<\/h1>/g, '**$1**')
-        .replace(/<h2[^>]*>([A-Z])<\/h2>/g, '**$1**')
-        // Ensure proper dash formatting for entries
-        .replace(/<p class="index-entry">(.+?)<\/p>/g, '- $1')
-        .replace(/<p class="index-subentry">(.+?)<\/p>/g, '  - $1');
-    }
-    
-    setLocalContent(updatedContent);
+    setLocalContent(content);
     setHasLocalChanges(true);
-    setHasChanges(true);
   };
-
+  
+  // Prepare content for editing - convert HTML to appropriate format for editor
+  const prepareContentForEditing = () => {
+    return localContent || '';
+  };
+  
   // Save changes
   const saveChanges = async () => {
     if (!hasLocalChanges || !bookData?.id) return;
@@ -163,13 +137,12 @@ export const IndexContent: React.FC<IndexContentProps> = ({
       setIsSaving(true);
       
       await updateBookGenerated({
-        bookGenerationId: bookData.id,
-        index: localContent
-      }).unwrap();
-      
-     setEditMode(false);
-      await refetchBook();
-      setHasChanges(false);
+            bookGenerationId: bookData.id,
+            index: localContent
+          }).unwrap();
+        
+      if (setEditMode) setEditMode(false);
+      if (refetchBook) await refetchBook();
       setHasLocalChanges(false);
       addToast("Index saved successfully", "success");
     } catch (error) {
@@ -179,17 +152,16 @@ export const IndexContent: React.FC<IndexContentProps> = ({
       setIsSaving(false);
     }
   };
-
+  
   // Discard changes
   const handleCancelChanges = () => {
-    setLocalContent(indexContent);
+    setLocalContent(originalContent);
     setHasLocalChanges(false);
-    setHasChanges(false);
   };
 
   return (
     <div className="min-h-[800px] relative">
-      {/* Save/Cancel buttons when in edit mode and changes exist */}
+      {/* Save/Cancel buttons when in edit mode */}
       {editMode && (
         <div className="sticky top-4 z-10 flex justify-end mb-4 px-4">
           <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-gray-100 p-2 flex gap-2">
@@ -240,16 +212,16 @@ export const IndexContent: React.FC<IndexContentProps> = ({
             content={prepareContentForEditing()}
             editMode={true}
             onUpdate={handleContentUpdate}
-            className="min-h-[800px] px-8 py-12"
-            titleClassName="text-4xl text-center mb-8 text-gray-900"
+            className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12"
+            titleClassName="text-3xl sm:text-4xl text-center mb-6 sm:mb-8 text-gray-900"
             contentClassName="prose max-w-none index-content"
             placeholder="Add index entries here..."
           />
         </div>
       ) : (
-        <div className="min-h-[800px] px-8 py-12">
-          <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-lg">
-            <h1 className="text-4xl text-center mb-8 text-gray-900">Index</h1>
+        <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12">
+          <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm p-6 sm:p-12 rounded-lg shadow-lg">
+            <h1 className="text-3xl sm:text-4xl text-center mb-6 sm:mb-8 text-gray-900">Index</h1>
             
             <div className="quill-content-view">
               <div dangerouslySetInnerHTML={{ __html: formattedContent }} />
@@ -259,4 +231,4 @@ export const IndexContent: React.FC<IndexContentProps> = ({
       )}
     </div>
   );
-}; 
+};

@@ -910,7 +910,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                       >
                         <RotateCw className="w-4 h-4" />
                       </Button>
-                      <Button
+                      {/* <Button
                         variant="outline"
                         size="icon"
                         onClick={() => handleEditClick(streamedContent, -1)}
@@ -918,7 +918,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                         title="Edit Chapter"
                       >
                         <Edit className="w-4 h-4" />
-                      </Button>
+                      </Button> */}
                       {streamedContent && (
                         <Button
                           onClick={handleNextChapter}

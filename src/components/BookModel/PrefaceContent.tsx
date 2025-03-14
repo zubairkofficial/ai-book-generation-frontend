@@ -9,7 +9,6 @@ import { useToast } from '@/context/ToastContext';
 interface PrefaceContentProps {
   bookData: any;
   editMode: boolean;
-  setHasChanges: (value: boolean) => void;
   refetchBook: any;
   setEditMode: any
 }
@@ -25,7 +24,6 @@ interface PrefaceSections {
 export const PrefaceContent = ({
   bookData,
   editMode,
-  setHasChanges,
   refetchBook,
   setEditMode
 }: PrefaceContentProps) => {
@@ -108,7 +106,6 @@ export const PrefaceContent = ({
       [sectionName]: sectionContent
     }));
     setHasLocalChanges(true);
-    setHasChanges(true);
   };
 
   const savePreface = async () => {
@@ -138,7 +135,6 @@ ${sections.acknowledgments}
       
       await refetchBook();
       setEditMode(false);
-      setHasChanges(false);
       setHasLocalChanges(false);
       setOriginalSections({...sections});
       addToast("Preface saved successfully", "success");
@@ -154,7 +150,6 @@ ${sections.acknowledgments}
   const handleCancelChanges = () => {
     setSections({...originalSections});
     setHasLocalChanges(false);
-    setHasChanges(false);
   };
 
   const renderSection = (title: string, content: string, sectionKey: string) => {

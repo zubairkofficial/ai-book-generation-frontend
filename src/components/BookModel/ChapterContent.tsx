@@ -32,7 +32,6 @@ interface ChapterContentProps {
   totalChapters: number;
   editMode: boolean;
   onUpdate: (content: string, chapterNo: string) => void;
-  setHasChanges: (value: boolean) => void;
   onNavigate: (chapterNo: number) => void;
 }
 
@@ -42,7 +41,6 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
   totalChapters,
   editMode,
   onUpdate,
-  setHasChanges,
   onNavigate
 }) => {
   const { addToast } = useToast();
@@ -137,7 +135,6 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
     setLocalContent(markdownContent);
     const hasChanged = content !== originalContent;
     setHasLocalChanges(hasChanged);
-    setHasChanges(hasChanged);
   };
   
   // Save changes to the server
@@ -168,7 +165,6 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
       // Reset state
       setOriginalContent(localContent);
       setHasLocalChanges(false);
-      setHasChanges(false);
       processContent(localContent);
       
       addToast("Chapter saved successfully", "success");
@@ -182,7 +178,6 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
   const handleCancelChanges = () => {
     setLocalContent(originalContent);
     setHasLocalChanges(false);
-    setHasChanges(false);
   };
 
   return (

@@ -184,6 +184,12 @@ interface UpdateChapterSummaryRequest {
   summary: string;
 }
 
+// Add new interface for book end content response
+interface BookEndContentResponse {
+  message: string;
+  data: any;
+}
+
 export const bookApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Endpoint to fetch all books
@@ -370,6 +376,14 @@ export const bookApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+
+    // Add new endpoint to fetch book end content
+    fetchBookEndContent: builder.mutation<BookEndContentResponse, number>({
+      query: (bookId) => ({
+        url: `/book-generation/end-content/${bookId}`,
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
@@ -394,4 +408,5 @@ export const {
   useGenerateChapterSummaryMutation,
   useGeneratePresentationSlidesMutation,
   useUpdateChapterSummaryMutation,
+  useFetchBookEndContentMutation, // New hook for fetching book end content
 } = bookApi;

@@ -1,15 +1,12 @@
-import { Dispatch, FormEvent, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch,  SetStateAction,  useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import { 
   Loader2, Edit2, Image,
   BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useFetchBookByIdQuery, useUpdateChapterMutation,  useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
-import { BASE_URl, ToastType } from '@/constant';
+import { useFetchBookByIdQuery,   useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
+import { BASE_URl } from '@/constant';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { RegenerateImageModal } from './RegenerateImageModal';
 import { CoverContent } from './CoverContent';
@@ -19,7 +16,6 @@ import { GlossaryContent } from './GlossaryContent';
 import { IndexContent } from './IndexContent';
 import { ReferencesContent } from './ReferencesContent';
 import { TableOfContentsContent } from './TableOfContentsContent';
-import {  markdownComponents } from '@/utils/markdownUtils.tsx';
 import { ChapterContent } from './ChapterContent';
 import { IntroductionContent } from './IntroductionContent';
 import { useToast } from '@/context/ToastContext';
@@ -45,18 +41,7 @@ interface TextStyle {
   letterSpacing: string;
 }
 
-const PAGES: PageContent[] = [
-  { id: 'cover', icon: <BookOpen className="w-4 h-4" />, label: 'Cover' },
-  { id: 'dedication', icon: <Heart className="w-4 h-4" />, label: 'Dedication' },
-  { id: 'introduction', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Introduction' },
-  { id: 'preface', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Preface' },
-  { id: 'toc', icon: <List className="w-4 h-4" />, label: 'Contents' },
-  { id: 'glossary', icon: <Users className="w-4 h-4" />, label: 'Glossary' },
-  { id: 'index', icon: <List className="w-4 h-4" />, label: 'Index' },
-  { id: 'references', icon: <BookmarkIcon className="w-4 h-4" />, label: 'References' },
-  { id: 'backCover', icon: <BookOpen className="w-4 h-4" />, label: 'Back Cover' },
-  { id: 'edit', icon: <Edit2 className="w-4 h-4" />, label: 'Edit', isAction: true }
-];
+
 
 // Add proper type definitions
 const BookModel = () => {
@@ -76,12 +61,25 @@ const BookModel = () => {
     lineHeight: '1.6',
     letterSpacing: 'normal'
   });
-  const [hasChanges, setHasChanges] = useState(false);
   const { addToast } = useToast();
   
   // API Hooks
   const { data: book, isLoading, refetch: refetchBook } = useFetchBookByIdQuery(bookId, { skip: !bookId });
-  
+  const isComplete=book?.data.type==="complete"
+  const PAGES: PageContent[] = [
+    { id: 'cover', icon: <BookOpen className="w-4 h-4" />, label: 'Cover' },
+    { id: 'dedication', icon: <Heart className="w-4 h-4" />, label: 'Dedication' },
+    { id: 'introduction', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Introduction' },
+    { id: 'preface', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Preface' },
+    { id: 'toc', icon: <List className="w-4 h-4" />, label: 'Contents' },
+    ...(isComplete ? [
+      { id: 'glossary', icon: <Users className="w-4 h-4" />, label: 'Glossary' },
+      { id: 'index', icon: <List className="w-4 h-4" />, label: 'Index' },
+      { id: 'references', icon: <BookmarkIcon className="w-4 h-4" />, label: 'References' },
+    ] : []),
+     { id: 'edit', icon: <Edit2 className="w-4 h-4" />, label: 'Edit', isAction: true }
+  ];
+
   const [updateImage] = useUpdateImageMutation();
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
 
@@ -111,7 +109,6 @@ const BookModel = () => {
   const handleContentUpdate = async (content: string, pageType?: string) => {
     if (!bookId || !book?.data) return;
     
-    setHasChanges(false);
     
     try {
       switch (pageType) {
@@ -375,7 +372,6 @@ const BookModel = () => {
               handleContentUpdate,
               setCurrentPage,
               handleImageUpdate,
-              setHasChanges,
               refetchBook
             )}
           </div>
@@ -398,7 +394,6 @@ const renderCurrentPageContent = (
   onUpdate: (content: string, pageType?: string) => void,
   onPageChange: (page: string) => void,
   onImageUpdate: (file: File, type: 'cover' | 'backCover') => void,
-  setHasChanges: (value: boolean) => void,
   refetchBook: unknown
 ): JSX.Element => {
  ;
@@ -420,7 +415,6 @@ const renderCurrentPageContent = (
           <CoverContent
             bookData={bookData}
             editMode={editMode}
-            setHasChanges={setHasChanges}
           />
           {/* Copyright Notice */}
           <div className="text-sm text-gray-500 mt-4">
@@ -445,7 +439,6 @@ const renderCurrentPageContent = (
         <IntroductionContent
           bookData={bookData}
           editMode={editMode}
-          setHasChanges={setHasChanges}
           refetchBook={refetchBook}
           setEditMode={setEditMode}
         />
@@ -455,7 +448,6 @@ const renderCurrentPageContent = (
         <PrefaceContent
           bookData={bookData}
           editMode={editMode}
-          setHasChanges={setHasChanges}
           refetchBook={refetchBook}
           setEditMode={setEditMode}
 
@@ -478,9 +470,7 @@ const renderCurrentPageContent = (
         <GlossaryContent 
           bookData={bookData} 
           editMode={editMode}
-          // onUpdate={(content) => onUpdate(content, 'glossary')}
           setEditMode={setEditMode}
-          setHasChanges={setHasChanges}
           refetchBook={refetchBook}
           />
       );
@@ -490,7 +480,6 @@ const renderCurrentPageContent = (
         <IndexContent 
           bookData={bookData} 
           editMode={editMode}
-          setHasChanges={setHasChanges}
           refetchBook={refetchBook}
           setEditMode={setEditMode}
         />
@@ -501,36 +490,12 @@ const renderCurrentPageContent = (
         <ReferencesContent 
         bookData={bookData} 
         editMode={editMode}
-        setHasChanges={setHasChanges}
         refetchBook={refetchBook}
         setEditMode={setEditMode}
         />
       );
 
-    case 'backCover':
-      return (
-        <div className="flex flex-col items-center justify-center min-h-[800px] text-center space-y-8 relative">
-          <div className="relative w-full max-w-2xl">
-            <ImageUpload
-              currentImage={bookData.additionalData.backCoverImageUrl}
-              onImageUpdate={(file) => onImageUpdate(file, 'backCover')}
-              label="Back Cover"
-              isEditing={editMode}
-              bookId={bookData.id}
-              imageType="backCover"
-            />
-          </div>
-          <div 
-            className="space-y-6 max-w-2xl bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-lg"
-            contentEditable={editMode}
-            onBlur={(e) => onUpdate(e.currentTarget.textContent || '')}
-          >
-            <h2 className="text-2xl font-bold">About this Book</h2>
-            <p className="text-gray-700">{bookData.bookDescription || bookData.ideaCore}</p>
-          </div>
-        </div>
-      );
-
+   
     default:
       if (currentPage.startsWith('chapter-')) {
         const chapterNum = parseInt(currentPage.split('-')[1]);
@@ -550,7 +515,6 @@ const renderCurrentPageContent = (
             bookGenerationId={bookData.id}
             editMode={editMode}
             onUpdate={onUpdate}
-            setHasChanges={setHasChanges}
             onNavigate={(chapterNo) => onPageChange(`chapter-${chapterNo}`)}
           />
         ) : (

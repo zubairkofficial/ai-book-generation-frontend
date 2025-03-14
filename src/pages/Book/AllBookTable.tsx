@@ -1,9 +1,9 @@
-import { ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent, MouseEvent, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Loader2, Eye, Search,  Plus, BookOpen, Trash2 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
-import { useFetchBooksQuery, useDeleteBookMutation, BookStatus, useFetchBooksByTypeQuery } from '@/api/bookApi';
+import { useFetchBooksQuery, useDeleteBookMutation, BookStatus, useFetchBooksByTypeQuery, useFetchBookEndContentMutation } from '@/api/bookApi';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { BASE_URl, ToastType } from '@/constant';
@@ -28,6 +28,9 @@ interface BookData {
     coverImagePath?: string;
   
   };
+  glossary?:string;
+  index?: string;
+  refrence?: string;
   // ... other properties
 }
 
@@ -41,7 +44,8 @@ export default function BookTable() {
   const [deleteBook] = useDeleteBookMutation();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [bookToDelete, setBookToDelete] = useState<number | null>(null);
-
+  const [fetchBookEndContent] = useFetchBookEndContentMutation();
+ 
   // const { data: searchData } = useSearchBookQuery({ userId: user.id, searchParams }); // Fetch books with the hook
   // console.log("searchData", searchData)
   // Handle the error case
@@ -77,6 +81,25 @@ export default function BookTable() {
     setBookToDelete(bookId);
     setIsDeleteDialogOpen(true);
   };
+
+  const handlePreview=async(e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>,book: BookData)=>{
+  console.log("book++++++++",book)
+  e.stopPropagation();
+   
+  if (book.type === "complete" && !book.glossary && !book.index && !book.refrence) {
+     
+      try {
+        await fetchBookEndContent(book.id).unwrap();
+        navigate(`/book-modal?id=${book.id}`);
+      } catch (error: any) {
+        addToast(error?.data?.message || 'Failed to fetch book end content', ToastType.ERROR);
+      }
+    } else {
+      navigate(`/book-modal?id=${book.id}`);
+    }
+
+      
+  }
 
   const confirmDelete = async () => {
     if (bookToDelete) {
@@ -218,10 +241,12 @@ export default function BookTable() {
                             variant="secondary"
                             size="sm"
                             className="bg-white hover:bg-gray-50 shadow-sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/book-modal?id=${book.id}`);
-                            }}
+                            onClick={(e) => handlePreview(e,book)
+                            //   {
+                            //   e.stopPropagation();
+                            //   navigate(`/book-modal?id=${book.id}`);
+                            // }
+                          }
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             Preview
@@ -247,11 +272,11 @@ export default function BookTable() {
                         )}
                         
                         {/* Status badge with progress */}
-                        {book.type === "incomplete" && (
+                        {/* {book.type === "incomplete" && (
                           <span className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded-full truncate w-full">
                             Incomplete ({book.bookChapter?.length || 0}/{book.numberOfChapters} chapters)
                           </span>
-                        )}
+                        )} */}
                       </div>
                     </div>
 

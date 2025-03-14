@@ -4,7 +4,6 @@ import { useUpdateBookCoverMutation } from '@/api/bookApi';
 interface CoverContentProps {
   bookData: any;
   editMode: boolean;
-  setHasChanges: (value: boolean) => void;
 }
 
 interface CoverData {
@@ -18,7 +17,7 @@ interface CoverData {
   authorBio: string;
 }
 
-export const CoverContent = ({ bookData, editMode, setHasChanges }: CoverContentProps) => {
+export const CoverContent = ({ bookData, editMode }: CoverContentProps) => {
   const [localContent, setLocalContent] = useState<CoverData>({
     bookTitle: '',
     authorName: '',
@@ -61,7 +60,6 @@ export const CoverContent = ({ bookData, editMode, setHasChanges }: CoverContent
     };
 
     setLocalContent(newContent);
-    setHasChanges(true);
 
     try {
       await updateBookCover({
@@ -69,7 +67,6 @@ export const CoverContent = ({ bookData, editMode, setHasChanges }: CoverContent
         ...newContent
       }).unwrap();
       
-      setHasChanges(false);
     } catch (error) {
       console.error('Failed to update cover content:', error);
     }
