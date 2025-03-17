@@ -104,6 +104,10 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
 
   const [showInsertOption, setShowInsertOption] = useState(false);
   const [regeneratedContent, setRegeneratedContent] = useState('');
+  // Add state for tracking editing mode
+  const [editMode, setEditMode] = useState<'ai' | 'human'>('ai');
+  const [humanEditContent, setHumanEditContent] = useState('');
+
   // Auto-scroll effect
   useEffect(() => {
     if (streamContainerRef.current) {
@@ -553,10 +557,15 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
     }
   };
 
+  // Update handleInsertContent to handle both AI and human-edited content
   const handleInsertContent = async () => {
-    if (selectedContent && regeneratedContent) {
+    if (selectedContent) {
       try {
         setIsInserting(true);        
+        
+        // Get the content to insert based on edit mode
+        const contentToInsert = editMode === 'ai' ? regeneratedContent : humanEditContent;
+        
         // Update local content first
         const updatedContent = (() => {
           const paragraphs = streamedContent.split('\n');
@@ -565,7 +574,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
           const updatedParagraphs = paragraphs.map(paragraph => {
             if (!found && paragraph.includes(selectedContent.text)) {
               found = true;
-              return paragraph.replace(selectedContent.text, regeneratedContent);
+              return paragraph.replace(selectedContent.text, contentToInsert);
             }
             return paragraph;
           });
@@ -573,29 +582,35 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
           return updatedParagraphs.join('\n');
         })();
 
-        // Prepare and send API update
-        const bookId = typeof bookData.id === 'string' ? parseInt(bookData.id, 10) : bookData.id;
-        
-        if (isNaN(bookId)) {
-          throw new Error('Invalid book ID');
-        }
-
-        const updatePayload:any = {
-          chapterNo: currentChapterNo,
-          bookGenerationId: bookId,
-          updateContent: updatedContent
-        };
-
-        const response = await updateBookChapter(updatePayload).unwrap();
-        
-        if (response.statusCode === 200) {
-          // Update local state after successful API call
+        // If using human edit mode, we don't need API call for content generation
+        if (editMode === 'human') {
+          // Just update local state
           setStreamedContent(updatedContent);
           addToast("Content updated successfully", ToastType.SUCCESS);
         } else {
-          throw new Error(response.message || 'Failed to update content');
-        }
+          // For AI mode, prepare and send API update as before
+          const bookId = typeof bookData.id === 'string' ? parseInt(bookData.id, 10) : bookData.id;
+          
+          if (isNaN(bookId)) {
+            throw new Error('Invalid book ID');
+          }
 
+          const updatePayload:any = {
+            chapterNo: currentChapterNo,
+            bookGenerationId: bookId,
+            updateContent: updatedContent
+          };
+
+          const response = await updateBookChapter(updatePayload).unwrap();
+          
+          if (response.statusCode === 200) {
+            // Update local state after successful API call
+            setStreamedContent(updatedContent);
+            addToast("Content updated successfully", ToastType.SUCCESS);
+          } else {
+            throw new Error(response.message || 'Failed to update content');
+          }
+        }
       } catch (error: any) {
         console.error('Update Error:', error);
         addToast(error.message || "Failed to update content", ToastType.ERROR);
@@ -606,6 +621,8 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
         setSelectedContent(null);
         setShowEditPanel(false);
         setRegeneratedContent('');
+        setHumanEditContent('');
+        setEditMode('ai');
       }
     }
   };
@@ -708,8 +725,68 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
                       {selectedContent?.text}
                     </div>
                   </div>
+                  
+                  {/* Add edit mode selection */}
+                  <div className="flex gap-4 items-center">
+                    <Label className="font-medium">Edit Mode:</Label>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="radio" 
+                        id="ai-edit" 
+                        name="edit-mode" 
+                        checked={editMode === 'ai'} 
+                        onChange={() => setEditMode('ai')} 
+                      />
+                      <Label htmlFor="ai-edit" className="cursor-pointer">AI</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="radio" 
+                        id="human-edit" 
+                        name="edit-mode" 
+                        checked={editMode === 'human'} 
+                        onChange={() => setEditMode('human')} 
+                      />
+                      <Label htmlFor="human-edit" className="cursor-pointer">Human</Label>
+                    </div>
+                  </div>
 
-                  {showInsertOption ? (
+                  {editMode === 'human' ? (
+                    <div>
+                      <Label>Human Edit</Label>
+                      <Textarea 
+                        value={humanEditContent || selectedContent?.text || ''}
+                        onChange={(e) => setHumanEditContent(e.target.value)}
+                        className="mt-1 min-h-[150px]"
+                        placeholder="Edit the text directly..."
+                      />
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
+                          onClick={handleInsertContent}
+                          disabled={isInserting}
+                        >
+                          {isInserting ? (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Inserting...</span>
+                            </div>
+                          ) : (
+                            "Insert Edited Content"
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowEditPanel(false);
+                            setHumanEditContent('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : showInsertOption ? (
                     <>
                       <div>
                         <Label>Regenerated Content</Label>

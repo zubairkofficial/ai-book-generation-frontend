@@ -81,9 +81,12 @@ const bookSchema: any = yup.object().shape({
   characters: yup.string().transform((value) => value || "").optional(),
   targetAudience: yup.string().required("Target audience is required").oneOf(Object.values(TargetAudience)),
   language: yup.string().required("Language is required").oneOf(Object.values(BookLanguage)),
-  numberOfChapters: yup.number()
+  numberOfChapters: yup
+    .number()
+    .typeError("Number of chapters is required")
     .required("Number of chapters is required")
-    .min(1, "Must have at least 1 chapter")
+    .integer("Must be a whole number")
+    .min(1, "Must be at least 1")
     .max(50, "Maximum 50 chapters allowed"),
 });
 
@@ -205,49 +208,58 @@ const CreateBook = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]:
-        name === "numberOfChapters"
-          ? value === ""
-            ? ""
-            : parseInt(value, 10)
-          : value,
-    }));
-
-    // Clear the error for the specific field being updated
-    setErrors((prevErrors) => {
-      const { [name]: removedError, ...restErrors } = prevErrors;
-      return restErrors;
-    });
-  };
-
-  const handleAdvancedOptionsChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setAdvancedOptions((prev: any) => {
-      const newOptions = { ...prev };
-      const keys = name.split(".");
-
-      if (keys.length === 1) {
-        // Handle top-level properties
-        return { ...prev, [name]: value };
-      }
-
-      // Handle nested properties
-      let current: any = newOptions;
-      for (let i = 0; i < keys.length - 1; i++) {
-        if (!current[keys[i]]) {
-          current[keys[i]] = {};
+    
+    // Special handling for number fields
+    if (name === "numberOfChapters") {
+      // Always keep as string in state to match type definition
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: value, // Keep as string in the state
+      }));
+      
+      // For validation, convert to number to check range
+      if (value === "") {
+        // Handle empty value
+        setErrors(prev => ({
+          ...prev,
+          [name]: "Number of chapters is required"
+        }));
+      } else {
+        const numValue = parseInt(value, 10);
+        
+        // Clear error if value is valid
+        if (!isNaN(numValue) && numValue >= 1 && numValue <= 50) {
+          setErrors((prevErrors) => {
+            const { [name]: removedError, ...restErrors } = prevErrors;
+            return restErrors;
+          });
+        } else {
+          // Set error immediately for invalid number
+          setErrors(prev => ({
+            ...prev,
+            [name]: isNaN(numValue)
+              ? "Must be a valid number"
+              : numValue < 1 
+                ? "Must be at least 1" 
+                : "Maximum 50 chapters allowed"
+          }));
         }
-        current = current[keys[i]];
       }
-      current[keys[keys.length - 1]] = value;
-
-      return newOptions;
-    });
+    } else {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: value,
+      }));
+      
+      // Clear the error for the specific field being updated
+      setErrors((prevErrors) => {
+        const { [name]: removedError, ...restErrors } = prevErrors;
+        return restErrors;
+      });
+    }
   };
+
+
 
   const formatLabel = (key: string) => {
     if (key === 'bookInformation') return 'Core Idea';
@@ -262,10 +274,10 @@ const CreateBook = () => {
     const fieldsToValidate = currentStepData.fields.reduce((acc: any, field: any) => {
       if (Array.isArray(field)) {
         field.forEach(f => {
-          acc[f] = formData[f as keyof typeof formData] || "";
+          acc[f] = formData[f as keyof typeof formData];
         });
       } else if (field !== "advancedOptions") {
-        acc[field] = formData[field as keyof typeof formData] || "";
+        acc[field] = formData[field as keyof typeof formData];
       }
       return acc;
     }, {});
@@ -330,7 +342,7 @@ const CreateBook = () => {
       const isValid = await Promise.all(
         Object.keys(steps).map((step) => validateStep(parseInt(step)))
       ).then((results) => results.every(Boolean));
-
+      console.log("isValid",isValid,Object.keys(steps))
       if (!isValid) {
         addToast("Please check all fields and try again", ToastType.ERROR);
         return;
@@ -387,15 +399,7 @@ const CreateBook = () => {
     setShowChapterConfig(true);
   };
 
-  // Sanitize HTML content to prevent XSS attacks
-  const sanitizeHTML = (html: string) => {
-    return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: ["p", "h1", "h2", "h3", "h4", "h5", "h6", "strong", "em", "u", "br", "div", "span", "ul", "ol", "li", "img"],
-      ALLOWED_ATTR: ["style", "class", "id", "src", "alt", "href"],
-      ADD_TAGS: ["style"],
-      ADD_ATTR: ["target"],
-    });
-  };
+
 
   const renderField = (key: string) => {
     const baseFieldClasses = "space-y-2 w-full";
@@ -566,243 +570,7 @@ const CreateBook = () => {
     </div>
   );
 
-  const renderAdvancedOptions = () => (
-    <div className="space-y-8">
-      {/* Cover Image Prompt */}
-      <div className="space-y-2">
-        <Label htmlFor="coverImagePrompt">Cover Image Prompt</Label>
-        <Input
-          id="coverImagePrompt"
-          name="coverImagePrompt"
-          value={advancedOptions.coverImagePrompt}
-          onChange={handleAdvancedOptionsChange}
-          placeholder="Describe your ideal book cover"
-        />
-        <p className="text-sm text-gray-500">
-          Describe how you want your book cover to look
-        </p>
-      </div>
-
-      {/* Color Scheme */}
-      <div className="space-y-2">
-        <Label htmlFor="colorScheme">Color Scheme</Label>
-        <div className="flex gap-3">
-          <Input
-            type="color"
-            id="colorScheme"
-            name="colorScheme"
-            value={advancedOptions.colorScheme}
-            onChange={handleAdvancedOptionsChange}
-            className="w-20 h-10"
-          />
-          <Input
-            type="text"
-            value={advancedOptions.colorScheme}
-            onChange={handleAdvancedOptionsChange}
-            name="colorScheme"
-            placeholder="#000000"
-            className="flex-1"
-          />
-        </div>
-        <p className="text-sm text-gray-500">
-          Choose a primary color for your book's theme
-        </p>
-      </div>
-
-      {/* Font Style */}
-      <div className="space-y-2">
-        <Label htmlFor="fontStyle">Font Style</Label>
-        <select
-          id="fontStyle"
-          name="fontStyle"
-          value={advancedOptions.fontStyle}
-          onChange={handleAdvancedOptionsChange}
-          className="w-full rounded-md border bg-gray-50 border-gray-300 p-2"
-        >
-          <option value="">Select a font style</option>
-          <option value="serif">Serif</option>
-          <option value="sans-serif">Sans Serif</option>
-          <option value="modern">Modern</option>
-          <option value="classic">Classic</option>
-          <option value="playful">Playful</option>
-        </select>
-        <p className="text-sm text-gray-500">
-          Choose the main font style for your book
-        </p>
-      </div>
-
-      {/* Advanced Styling Options */}
-      <div className="space-y-6">
-        <div className="border-t pt-6">
-          <h4 className="text-lg font-medium mb-4">Advanced Styling Options</h4>
-
-          {/* Typography Settings */}
-          <div className="space-y-6">
-            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-              <h5 className="font-medium text-base">Typography Settings</h5>
-
-              {/* Font Sizes */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { key: "title", label: "Title Size", default: "32px" },
-                  { key: "chapterTitle", label: "Chapter Title", default: "24px" },
-                  { key: "headers", label: "Headers", default: "20px" },
-                  { key: "body", label: "Body Text", default: "16px" },
-                ].map(({ key, label, default: defaultSize }) => (
-                  <div key={key} className="space-y-2">
-                    <Label htmlFor={`fontSize-${key}`} className="text-sm">
-                      {label}
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id={`fontSize-${key}`}
-                        name={`styling.fontSize.${key}`}
-                        value={advancedOptions.styling?.fontSize?.[key] || ""}
-                        onChange={handleAdvancedOptionsChange}
-                        placeholder={defaultSize}
-                        className="flex-1"
-                      />
-                      <Select
-                        value={advancedOptions.styling?.fontSize?.[key]?.includes("rem") ? "rem" : "px"}
-                        onValueChange={(unit) => {
-                          const value = advancedOptions.styling?.fontSize?.[key]?.replace(/[^0-9.]/g, "") || "";
-                          handleAdvancedOptionsChange({
-                            target: {
-                              name: `styling.fontSize.${key}`,
-                              value: `${value}${unit}`,
-                            },
-                          } as any);
-                        }}
-                      >
-                        <SelectTrigger className="w-20">
-                          <SelectValue placeholder="Unit" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="px">px</SelectItem>
-                          <SelectItem value="rem">rem</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Line Heights */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { key: "title", label: "Title Line Height", default: "1.2" },
-                  { key: "chapterTitle", label: "Chapter Line Height", default: "1.3" },
-                  { key: "headers", label: "Headers Line Height", default: "1.4" },
-                  { key: "body", label: "Body Line Height", default: "1.6" },
-                ].map(({ key, label, default: defaultHeight }) => (
-                  <div key={key} className="space-y-2">
-                    <Label htmlFor={`lineHeight-${key}`} className="text-sm">
-                      {label}
-                    </Label>
-                    <Input
-                      id={`lineHeight-${key}`}
-                      name={`styling.lineHeight.${key}`}
-                      value={advancedOptions.styling?.lineHeight?.[key] || ""}
-                      onChange={handleAdvancedOptionsChange}
-                      placeholder={defaultHeight}
-                      type="number"
-                      step="0.1"
-                      min="1"
-                      max="3"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Spacing Settings */}
-            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-              <h5 className="font-medium text-base">Spacing & Margins</h5>
-
-              {/* Margins */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {["top", "right", "bottom", "left"].map((side) => (
-                  <div key={side} className="space-y-2">
-                    <Label htmlFor={`margin-${side}`} className="text-sm capitalize">
-                      {side} Margin
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id={`margin-${side}`}
-                        name={`styling.margins.${side}`}
-                        value={advancedOptions.styling?.margins?.[side] || ""}
-                        onChange={handleAdvancedOptionsChange}
-                        placeholder="2cm"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Spacing */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { key: "paragraphSpacing", label: "Paragraph Spacing", default: "1.5rem" },
-                  { key: "chapterSpacing", label: "Chapter Spacing", default: "3rem" },
-                  { key: "sectionSpacing", label: "Section Spacing", default: "2rem" },
-                ].map(({ key, label, default: defaultSpacing }) => (
-                  <div key={key} className="space-y-2">
-                    <Label htmlFor={`spacing-${key}`} className="text-sm">
-                      {label}
-                    </Label>
-                    <Input
-                      id={`spacing-${key}`}
-                      name={`styling.spacing.${key}`}
-                      value={advancedOptions.styling?.spacing?.[key] || ""}
-                      onChange={handleAdvancedOptionsChange}
-                      placeholder={defaultSpacing}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Text Alignment */}
-            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-              <h5 className="font-medium text-base">Text Alignment</h5>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { key: "title", label: "Title Alignment" },
-                  { key: "chapterTitle", label: "Chapter Title Alignment" },
-                  { key: "headers", label: "Headers Alignment" },
-                  { key: "body", label: "Body Text Alignment" },
-                ].map(({ key, label }) => (
-                  <div key={key} className="space-y-2">
-                    <Label htmlFor={`alignment-${key}`} className="text-sm">
-                      {label}
-                    </Label>
-                    <Select
-                      value={advancedOptions.styling?.textAlignment?.[key] || ""}
-                      onValueChange={(value) =>
-                        handleAdvancedOptionsChange({
-                          target: { name: `styling.textAlignment.${key}`, value },
-                        } as any)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select alignment" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="left">Left</SelectItem>
-                        <SelectItem value="center">Center</SelectItem>
-                        <SelectItem value="right">Right</SelectItem>
-                        <SelectItem value="justify">Justify</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+ 
 
   const renderApiErrors = () => {
     if (Object.keys(errors).length === 0) return null;

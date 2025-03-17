@@ -18,7 +18,7 @@ import {
   UserCircle, 
   Key, 
   Shield,
-  ChevronRight,
+  BrainIcon,
   Save,
   AlertCircle
 } from 'lucide-react';
@@ -304,6 +304,7 @@ useEffect(()=>{userRefetch()},[])
                   </TabsTrigger>
 
                   {userInfo?.role === 'admin' && (
+                    <>
                     <TabsTrigger 
                       value="api-keys"
                       className="flex-1 py-4 px-3 group"
@@ -313,6 +314,16 @@ useEffect(()=>{userRefetch()},[])
                         <span className="hidden sm:inline">API Keys</span>
                       </div>
                     </TabsTrigger>
+                    <TabsTrigger 
+                      value="model-prompts"
+                      className="flex-1 py-4 px-3 group"
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <BrainIcon className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
+                        <span className="hidden sm:inline">AI Model and Prompts</span>
+                      </div>
+                    </TabsTrigger>
+                    </>
                   )}
                 </TabsList>
               </div>
@@ -486,6 +497,184 @@ useEffect(()=>{userRefetch()},[])
                           <h2 className="text-lg sm:text-xl font-semibold text-gray-900">API Keys</h2>
                           <p className="mt-2 text-sm text-gray-600">
                             Manage your API keys for external services
+                          </p>
+                        </div>
+
+                        {/* Current API Keys Display */}
+                        {apiKeyInfo && (
+                          <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 className="text-sm font-medium text-gray-700 mb-4">Current API Keys</h3>
+                            <div className="grid gap-4">
+                             
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">OpenAI API Key:</span>
+                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                                  {apiKeyInfo.openai_key ? 
+                                    `${apiKeyInfo.openai_key.substring(0, 4)}...${apiKeyInfo.openai_key.slice(-4)}` : 
+                                    'Not set'}
+                                </code>
+                              </div>
+                             
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Fal AI Key:</span>
+                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                                  {apiKeyInfo.fal_ai ? 
+                                    `${apiKeyInfo.fal_ai.substring(0, 4)}...${apiKeyInfo.fal_ai.slice(-4)}` : 
+                                    'Not set'}
+                                </code>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">LLM Model:</span>
+                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                                  {apiKeyInfo.model || 'Not set'}
+                                </code>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Update API Keys Form */}
+                        <form onSubmit={handleSubmitApiKeys(handleApiKeysSave)} className="space-y-6">
+                          <div className="grid gap-6">
+                           
+
+                            <div className="space-y-2">
+                              <Label htmlFor="openaiKey">New OpenAI API Key</Label>
+                              <div className="relative">
+                                <Input
+                                  {...registerApiKeys('openaiKey', {
+                                    onChange: (e) => validateOpenAIKey(e.target.value)
+                                  })}
+                                  type="password"
+                                  id="openaiKey"
+                                  placeholder="sk-..."
+                                  className={`w-full pr-10 ${
+                                    !openaiKeyValidation.isValid || apiKeyErrors.openaiKey 
+                                      ? 'border-red-500' 
+                                      : ''
+                                  }`}
+                                />
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                  {(!openaiKeyValidation.isValid || apiKeyErrors.openaiKey) && (
+                                    <svg
+                                      className="h-5 w-5 text-red-500"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                      />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Error Message */}
+                              {(!openaiKeyValidation.isValid || apiKeyErrors.openaiKey) && (
+                                <p className="text-sm text-red-500">
+                                  {openaiKeyValidation.error || apiKeyErrors.openaiKey?.message}
+                                </p>
+                              )}
+
+                              {/* Help Text */}
+                              <p className="text-xs text-gray-500">
+                                Format: Must start with "sk-" and contain only letters, numbers, underscores, and hyphens
+                              </p>
+                            </div>
+
+                            
+
+                            <div className="space-y-2">
+                              <Label htmlFor="falKey">New Fal AI Key</Label>
+                              <div className="relative">
+                                <Input
+                                  {...registerApiKeys('falKey')}
+                                  type="password"
+                                  id="falKey"
+                                  placeholder="fal_..."
+                                  className={`w-full pr-20 ${apiKeyErrors.falKey ? 'border-red-500' : ''}`}
+                                />
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                  {apiKeyErrors.falKey && (
+                                    <svg 
+                                      className="h-5 w-5 text-red-500" 
+                                      fill="none" 
+                                      viewBox="0 0 24 24" 
+                                      stroke="currentColor"
+                                    >
+                                      <path 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round" 
+                                        strokeWidth={2} 
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                                      />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              {apiKeyErrors.falKey && (
+                                <p className="text-sm text-red-500 mt-1">
+                                  {apiKeyErrors.falKey.message}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-500 mt-1">
+                                Format: fal_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (Starts with 'fal_')
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="llmModel">LLM Model</Label>
+                              <select
+                                {...registerApiKeys('llmModel')}
+                                className={`w-full rounded-md border ${apiKeyErrors.llmModel ? 'border-red-500' : 'border-gray-300'}`}
+                              >
+                                <option value="">Select a model</option>
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                <option value="gpt-4">GPT-4</option>
+                                <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                                <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                              </select>
+                              {apiKeyErrors.llmModel && (
+                                <p className="text-sm text-red-500">{apiKeyErrors.llmModel.message}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end pt-6 border-t border-gray-100">
+                            <Button 
+                              type="submit" 
+                              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white transition-colors duration-200"
+                              disabled={isUpdatingKeys}
+                            >
+                              {isUpdatingKeys ? (
+                                <div className="flex items-center gap-2">
+                                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                  </svg>
+                                  <span>Updating...</span>
+                                </div>
+                              ) : 'Update Settings'}
+                            </Button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </TabsContent>
+                )}
+
+{userInfo?.role === 'admin' && (
+                  <TabsContent value="model-prompts">
+                    <div className="animate-in fade-in-50 duration-500">
+                      <div className="max-w-2xl mx-auto space-y-6">
+                        <div className="mb-6">
+                          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">AI Model & Prompts</h2>
+                          <p className="mt-2 text-sm text-gray-600">
+                            Manage your AI model and prompts
                           </p>
                         </div>
 
