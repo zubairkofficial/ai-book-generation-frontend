@@ -51,7 +51,7 @@ interface BookData {
   };
   glossary?: string;
   index?: string;
-  refrence?: string;
+  references?: string;
   // ... other properties
 }
 
@@ -128,7 +128,7 @@ export default function BookTable() {
         book.genre?.toLowerCase().includes(term)
     );
   }, [selectedStatus, allBookData, filterBookData, searchTerm]);
-
+console.log("filteredBooks",!!filteredBooks[3].index)
   const handleStatusChange = (value: BookStatus) => {
     setSelectedStatus(value);
   };
@@ -150,12 +150,12 @@ export default function BookTable() {
 console.log("first+++++++++", book.type === "complete" &&
   !book.glossary &&
   !book.index &&
-  !book.refrence)
+  !book.references)
     if (
       book.type === "complete" &&
       !book.glossary &&
       !book.index &&
-      !book.refrence
+      !book.references
     ) {
       try {
         // Use Promise.race with a timeout to handle long-running requests
@@ -340,9 +340,9 @@ console.log("first+++++++++", book.type === "complete" &&
                               },
                             });
                           } else if(book.type === "complete" &&
-                            !book.glossary &&
-                            !book.index &&
-                            !book.refrence) {
+                            !(!!book?.glossary &&
+                            !!book?.index &&
+                            !!book?.references)) {
     //                         setIsBookLoading(true);
     // setLoadingBookId(book.id);
     //                           try {
@@ -429,11 +429,13 @@ console.log("first+++++++++", book.type === "complete" &&
                               {/* Status indicator overlay for incomplete books */}
                               {book.type === "incomplete"?
                              ( <div className="absolute top-2 left-2 bg-amber-500 text-white rounded-full px-3 py-1 text-xs font-bold shadow-md z-10">
-                              In Progress
+                                In Progress
                             </div>):
-                              (book.type === 'complete' && !book.refrence && !book.glossary &&!book.index) && (
+                            (book.type === 'complete' &&  !(!!book?.glossary &&
+                              !!book?.index &&
+                              !!book?.references)) && (
                          <div className="absolute top-2 left-2 bg-amber-500 text-white rounded-full px-3 py-1 text-xs font-bold shadow-md z-10">
-                                  In Progress
+                        In Progress
                                 </div>
                               )}
 

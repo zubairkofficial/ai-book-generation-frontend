@@ -135,7 +135,7 @@ export const ReferencesContent: React.FC<ReferencesContentProps> = ({
      
         await updateBookGenerated({
           bookGenerationId: bookData.id,
-          references: localContent  // Note: API param is 'references' but field is 'refrence'
+          references: localContent  // Note: API param is 'references' but field is 'references'
         }).unwrap();
       
       

@@ -699,7 +699,7 @@ console.log("selectedContent",selectedContent)
   useEffect(() => {
     if (bookData && bookData.type === "complete") {
       // Check if any of the end content sections are missing
-      const needsEndContent = !bookData.glossary || !bookData.index || !bookData.refrence;
+      const needsEndContent = !bookData.glossary || !bookData.index || !bookData.references;
       
       if (needsEndContent) {
         // Switch to end content generation mode
@@ -717,12 +717,12 @@ console.log("selectedContent",selectedContent)
           bookTitle={bookData.bookTitle || "Your Book"}
           // initialContent={{
           //   glossary: bookData.glossary || '',
-          //   references: bookData.refrence || '', // Note the typo in API field name
+          //   references: bookData.references || '', // Note the typo in API field name
           //   index: bookData.index || ''
           // }}
           // initialProgress={{
           //   glossary: !!bookData.glossary, 
-          //   references: !!bookData.refrence, 
+          //   references: !!bookData.references, 
           //   index: !!bookData.index
           // }}
           onComplete={() => {

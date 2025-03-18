@@ -85,6 +85,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
     return (completedSections / 3) * 100;
   };
 
+  useEffect(()=>{refetchBook()},[activeTab])
   console.log("getBookById",!!getBookById?.data)
   // Load content from API on component mount
   useEffect(() => {
@@ -117,15 +118,15 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
 
         await refetchBook()
         if (getBookById.statusCode === 200 && getBookById.data) {
-          const { glossary, refrence, index } = getBookById.data;
+          const { glossary, references, index } = getBookById.data;
           
           if (glossary) {
             setGlossaryContent(glossary);
             setGenerated(prev => ({ ...prev, glossary: true }));
           }
           
-          if (refrence) { // Note: API field has a typo
-            setReferencesContent(refrence);
+          if (references) { // Note: API field has a typo
+            setReferencesContent(references);
             setGenerated(prev => ({ ...prev, references: true }));
           }
           
@@ -304,7 +305,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
       if (activeTab === "glossary") {
         updateData.glossary = content;
       } else if (activeTab === "references") {
-        updateData.refrence = content; // API field name has a typo
+        updateData.references = content; // API field name has a typo
       } else if (activeTab === "index") {
         updateData.index = content;
       }
@@ -765,7 +766,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
                           : "hover:bg-amber-50 text-gray-700"
                       )}
                     >
-                      <div className="flex items-center">
+                      <div className=" items-center">
                         <span className="capitalize">{tab}</span>
                         {generated[tab as ContentType] && (
                           <Check className="h-3 w-3 ml-2 text-green-600" />
@@ -844,17 +845,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
               <h2 className="text-xl font-semibold capitalize">{activeTab}</h2>
             </div>
             <div className="flex gap-2">
-              {generated[activeTab] && !isEditing && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEditMode}
-                  disabled={isGenerating}
-                  title="Edit Content"
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
-              )}
+              
               {generated[activeTab] && !isEditing && (
                 <Button
                   variant="outline"
