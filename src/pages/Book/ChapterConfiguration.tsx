@@ -4,16 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BASE_URl, ToastType } from '@/constant';
-import { UpdateBookGenerateRequest, useCreateChapterMutation, useFetchBooksQuery, useUpdateChapterMutation } from '@/api/bookApi';
+import { UpdateBookGenerateRequest, useCreateChapterMutation, useFetchBooksQuery, useUpdateChapterMutation, useGenerateBookEndContentMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
 import { useToast } from '@/context/ToastContext';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, BookOpen, Settings, RotateCw, Edit, Loader2, Circle, ArrowLeft } from 'lucide-react';
+import { ArrowRight, BookOpen, Settings, RotateCw,  Loader2,  ArrowLeft, Check } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import { ChapterConfigurationProps, ChapterConfig } from './types/chapter.types';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
+import BookEndContentGenerator from './components/BookEndContentGenerator';
 
 
 
@@ -94,7 +95,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
   const [isEditing, setIsEditing] = useState(false);
   const [editableContent, setEditableContent] = useState('');
   const { token } = useSelector((state: RootState) => state.auth);
-
+console.log("selectedContent",selectedContent)
   const [textFormat, setTextFormat] = useState<TextFormat>({
     isBold: false,
     isItalic: false,
@@ -107,6 +108,26 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
   // Add state for tracking editing mode
   const [editMode, setEditMode] = useState<'ai' | 'human'>('ai');
   const [humanEditContent, setHumanEditContent] = useState('');
+
+  // Add state for end content generation
+  const [endContentMode, setEndContentMode] = useState<boolean>(false);
+  const [activeEndContentType, setActiveEndContentType] = useState<'glossary' | 'references' | 'index'>('glossary');
+  const [endContentProgress, setEndContentProgress] = useState({
+    glossary: false,
+    references: false,
+    index: false
+  });
+  const [endContentData, setEndContentData] = useState({
+    glossary: '',
+    references: '',
+    index: ''
+  });
+  const [additionalEndContentInfo, setAdditionalEndContentInfo] = useState('');
+  const [isGeneratingEndContent, setIsGeneratingEndContent] = useState(false);
+  
+  // Add API hooks for end content generation
+  const [generateBookEndContent] = useGenerateBookEndContentMutation();
+  const [updateBookGenerated] = useUpdateBookGeneratedMutation();
 
   // Auto-scroll effect
   useEffect(() => {
@@ -673,9 +694,46 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
    await refetchAllBooks()
     navigate(-1)
   }
+
+  // Add effect to check if book is complete but missing end content
+  useEffect(() => {
+    if (bookData && bookData.type === "complete") {
+      // Check if any of the end content sections are missing
+      const needsEndContent = !bookData.glossary || !bookData.index || !bookData.refrence;
+      
+      if (needsEndContent) {
+        // Switch to end content generation mode
+        setEndContentMode(true);
+      }
+    }
+  }, [bookData]);
+
   return (
     <div className="container mx-auto px-4 py-8">
-      {isBookCompleted ? (
+      {endContentMode ? (
+        // Use the BookEndContentGenerator component for end content generation
+        <BookEndContentGenerator 
+          bookId={typeof bookData.id === 'string' ? parseInt(bookData.id, 10) : bookData.id}
+          bookTitle={bookData.bookTitle || "Your Book"}
+          // initialContent={{
+          //   glossary: bookData.glossary || '',
+          //   references: bookData.refrence || '', // Note the typo in API field name
+          //   index: bookData.index || ''
+          // }}
+          // initialProgress={{
+          //   glossary: !!bookData.glossary, 
+          //   references: !!bookData.refrence, 
+          //   index: !!bookData.index
+          // }}
+          onComplete={() => {
+            // Refetch all books to update data after completion
+            refetchAllBooks();
+            // Navigate back to books page
+            navigate('/books');
+          }}
+        />
+      ) : isBookCompleted ? (
+        // Show completion UI with option to add end content
         <Card className="p-8 text-center">
           <h2 className="text-2xl font-bold text-amber-800 mb-4">
             🎉 Congratulations!
@@ -683,12 +741,21 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({ previousCon
           <p className="text-gray-600 mb-6">
             You have successfully completed all chapters of your book.
           </p>
-          <Button 
-            className="bg-amber-500 hover:bg-amber-600 text-white"
-            onClick={() => navigate('/books')}
-          >
-            View All Books
-          </Button>
+          <div className="flex flex-col md:flex-row gap-4 justify-center">
+            <Button 
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={() => setEndContentMode(true)}
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              Add Glossary, Index & References
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/books')}
+            >
+              View All Books
+            </Button>
+          </div>
         </Card>
       ) : (
         <>

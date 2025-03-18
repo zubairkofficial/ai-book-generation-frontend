@@ -190,6 +190,13 @@ interface BookEndContentResponse {
   data: any;
 }
 
+// Add this interface for book end content generation
+interface GenerateBookEndContentRequest {
+  bookId: number;
+  contentType: 'glossary' | 'references' | 'index';
+  additionalInfo?: string;
+}
+
 export const bookApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Endpoint to fetch all books
@@ -384,6 +391,15 @@ export const bookApi = baseApi.injectEndpoints({
         method: 'GET',
       }),
     }),
+
+    // Add this to your endpoints in the builder
+    generateBookEndContent: builder.mutation<any, GenerateBookEndContentRequest>({
+      query: (payload) => ({
+        url: '/book-generation/brg',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -409,4 +425,5 @@ export const {
   useGeneratePresentationSlidesMutation,
   useUpdateChapterSummaryMutation,
   useFetchBookEndContentMutation, // New hook for fetching book end content
+  useGenerateBookEndContentMutation, // Hook for generating book end content
 } = bookApi;

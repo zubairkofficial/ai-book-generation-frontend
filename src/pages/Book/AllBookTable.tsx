@@ -163,11 +163,11 @@ console.log("first+++++++++", book.type === "complete" &&
           setTimeout(() => reject(new Error("Request timeout")), 30000)
         );
 
-        await Promise.race([
-          fetchBookEndContent(book.id).unwrap(),
-          timeoutPromise,
-        ]);
-        await refetchBook();
+        // await Promise.race([
+        //   fetchBookEndContent(book.id).unwrap(),
+        //   timeoutPromise,
+        // ]);
+        // await refetchBook();
         navigate(`/book-modal?id=${book.id}`);
       } catch (error: any) {
         if (error.message === "Request timeout") {
@@ -343,42 +343,51 @@ console.log("first+++++++++", book.type === "complete" &&
                             !book.glossary &&
                             !book.index &&
                             !book.refrence) {
-                            setIsBookLoading(true);
-    setLoadingBookId(book.id);
-                              try {
-                                // Use Promise.race with a timeout to handle long-running requests
-                                const timeoutPromise = new Promise(
-                                  (_, reject) =>
-                                    setTimeout(
-                                      () =>
-                                        reject(new Error("Request timeout")),
-                                      30000
-                                    )
-                                );
+    //                         setIsBookLoading(true);
+    // setLoadingBookId(book.id);
+    //                           try {
+    //                             // Use Promise.race with a timeout to handle long-running requests
+    //                             const timeoutPromise = new Promise(
+    //                               (_, reject) =>
+    //                                 setTimeout(
+    //                                   () =>
+    //                                     reject(new Error("Request timeout")),
+    //                                   30000
+    //                                 )
+    //                             );
 
-                                await Promise.race([
-                                  fetchBookEndContent(book.id).unwrap(),
-                                  timeoutPromise,
-                                ]);
-                                await refetchBook();
-                                navigate(`/book-modal?id=${book.id}`);
-                              } catch (error: any) {
-                                if (error.message === "Request timeout") {
-                                  addToast(
-                                    "Request is taking longer than expected. Please try again.",
-                                    ToastType.WARNING
-                                  );
-                                } else {
-                                  addToast(
-                                    error?.data?.message ||
-                                      "Failed to fetch book end content",
-                                    ToastType.ERROR
-                                  );
-                                }
-                              }  finally {
-                                setIsBookLoading(false);
-                                setLoadingBookId(null);
-                              }
+    //                             await Promise.race([
+    //                               fetchBookEndContent(book.id).unwrap(),
+    //                               timeoutPromise,
+    //                             ]);
+    //                             await refetchBook();
+    //                             navigate(`/book-modal?id=${book.id}`);
+    //                           } catch (error: any) {
+    //                             if (error.message === "Request timeout") {
+    //                               addToast(
+    //                                 "Request is taking longer than expected. Please try again.",
+    //                                 ToastType.WARNING
+    //                               );
+    //                             } else {
+    //                               addToast(
+    //                                 error?.data?.message ||
+    //                                   "Failed to fetch book end content",
+    //                                 ToastType.ERROR
+    //                               );
+    //                             }
+    //                           }  finally {
+    //                             setIsBookLoading(false);
+    //                             setLoadingBookId(null);
+    //                           }
+    const nextChapter =
+    (book?.bookChapter?.length ?? 0) + 1;
+
+    return navigate(`/books/chapter-configuration`, {
+      state: {
+        previousContent: JSON.stringify(book),
+        initialChapter: nextChapter,
+      },
+    });
                             // navigate(`/book-modal?id=${book.id}`);
                           }else {
                             navigate(`/book-modal?id=${book.id}`);
@@ -418,8 +427,12 @@ console.log("first+++++++++", book.type === "complete" &&
                               />
 
                               {/* Status indicator overlay for incomplete books */}
-                              {book.type === "incomplete" && (
-                                <div className="absolute top-2 left-2 bg-amber-500 text-white rounded-full px-3 py-1 text-xs font-bold shadow-md z-10">
+                              {book.type === "incomplete"?
+                             ( <div className="absolute top-2 left-2 bg-amber-500 text-white rounded-full px-3 py-1 text-xs font-bold shadow-md z-10">
+                              In Progress
+                            </div>):
+                              (book.type === 'complete' && !book.refrence && !book.glossary &&!book.index) && (
+                         <div className="absolute top-2 left-2 bg-amber-500 text-white rounded-full px-3 py-1 text-xs font-bold shadow-md z-10">
                                   In Progress
                                 </div>
                               )}

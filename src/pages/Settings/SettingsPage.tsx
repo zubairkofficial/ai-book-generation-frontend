@@ -315,7 +315,7 @@ useEffect(()=>{userRefetch()},[])
                       </div>
                     </TabsTrigger>
                     <TabsTrigger 
-                      value="model-prompts"
+                      value="model-prompt"
                       className="flex-1 py-4 px-3 group"
                     >
                       <div className="flex items-center justify-center gap-2">
@@ -668,13 +668,13 @@ useEffect(()=>{userRefetch()},[])
                 )}
 
 {userInfo?.role === 'admin' && (
-                  <TabsContent value="model-prompts">
+                  <TabsContent value="model-prompt">
                     <div className="animate-in fade-in-50 duration-500">
                       <div className="max-w-2xl mx-auto space-y-6">
                         <div className="mb-6">
-                          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">AI Model & Prompts</h2>
+                          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">AI Model & Keys</h2>
                           <p className="mt-2 text-sm text-gray-600">
-                            Manage your AI model and prompts
+                            Manage your API keys for external services
                           </p>
                         </div>
 
@@ -714,8 +714,6 @@ useEffect(()=>{userRefetch()},[])
                         {/* Update API Keys Form */}
                         <form onSubmit={handleSubmitApiKeys(handleApiKeysSave)} className="space-y-6">
                           <div className="grid gap-6">
-                           
-
                             <div className="space-y-2">
                               <Label htmlFor="openaiKey">New OpenAI API Key</Label>
                               <div className="relative">
