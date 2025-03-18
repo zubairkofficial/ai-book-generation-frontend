@@ -485,7 +485,11 @@ console.log("first+++++++++", book.type === "complete" &&
                               </span>
                             )}
 
-                            {book.type === "complete" && (
+                            {book.type === "complete" &&
+                             (!!book?.glossary &&
+                              !!book?.index &&
+                              !!book?.references)
+                            && (
                               <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded-full truncate w-full flex items-center justify-center">
                                 <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
                                 Complete
