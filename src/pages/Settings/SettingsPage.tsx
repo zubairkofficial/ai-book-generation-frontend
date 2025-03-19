@@ -20,8 +20,11 @@ import {
   Shield,
   BrainIcon,
   Save,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+import { ModelPromptTab } from './tabs/ModelPromptTab';
+import { Card } from '@/components/ui/card';
 
 // Add validation schemas
 const passwordSchema = yup.object({
@@ -258,34 +261,32 @@ useEffect(()=>{userRefetch()},[])
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-4 sm:py-8 px-4 sm:px-6 lg:px-8"
+        className="min-h-screen bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50"
       >
-        <div className="max-w-7xl mx-auto">
-          {/* Enhanced Header */}
-          <div className="mb-6 sm:mb-10">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                Account Settings
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                Manage your profile, security, and API preferences
-              </p>
-            </motion.div>
+        <div className="container mx-auto px-4 py-10 sm:px-6 lg:px-8">
+          {/* Enhanced Header Section */}
+          <div className="text-center mb-12 max-w-4xl mx-auto">
+            <div className="inline-block p-2 bg-gradient-to-r from-amber-100 to-amber-200 rounded-2xl mb-4">
+              <UserCircle className="w-8 h-8 text-amber-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl lg:text-5xl tracking-tight">
+              Account <span className="text-amber-600">Settings</span>
+            </h1>
+            <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Manage your profile, security settings, and API preferences all in one place
+            </p>
+            <div className="w-16 h-1 bg-amber-500 mx-auto mt-6 rounded-full" />
           </div>
 
-          {/* Main Content - Enhanced Card Design */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* Main Content Card */}
+          <Card className="max-w-4xl mx-auto bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden border-0">
             <Tabs defaultValue="profile" className="w-full">
               {/* Enhanced Tab Navigation */}
-              <div className="border-b border-gray-200 bg-gray-50/80 backdrop-blur-sm sticky top-0 z-10">
+              <div className="border-b border-gray-200 bg-gradient-to-b from-gray-50 to-transparent backdrop-blur-sm sticky top-0 z-10">
                 <TabsList className="flex w-full max-w-3xl mx-auto px-4">
                   <TabsTrigger 
                     value="profile" 
-                    className="flex-1 py-4 px-3 group"
+                    className="flex-1 py-4 px-3 group transition-all duration-200"
                   >
                     <div className="flex items-center justify-center gap-2">
                       <UserCircle className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
@@ -295,7 +296,7 @@ useEffect(()=>{userRefetch()},[])
 
                   <TabsTrigger 
                     value="password"
-                    className="flex-1 py-4 px-3 group"
+                    className="flex-1 py-4 px-3 group transition-all duration-200"
                   >
                     <div className="flex items-center justify-center gap-2">
                       <Shield className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
@@ -305,31 +306,31 @@ useEffect(()=>{userRefetch()},[])
 
                   {userInfo?.role === 'admin' && (
                     <>
-                    <TabsTrigger 
-                      value="api-keys"
-                      className="flex-1 py-4 px-3 group"
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <Key className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
-                        <span className="hidden sm:inline">API Keys</span>
-                      </div>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="model-prompt"
-                      className="flex-1 py-4 px-3 group"
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <BrainIcon className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
-                        <span className="hidden sm:inline">AI Model and Prompts</span>
-                      </div>
-                    </TabsTrigger>
+                      <TabsTrigger 
+                        value="api-keys"
+                        className="flex-1 py-4 px-3 group transition-all duration-200"
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <Key className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
+                          <span className="hidden sm:inline">API Keys</span>
+                        </div>
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="model-prompt"
+                        className="flex-1 py-4 px-3 group transition-all duration-200"
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <BrainIcon className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
+                          <span className="hidden sm:inline">AI Model</span>
+                        </div>
+                      </TabsTrigger>
                     </>
                   )}
                 </TabsList>
               </div>
 
               {/* Enhanced Tab Content */}
-              <div className="p-4 sm:p-6 lg:p-8">
+              <div className="p-6 sm:p-8">
                 <TabsContent value="profile">
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -341,8 +342,8 @@ useEffect(()=>{userRefetch()},[])
                     <form onSubmit={handleSubmitProfile(handleProfileSave)}>
                       <div className="space-y-6">
                         {/* Profile Picture Section */}
-                        <div className="flex items-center gap-4">
-                          <div className="h-20 w-20 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-2xl font-semibold text-amber-600">
+                        <div className="flex items-center gap-6 p-6 bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-xl">
+                          <div className="h-20 w-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-2xl font-semibold text-white shadow-lg">
                             {userInfo?.name?.charAt(0).toUpperCase() || 'U'}
                           </div>
                           <div>
@@ -358,11 +359,11 @@ useEffect(()=>{userRefetch()},[])
                             <Label htmlFor="name" className="text-sm font-medium text-gray-700">
                               Full Name
                             </Label>
-                            <div className="relative">
+                            <div className="relative group">
                               <Input
                                 {...registerProfile('name')}
                                 id="name"
-                                className="pl-10"
+                                className="pl-10 transition-all duration-200 group-hover:border-amber-300"
                                 placeholder="Enter your full name"
                               />
                               <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -371,7 +372,7 @@ useEffect(()=>{userRefetch()},[])
                               <motion.p 
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="text-sm text-red-500 flex items-center gap-1"
+                                className="text-sm text-red-500 flex items-center gap-1 mt-1"
                               >
                                 <AlertCircle className="h-4 w-4" />
                                 {profileErrors.name.message}
@@ -379,45 +380,26 @@ useEffect(()=>{userRefetch()},[])
                             )}
                           </div>
 
-                          {/* Email Input - Enhanced */}
-                          <div className="space-y-2">
-                            <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                              Email Address
-                            </Label>
-                            <div className="relative">
-                              <Input
-                                {...registerProfile('email')}
-                                id="email"
-                                type="email"
-                                className="pl-10"
-                                disabled={true}
-                                placeholder="Enter your email"
-                              />
-                              <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                            </div>
-                            {profileErrors.email && (
-                              <motion.p 
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-sm text-red-500 flex items-center gap-1"
-                              >
-                                <AlertCircle className="h-4 w-4" />
-                                {profileErrors.email.message}
-                              </motion.p>
-                            )}
+                          {/* Submit Button - Enhanced */}
+                          <div className="flex justify-end pt-6 border-t border-gray-100">
+                            <Button
+                              type="submit"
+                              className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-6 shadow-md hover:shadow-lg transition-all duration-200"
+                              disabled={isLoading}
+                            >
+                              {isLoading ? (
+                                <div className="flex items-center gap-2">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  <span>Saving...</span>
+                                </div>
+                              ) : (
+                                <>
+                                  <Save className="h-4 w-4" />
+                                  <span>Save Changes</span>
+                                </>
+                              )}
+                            </Button>
                           </div>
-                        </div>
-
-                        {/* Submit Button - Enhanced */}
-                        <div className="flex justify-end pt-6 border-t border-gray-100">
-                          <Button
-                            type="submit"
-                            className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6"
-                            disabled={isLoading}
-                          >
-                            <Save className="h-4 w-4" />
-                            {isLoading ? 'Saving...' : 'Save Changes'}
-                          </Button>
                         </div>
                       </div>
                     </form>
@@ -669,182 +651,17 @@ useEffect(()=>{userRefetch()},[])
 
 {userInfo?.role === 'admin' && (
                   <TabsContent value="model-prompt">
-                    <div className="animate-in fade-in-50 duration-500">
-                      <div className="max-w-2xl mx-auto space-y-6">
-                        <div className="mb-6">
-                          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">AI Model & Keys</h2>
-                          <p className="mt-2 text-sm text-gray-600">
-                            Manage your API keys for external services
-                          </p>
-                        </div>
-
-                        {/* Current API Keys Display */}
-                        {apiKeyInfo && (
-                          <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <h3 className="text-sm font-medium text-gray-700 mb-4">Current API Keys</h3>
-                            <div className="grid gap-4">
-                             
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">OpenAI API Key:</span>
-                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                                  {apiKeyInfo.openai_key ? 
-                                    `${apiKeyInfo.openai_key.substring(0, 4)}...${apiKeyInfo.openai_key.slice(-4)}` : 
-                                    'Not set'}
-                                </code>
-                              </div>
-                             
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Fal AI Key:</span>
-                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                                  {apiKeyInfo.fal_ai ? 
-                                    `${apiKeyInfo.fal_ai.substring(0, 4)}...${apiKeyInfo.fal_ai.slice(-4)}` : 
-                                    'Not set'}
-                                </code>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">LLM Model:</span>
-                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                                  {apiKeyInfo.model || 'Not set'}
-                                </code>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Update API Keys Form */}
-                        <form onSubmit={handleSubmitApiKeys(handleApiKeysSave)} className="space-y-6">
-                          <div className="grid gap-6">
-                            <div className="space-y-2">
-                              <Label htmlFor="openaiKey">New OpenAI API Key</Label>
-                              <div className="relative">
-                                <Input
-                                  {...registerApiKeys('openaiKey', {
-                                    onChange: (e) => validateOpenAIKey(e.target.value)
-                                  })}
-                                  type="password"
-                                  id="openaiKey"
-                                  placeholder="sk-..."
-                                  className={`w-full pr-10 ${
-                                    !openaiKeyValidation.isValid || apiKeyErrors.openaiKey 
-                                      ? 'border-red-500' 
-                                      : ''
-                                  }`}
-                                />
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                                  {(!openaiKeyValidation.isValid || apiKeyErrors.openaiKey) && (
-                                    <svg
-                                      className="h-5 w-5 text-red-500"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                      />
-                                    </svg>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              {/* Error Message */}
-                              {(!openaiKeyValidation.isValid || apiKeyErrors.openaiKey) && (
-                                <p className="text-sm text-red-500">
-                                  {openaiKeyValidation.error || apiKeyErrors.openaiKey?.message}
-                                </p>
-                              )}
-
-                              {/* Help Text */}
-                              <p className="text-xs text-gray-500">
-                                Format: Must start with "sk-" and contain only letters, numbers, underscores, and hyphens
-                              </p>
-                            </div>
-
-                            
-
-                            <div className="space-y-2">
-                              <Label htmlFor="falKey">New Fal AI Key</Label>
-                              <div className="relative">
-                                <Input
-                                  {...registerApiKeys('falKey')}
-                                  type="password"
-                                  id="falKey"
-                                  placeholder="fal_..."
-                                  className={`w-full pr-20 ${apiKeyErrors.falKey ? 'border-red-500' : ''}`}
-                                />
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                                  {apiKeyErrors.falKey && (
-                                    <svg 
-                                      className="h-5 w-5 text-red-500" 
-                                      fill="none" 
-                                      viewBox="0 0 24 24" 
-                                      stroke="currentColor"
-                                    >
-                                      <path 
-                                        strokeLinecap="round" 
-                                        strokeLinejoin="round" 
-                                        strokeWidth={2} 
-                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
-                                      />
-                                    </svg>
-                                  )}
-                                </div>
-                              </div>
-                              {apiKeyErrors.falKey && (
-                                <p className="text-sm text-red-500 mt-1">
-                                  {apiKeyErrors.falKey.message}
-                                </p>
-                              )}
-                              <p className="text-xs text-gray-500 mt-1">
-                                Format: fal_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (Starts with 'fal_')
-                              </p>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="llmModel">LLM Model</Label>
-                              <select
-                                {...registerApiKeys('llmModel')}
-                                className={`w-full rounded-md border ${apiKeyErrors.llmModel ? 'border-red-500' : 'border-gray-300'}`}
-                              >
-                                <option value="">Select a model</option>
-                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                                <option value="gpt-4">GPT-4</option>
-                                <option value="claude-3-opus-20240229">Claude 3 Opus</option>
-                                <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
-                              </select>
-                              {apiKeyErrors.llmModel && (
-                                <p className="text-sm text-red-500">{apiKeyErrors.llmModel.message}</p>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex justify-end pt-6 border-t border-gray-100">
-                            <Button 
-                              type="submit" 
-                              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white transition-colors duration-200"
-                              disabled={isUpdatingKeys}
-                            >
-                              {isUpdatingKeys ? (
-                                <div className="flex items-center gap-2">
-                                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                  </svg>
-                                  <span>Updating...</span>
-                                </div>
-                              ) : 'Update Settings'}
-                            </Button>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
+                    <ModelPromptTab />
                   </TabsContent>
                 )}
               </div>
             </Tabs>
-          </div>
+          </Card>
+
+          {/* Decorative Elements */}
+          <div className="absolute top-40 left-10 w-64 h-64 bg-amber-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+          <div className="absolute top-80 right-10 w-72 h-72 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-40 w-72 h-72 bg-amber-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
         </div>
       </motion.div>
     </Layout>

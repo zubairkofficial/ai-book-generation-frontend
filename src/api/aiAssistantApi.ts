@@ -54,14 +54,7 @@ interface AiAssistantResponse {
   deletedAt: null | string;
 }
 
-interface BookCoverInfo {
-  bookTitle: string;
-  genre: string;
-  coverStyle: string;
-  colorPreference: string;
-  targetAudience: string;
-  additionalElements: string;
-}
+
 
 // Add these interfaces at the top with the other interfaces
 interface AiAssistantMessage {
@@ -98,6 +91,7 @@ export const aiAssistantApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+    
   }),
 });
 

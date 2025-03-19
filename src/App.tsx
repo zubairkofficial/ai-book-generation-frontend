@@ -1,37 +1,41 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {jwtDecode} from 'jwt-decode';
-import LandingPage from './pages/LandingPage';
-import { ThemeProvider } from 'next-themes';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import AuthRedirect from './components/AuthRedirect';
-import ProtectedRoute from './components/ProtectedRoute';
-import { initializeAuth, logout } from './features/auth/authSlice'; // Import logout action
-import AIAssistantPage from './pages/AIAssistant/AIAssistantPage';
-import AnalyticsPage from './pages/Analytics/AnalyticsPage';
-import AuthPage from './pages/Auth/AuthPage';
-import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
-import PasswordResetPage from './pages/Auth/PasswordResetPage';
-import VerifyEmailPage from './pages/Auth/VerifyEmailPage';
-import VerifyOTP from './pages/Auth/VerifyOTP';
-import BookTable from './pages/Book/AllBookTable';
-import CreateBook from './pages/Book/CreateBook';
-import HomePage from './pages/HomePage';
-import SettingsPage from './pages/Settings/SettingsPage';
-import { RootState } from './store/store'; // Import RootState
-import ResponsePage from '@/pages/ResponsePage/ResponsePage';
-import BookModel from './components/BookModel/BookModel';
-import 'react-quill/dist/quill.snow.css';
-import './styles/editor.css';
-import ChapterSummaryPage from './pages/ChapterSummary/ChapterSummaryPage';
-import PresentationSlidesPage from './pages/PresentationSlides/PresentationSlidesPage';
-import ChapterConfiguration from './pages/Book/ChapterConfiguration';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { jwtDecode } from "jwt-decode";
+import LandingPage from "./pages/LandingPage";
+import { ThemeProvider } from "next-themes";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import AuthRedirect from "./components/AuthRedirect";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { initializeAuth, logout } from "./features/auth/authSlice"; // Import logout action
+import AIAssistantPage from "./pages/AIAssistant/AIAssistantPage";
+import AnalyticsPage from "./pages/Analytics/AnalyticsPage";
+import AuthPage from "./pages/Auth/AuthPage";
+import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
+import PasswordResetPage from "./pages/Auth/PasswordResetPage";
+import VerifyEmailPage from "./pages/Auth/VerifyEmailPage";
+import VerifyOTP from "./pages/Auth/VerifyOTP";
+import BookTable from "./pages/Book/AllBookTable";
+import CreateBook from "./pages/Book/CreateBook";
+import HomePage from "./pages/HomePage";
+import SettingsPage from "./pages/Settings/SettingsPage";
+import { RootState } from "./store/store"; // Import RootState
+import ResponsePage from "@/pages/ResponsePage/ResponsePage";
+import BookModel from "./components/BookModel/BookModel";
+import "react-quill/dist/quill.snow.css";
+import "./styles/editor.css";
+import ChapterSummaryPage from "./pages/ChapterSummary/ChapterSummaryPage";
+import PresentationSlidesPage from "./pages/PresentationSlides/PresentationSlidesPage";
+import ChapterConfiguration from "./pages/Book/ChapterConfiguration";
+import GenerateBookIdeas from "./pages/AIAssistant/GenerateBookIdeas";
+import BookCoverDesign from "./pages/AIAssistant/BookCoverDesign";
+import WritingAssistant from "./pages/AIAssistant/WritingAssistant";
 
 function App() {
   const dispatch = useDispatch();
-  const { token } = useSelector((state: RootState) => state.auth);
+  const { token, user } = useSelector((state: RootState) => state.auth);
+  console.log("user", user?.role);
   // Initialize authentication state from local storage when the app loads
   useEffect(() => {
     dispatch(initializeAuth());
@@ -68,7 +72,10 @@ function App() {
           />
 
           {/* Forgot Password Page */}
-          <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+          <Route
+            path="/auth/forgot-password"
+            element={<ForgotPasswordPage />}
+          />
 
           {/* Password Reset Page */}
           <Route path="/auth/password-reset" element={<PasswordResetPage />} />
@@ -82,17 +89,27 @@ function App() {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/books/add" element={<CreateBook />} />
-            <Route path="/books/chapter-configuration" element={<ChapterConfiguration />} />
+            <Route
+              path="/books/chapter-configuration"
+              element={<ChapterConfiguration />}
+            />
             <Route path="/books" element={<BookTable />} />
             <Route path="/home" element={<HomePage />} />
-
             <Route path="/ai-assistant" element={<AIAssistantPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/ai-assistant/book-ideas" element={<GenerateBookIdeas />} />
+            <Route path="/ai-assistant/cover-design" element={<BookCoverDesign />} />
+            <Route path="/ai-assistant/writing" element={<WritingAssistant />} />
+            {user?.role === "admin" && (
+              <Route path="/analytics" element={<AnalyticsPage />} />
+            )}{" "}
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/response" element={<ResponsePage />} />
             <Route path="/book-modal" element={<BookModel />} />
             <Route path="/chapter-summary" element={<ChapterSummaryPage />} />
-            <Route path="/presentation-slides" element={<PresentationSlidesPage />} />
+            <Route
+              path="/presentation-slides"
+              element={<PresentationSlidesPage />}
+            />
           </Route>
 
           {/* Response Page */}

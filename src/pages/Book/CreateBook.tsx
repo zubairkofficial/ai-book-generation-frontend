@@ -21,7 +21,7 @@ import TableOfContents from './components/TableOfContents';
 import { useLocation } from "react-router-dom";
 
 // Add this enum for genres
-enum BookGenre {
+export enum BookGenre {
   FICTION = "Fiction",
   NON_FICTION = "Non-Fiction",
   MYSTERY = "Mystery",

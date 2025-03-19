@@ -197,6 +197,16 @@ interface GenerateBookEndContentRequest {
   additionalInfo?: string;
 }
 
+// Add this interface for book cover design
+interface CoverDesignForm {
+  bookTitle: string;
+  genre: string;
+  style: string;
+  mood: string;
+  colorScheme: string;
+  additionalDetails: string;
+}
+
 export const bookApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Endpoint to fetch all books

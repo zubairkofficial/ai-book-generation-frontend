@@ -10,7 +10,7 @@ import BookCoverContent from './components/BookCoverContent';
 import BookIdeaContent from './components/BookIdeaContent';
 import { useNavigate } from 'react-router-dom';
 // Enums from CreateBook.tsx
-enum BookGenre {
+export enum BookGenre {
   FICTION = "Fiction",
   NON_FICTION = "Non-Fiction",
   MYSTERY = "Mystery",
@@ -35,7 +35,7 @@ enum BookGenre {
   COMEDY = "Comedy"
 }
 
-enum BookLanguage {
+export enum BookLanguage {
   ENGLISH = "English",
   SPANISH = "Spanish",
   FRENCH = "French",
@@ -48,7 +48,7 @@ enum BookLanguage {
   HINDI = "Hindi"
 }
 
-enum TargetAudience {
+export enum TargetAudience {
   ALL_AGES = "All Ages",
   CHILDREN = "Children (Ages 5-12)",
   TEENAGERS = "Teenagers (Ages 13-17)",

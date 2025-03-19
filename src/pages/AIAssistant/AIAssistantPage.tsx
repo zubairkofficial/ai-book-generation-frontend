@@ -18,7 +18,7 @@ const AIAssistantPage = () => {
       borderColor: 'border-blue-100',
       iconColor: 'text-blue-600',
       shadowColor: 'hover:shadow-blue-100',
-      onClick: () => setSelectedTool('Generate Book Ideas')
+      onClick: () => navigate('/ai-assistant/book-ideas')
     },
     {
       id: 2,
@@ -29,7 +29,7 @@ const AIAssistantPage = () => {
       borderColor: 'border-amber-100',
       iconColor: 'text-amber-600',
       shadowColor: 'hover:shadow-amber-100',
-      onClick: () => setSelectedTool('Book Cover Design')
+      onClick: () => navigate('/ai-assistant/cover-design')
     },
     {
       id: 3,
@@ -40,7 +40,7 @@ const AIAssistantPage = () => {
       borderColor: 'border-green-100',
       iconColor: 'text-green-600',
       shadowColor: 'hover:shadow-green-100',
-      onClick: () => setSelectedTool('Writing Assistant')
+      onClick: () => navigate('/ai-assistant/writing')
     },
     {
       id: 4,

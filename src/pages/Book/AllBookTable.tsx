@@ -128,7 +128,6 @@ export default function BookTable() {
         book.genre?.toLowerCase().includes(term)
     );
   }, [selectedStatus, allBookData, filterBookData, searchTerm]);
-console.log("filteredBooks",!!filteredBooks[3].index)
   const handleStatusChange = (value: BookStatus) => {
     setSelectedStatus(value);
   };
