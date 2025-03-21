@@ -58,7 +58,8 @@ enum BookLanguage {
   CHINESE = "Chinese",
   JAPANESE = "Japanese",
   KOREAN = "Korean",
-  HINDI = "Hindi"
+  HINDI = "Hindi",
+  Urdu = "Urdu"
 }
 
 // Add this enum for target audience

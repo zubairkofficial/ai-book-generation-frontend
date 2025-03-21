@@ -42,7 +42,10 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     { path: '/home', icon: <Home className="h-4 w-4" />, label: 'Home' },
     { path: '/books', icon: <BookOpen className="h-4 w-4" />, label: 'My Books' },
     { path: '/ai-assistant', icon: <Sparkles className="h-4 w-4" />, label: 'AI Assistant' },
-    { path: '/analytics', icon: <BarChart className="h-4 w-4" />, label: 'Analytics' },
+    // Conditionally include Analytics for admin users
+    ...(user?.role === 'admin' 
+      ? [{ path: '/analytics', icon: <BarChart className="h-4 w-4" />, label: 'User Analytics' }] 
+      : []),
     { path: '/settings', icon: <Settings className="h-4 w-4" />, label: 'Settings' },
   ];
 

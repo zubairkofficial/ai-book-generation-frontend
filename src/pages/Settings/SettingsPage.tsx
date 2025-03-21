@@ -1,90 +1,112 @@
 // pages/SettingsPage.tsx
-import React, { useState, useEffect } from 'react';
-import Layout from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect } from "react";
+import Layout from "@/components/layout/Layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useUserMeQuery, useUpdateUserMutation } from '@/api/userApi';
-import { UpdateUserPayload } from '@/interfaces/user.interface';
-import { useToast } from '@/context/ToastContext'; // Import custom toast hook
-import { DEFAULT_Model, ToastType } from '@/constant';
-import { useFetchApiKeysQuery, useUpdateApiKeysMutation } from '@/api/apiKeysApi';
-import * as yup from 'yup';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { motion } from 'framer-motion';
-import { 
-  UserCircle, 
-  Key, 
+import { useUserMeQuery, useUpdateUserMutation } from "@/api/userApi";
+import { UpdateUserPayload } from "@/interfaces/user.interface";
+import { useToast } from "@/context/ToastContext"; // Import custom toast hook
+import { DEFAULT_Model, ToastType } from "@/constant";
+import {
+  useFetchApiKeysQuery,
+  useUpdateApiKeysMutation,
+} from "@/api/apiKeysApi";
+import * as yup from "yup";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { motion } from "framer-motion";
+import {
+  UserCircle,
+  Key,
   Shield,
   BrainIcon,
   Save,
   AlertCircle,
-  Loader2
-} from 'lucide-react';
-import { ModelPromptTab } from './tabs/ModelPromptTab';
-import { Card } from '@/components/ui/card';
+  Loader2,
+} from "lucide-react";
+import { ModelPromptTab } from "./tabs/ModelPromptTab";
+import { Card } from "@/components/ui/card";
 
 // Add validation schemas
 const passwordSchema = yup.object({
-  oldPassword: yup.string()
-    .required('Current password is required')
-    .min(6, 'Password must be at least 6 characters'),
-  newPassword: yup.string()
-    .required('New password is required')
-    .min(6, 'Password must be at least 6 characters')
+  oldPassword: yup
+    .string()
+    .required("Current password is required")
+    .min(6, "Password must be at least 6 characters"),
+  newPassword: yup
+    .string()
+    .required("New password is required")
+    .min(6, "Password must be at least 6 characters")
     .matches(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
     ),
-  confirmPassword: yup.string()
-    .required('Please confirm your password')
-    .oneOf([yup.ref('newPassword')], 'Passwords must match'),
+  confirmPassword: yup
+    .string()
+    .required("Please confirm your password")
+    .oneOf([yup.ref("newPassword")], "Passwords must match"),
 });
 
 const apiKeysSchema = yup.object({
-  id: yup.string()
+  id: yup
+    .string()
     .nullable()
     .transform((value) => value || null),
-  openaiKey: yup.string()
+  openaiKey: yup
+    .string()
     .nullable()
     .transform((value) => value || null)
-    .test('is-empty-or-valid', 'Invalid OpenAI API key format', function(value) {
-      if (!value) return true;
-      return /^sk-[a-zA-Z0-9_-]+$/i.test(value);
-    }),
-  
-    falKey: yup.string()
+    .test(
+      "is-empty-or-valid",
+      "Invalid OpenAI API key format",
+      function (value) {
+        if (!value) return true;
+        return /^sk-[a-zA-Z0-9_-]+$/i.test(value);
+      }
+    ),
+
+  falKey: yup
+    .string()
     .nullable()
     .transform((value) => value || null)
-    .test('is-string', 'Fal AI key must be a string', function(value) {
+    .test("is-string", "Fal AI key must be a string", function (value) {
       if (!value) return true; // Allow null or undefined
-      return typeof value === 'string';
-    }),  
-  llmModel: yup.string()
+      return typeof value === "string";
+    }),
+  llmModel: yup
+    .string()
     .nullable()
     .transform((value) => value || null),
 });
 
 // Add validation schema for profile
 const profileSchema = yup.object({
-  name: yup.string()
-    .required('Full name is required')
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must not exceed 50 characters')
+  name: yup
+    .string()
+    .required("Full name is required")
+    .min(2, "Name must be at least 2 characters")
+    .max(50, "Name must not exceed 50 characters")
     .matches(
       /^[a-zA-Z\s'-]+$/,
-      'Name can only contain letters, spaces, hyphens, and apostrophes'
+      "Name can only contain letters, spaces, hyphens, and apostrophes"
     )
-    .test('no-consecutive-special', 'Cannot contain consecutive special characters', 
-      value => !value || !/[-']{2,}/.test(value))
-    .test('starts-with-letter', 'Must start with a letter', 
-      value => !value || /^[a-zA-Z]/.test(value))
+    .test(
+      "no-consecutive-special",
+      "Cannot contain consecutive special characters",
+      (value) => !value || !/[-']{2,}/.test(value)
+    )
+    .test(
+      "starts-with-letter",
+      "Must start with a letter",
+      (value) => !value || /^[a-zA-Z]/.test(value)
+    )
     .trim(),
-  email: yup.string()
-    .email('Invalid email format')
-    .required('Email is required'),
+  email: yup
+    .string()
+    .email("Invalid email format")
+    .required("Email is required"),
 });
 
 // Add interfaces for form data
@@ -101,7 +123,6 @@ interface ApiKeysFormData {
   llmModel?: string | null;
 }
 
-
 // Add interface for API keys payload
 interface UpdateApiKeysPayload {
   id: number;
@@ -111,53 +132,69 @@ interface UpdateApiKeysPayload {
 }
 
 const SettingsPage = () => {
-  const { data: userInfo,refetch:userRefetch } = useUserMeQuery();
-  
+  const { data: userInfo, refetch: userRefetch } = useUserMeQuery();
+
   // Only fetch API keys if user is admin
   const { data: apiKeyInfo } = useFetchApiKeysQuery(undefined, {
-    skip: userInfo?.role !== 'admin'
+    skip: userInfo?.role !== "admin",
   });
 
   const [updateUser, { isLoading }] = useUpdateUserMutation();
   const { addToast } = useToast(); // Use custom toast hook
-  const [updateApiKeys, { isLoading: isUpdatingKeys }] = useUpdateApiKeysMutation();
+  const [updateApiKeys, { isLoading: isUpdatingKeys }] =
+    useUpdateApiKeysMutation();
 
   // Add real-time validation state
   const [openaiKeyValidation, setOpenaiKeyValidation] = useState({
     isValid: true,
-    error: ''
+    error: "",
   });
 
   // Add form handling for password
-  const { register: registerPassword, handleSubmit: handleSubmitPassword, formState: { errors: passwordErrors }, reset: resetPassword } = useForm({
-    resolver: yupResolver(passwordSchema)
+  const {
+    register: registerPassword,
+    handleSubmit: handleSubmitPassword,
+    formState: { errors: passwordErrors },
+    reset: resetPassword,
+  } = useForm({
+    resolver: yupResolver(passwordSchema),
   });
 
   // Add form handling for API keys with default values
-  const { register: registerApiKeys, handleSubmit: handleSubmitApiKeys, formState: { errors: apiKeyErrors }, reset: resetApiKeys } = useForm({
+  const {
+    register: registerApiKeys,
+    handleSubmit: handleSubmitApiKeys,
+    formState: { errors: apiKeyErrors },
+    reset: resetApiKeys,
+  } = useForm({
     resolver: yupResolver(apiKeysSchema),
     defaultValues: {
-      id: '',
-      openaiKey: '',
-      falKey: '',
-      llmModel: ''
-    }
+      id: "",
+      openaiKey: "",
+      falKey: "",
+      llmModel: "",
+    },
   });
 
   // Add form handling for profile
-  const { register: registerProfile, handleSubmit: handleSubmitProfile, formState: { errors: profileErrors }, setValue } = useForm({
+  const {
+    register: registerProfile,
+    handleSubmit: handleSubmitProfile,
+    formState: { errors: profileErrors },
+    setValue,
+  } = useForm({
     resolver: yupResolver(profileSchema),
     defaultValues: {
-      name: '',
-      email: ''
-    }
+      name: "",
+      email: "",
+    },
   });
 
   // Update useEffect to set form values
   useEffect(() => {
     if (userInfo) {
-      setValue('name', userInfo.name);
-      setValue('email', userInfo.email);
+      setValue("name", userInfo.name);
+      setValue("email", userInfo.email);
     }
   }, [userInfo, setValue]);
 
@@ -165,37 +202,40 @@ const SettingsPage = () => {
   useEffect(() => {
     if (apiKeyInfo) {
       resetApiKeys({
-        id: apiKeyInfo.id ,
-        openaiKey: '',
-        dalleKey: '',
-        falKey: '',
-        llmModel: apiKeyInfo.model || ''
+        id: apiKeyInfo.id,
+        openaiKey: "",
+        dalleKey: "",
+        falKey: "",
+        llmModel: apiKeyInfo.model || "",
       });
     }
   }, [apiKeyInfo, resetApiKeys]);
 
   // Function to validate OpenAI key in real-time
   const validateOpenAIKey = (value: string) => {
-    let error = '';
-    
+    let error = "";
+
     if (value) {
-      if (!value.startsWith('sk-')) {
+      if (!value.startsWith("sk-")) {
         error = 'API key must start with "sk-"';
       } else if (value.length < 51) {
-        error = 'API key must be at least 51 characters';
+        error = "API key must be at least 51 characters";
       } else if (!/^sk-[a-zA-Z0-9_-]+$/i.test(value)) {
-        error = 'API key can only contain letters, numbers, underscores, and hyphens';
+        error =
+          "API key can only contain letters, numbers, underscores, and hyphens";
       }
     }
 
     setOpenaiKeyValidation({
       isValid: !error,
-      error
+      error,
     });
   };
 
   // Function to validate DALL-E key in real-time
-useEffect(()=>{userRefetch()},[])
+  useEffect(() => {
+    userRefetch();
+  }, []);
 
   const handleProfileSave = async (data: { name: string; email: string }) => {
     try {
@@ -205,10 +245,10 @@ useEffect(()=>{userRefetch()},[])
       };
 
       await updateUser(payload).unwrap();
-      addToast('Profile updated successfully!', ToastType.SUCCESS);
+      addToast("Profile updated successfully!", ToastType.SUCCESS);
       userRefetch();
     } catch (error: any) {
-      console.log("error",error)
+      console.log("error", error);
       addToast(`Failed to update profile: ${error.message}`, ToastType.ERROR);
     }
   };
@@ -216,8 +256,8 @@ useEffect(()=>{userRefetch()},[])
   // Update password handler
   const handlePasswordSave = async (data: PasswordFormData) => {
     const payload: UpdateUserPayload = {
-      name: userInfo?.name || '',
-      email: userInfo?.email || '',
+      name: userInfo?.name || "",
+      email: userInfo?.email || "",
       oldPassword: data.oldPassword,
       newPassword: data.newPassword,
     };
@@ -225,11 +265,14 @@ useEffect(()=>{userRefetch()},[])
     try {
       await updateUser(payload).unwrap();
       resetPassword();
-      addToast('Password updated successfully!', ToastType.SUCCESS);
+      addToast("Password updated successfully!", ToastType.SUCCESS);
     } catch (error: any) {
-      console.log("error",error)
+      console.log("error", error);
 
-      addToast(`Failed to update password: ${error.data.message.message}`, ToastType.ERROR);
+      addToast(
+        `Failed to update password: ${error.data.message.message}`,
+        ToastType.ERROR
+      );
     }
   };
 
@@ -246,11 +289,11 @@ useEffect(()=>{userRefetch()},[])
       await updateApiKeys(payload).unwrap();
       resetApiKeys({
         id: apiKeyInfo?.id,
-        openaiKey: '',
-        falKey: '',
-        llmModel: apiKeyInfo?.model || ''
+        openaiKey: "",
+        falKey: "",
+        llmModel: apiKeyInfo?.model || "",
       });
-      addToast('API keys updated successfully!', ToastType.SUCCESS);
+      addToast("API keys updated successfully!", ToastType.SUCCESS);
     } catch (error: any) {
       addToast(`Failed to update API keys: ${error.message}`, ToastType.ERROR);
     }
@@ -258,7 +301,7 @@ useEffect(()=>{userRefetch()},[])
 
   return (
     <Layout>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="min-h-screen bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50"
@@ -273,7 +316,8 @@ useEffect(()=>{userRefetch()},[])
               Account <span className="text-amber-600">Settings</span>
             </h1>
             <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Manage your profile, security settings, and API preferences all in one place
+              Manage your profile, security settings, and API preferences all in
+              one place
             </p>
             <div className="w-16 h-1 bg-amber-500 mx-auto mt-6 rounded-full" />
           </div>
@@ -284,8 +328,8 @@ useEffect(()=>{userRefetch()},[])
               {/* Enhanced Tab Navigation */}
               <div className="border-b border-gray-200 bg-gradient-to-b from-gray-50 to-transparent backdrop-blur-sm sticky top-0 z-10">
                 <TabsList className="flex w-full max-w-3xl mx-auto px-4">
-                  <TabsTrigger 
-                    value="profile" 
+                  <TabsTrigger
+                    value="profile"
                     className="flex-1 py-4 px-3 group transition-all duration-200"
                   >
                     <div className="flex items-center justify-center gap-2">
@@ -294,7 +338,7 @@ useEffect(()=>{userRefetch()},[])
                     </div>
                   </TabsTrigger>
 
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="password"
                     className="flex-1 py-4 px-3 group transition-all duration-200"
                   >
@@ -304,9 +348,9 @@ useEffect(()=>{userRefetch()},[])
                     </div>
                   </TabsTrigger>
 
-                  {userInfo?.role === 'admin' && (
+                  {userInfo?.role === "admin" && (
                     <>
-                      <TabsTrigger 
+                      <TabsTrigger
                         value="api-keys"
                         className="flex-1 py-4 px-3 group transition-all duration-200"
                       >
@@ -315,7 +359,7 @@ useEffect(()=>{userRefetch()},[])
                           <span className="hidden sm:inline">API Keys</span>
                         </div>
                       </TabsTrigger>
-                      <TabsTrigger 
+                      <TabsTrigger
                         value="model-prompt"
                         className="flex-1 py-4 px-3 group transition-all duration-200"
                       >
@@ -344,11 +388,15 @@ useEffect(()=>{userRefetch()},[])
                         {/* Profile Picture Section */}
                         <div className="flex items-center gap-6 p-6 bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-xl">
                           <div className="h-20 w-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-2xl font-semibold text-white shadow-lg">
-                            {userInfo?.name?.charAt(0).toUpperCase() || 'U'}
+                            {userInfo?.name?.charAt(0).toUpperCase() || "U"}
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900">Profile Picture</h3>
-                            <p className="text-sm text-gray-500">Update your profile photo</p>
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              Profile Picture
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              Update your profile photo
+                            </p>
                           </div>
                         </div>
 
@@ -356,12 +404,15 @@ useEffect(()=>{userRefetch()},[])
                         <div className="grid gap-6">
                           {/* Name Input - Enhanced */}
                           <div className="space-y-2">
-                            <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                            <Label
+                              htmlFor="name"
+                              className="text-sm font-medium text-gray-700"
+                            >
                               Full Name
                             </Label>
                             <div className="relative group">
                               <Input
-                                {...registerProfile('name')}
+                                {...registerProfile("name")}
                                 id="name"
                                 className="pl-10 transition-all duration-200 group-hover:border-amber-300"
                                 placeholder="Enter your full name"
@@ -369,7 +420,7 @@ useEffect(()=>{userRefetch()},[])
                               <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                             </div>
                             {profileErrors.name && (
-                              <motion.p 
+                              <motion.p
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="text-sm text-red-500 flex items-center gap-1 mt-1"
@@ -409,61 +460,105 @@ useEffect(()=>{userRefetch()},[])
                 <TabsContent value="password">
                   <div className="animate-in fade-in-50 duration-500">
                     <div className="max-w-2xl mx-auto space-y-6">
-                      <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6">Change Password</h2>
-                      <form onSubmit={handleSubmitPassword(handlePasswordSave)} className="space-y-6">
+                      <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6">
+                        Change Password
+                      </h2>
+                      <form
+                        onSubmit={handleSubmitPassword(handlePasswordSave)}
+                        className="space-y-6"
+                      >
                         <div className="grid gap-6">
                           <div className="space-y-2">
-                            <Label htmlFor="oldPassword">Current Password</Label>
+                            <Label htmlFor="oldPassword">
+                              Current Password
+                            </Label>
                             <Input
-                              {...registerPassword('oldPassword')}
+                              {...registerPassword("oldPassword")}
                               type="password"
-                              className={`w-full ${passwordErrors.oldPassword ? 'border-red-500' : ''}`}
+                              className={`w-full ${
+                                passwordErrors.oldPassword
+                                  ? "border-red-500"
+                                  : ""
+                              }`}
                             />
                             {passwordErrors.oldPassword && (
-                              <p className="text-sm text-red-500">{passwordErrors.oldPassword.message}</p>
+                              <p className="text-sm text-red-500">
+                                {passwordErrors.oldPassword.message}
+                              </p>
                             )}
                           </div>
 
                           <div className="space-y-2">
                             <Label htmlFor="newPassword">New Password</Label>
                             <Input
-                              {...registerPassword('newPassword')}
+                              {...registerPassword("newPassword")}
                               type="password"
-                              className={`w-full ${passwordErrors.newPassword ? 'border-red-500' : ''}`}
+                              className={`w-full ${
+                                passwordErrors.newPassword
+                                  ? "border-red-500"
+                                  : ""
+                              }`}
                             />
                             {passwordErrors.newPassword && (
-                              <p className="text-sm text-red-500">{passwordErrors.newPassword.message}</p>
+                              <p className="text-sm text-red-500">
+                                {passwordErrors.newPassword.message}
+                              </p>
                             )}
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                            <Label htmlFor="confirmPassword">
+                              Confirm New Password
+                            </Label>
                             <Input
-                              {...registerPassword('confirmPassword')}
+                              {...registerPassword("confirmPassword")}
                               type="password"
-                              className={`w-full ${passwordErrors.confirmPassword ? 'border-red-500' : ''}`}
+                              className={`w-full ${
+                                passwordErrors.confirmPassword
+                                  ? "border-red-500"
+                                  : ""
+                              }`}
                             />
                             {passwordErrors.confirmPassword && (
-                              <p className="text-sm text-red-500">{passwordErrors.confirmPassword.message}</p>
+                              <p className="text-sm text-red-500">
+                                {passwordErrors.confirmPassword.message}
+                              </p>
                             )}
                           </div>
                         </div>
 
                         <div className="flex justify-end pt-6 border-t border-gray-100">
-                          <Button 
-                            type="submit" 
+                          <Button
+                            type="submit"
                             className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white transition-colors duration-200"
                             disabled={isLoading}
                           >
                             {isLoading ? (
                               <div className="flex items-center gap-2">
-                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                <svg
+                                  className="animate-spin h-4 w-4"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                    fill="none"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
                                 </svg>
                                 <span>Updating...</span>
                               </div>
-                            ) : 'Update Password'}
+                            ) : (
+                              "Update Password"
+                            )}
                           </Button>
                         </div>
                       </form>
@@ -471,12 +566,14 @@ useEffect(()=>{userRefetch()},[])
                   </div>
                 </TabsContent>
 
-                {userInfo?.role === 'admin' && (
+                {userInfo?.role === "admin" && (
                   <TabsContent value="api-keys">
                     <div className="animate-in fade-in-50 duration-500">
                       <div className="max-w-2xl mx-auto space-y-6">
                         <div className="mb-6">
-                          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">API Keys</h2>
+                          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                            API Keys
+                          </h2>
                           <p className="mt-2 text-sm text-gray-600">
                             Manage your API keys for external services
                           </p>
@@ -485,30 +582,43 @@ useEffect(()=>{userRefetch()},[])
                         {/* Current API Keys Display */}
                         {apiKeyInfo && (
                           <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <h3 className="text-sm font-medium text-gray-700 mb-4">Current API Keys</h3>
+                            <h3 className="text-sm font-medium text-gray-700 mb-4">
+                              Current API Keys
+                            </h3>
                             <div className="grid gap-4">
-                             
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">OpenAI API Key:</span>
+                                <span className="text-sm text-gray-600">
+                                  OpenAI API Key:
+                                </span>
                                 <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                                  {apiKeyInfo.openai_key ? 
-                                    `${apiKeyInfo.openai_key.substring(0, 4)}...${apiKeyInfo.openai_key.slice(-4)}` : 
-                                    'Not set'}
+                                  {apiKeyInfo.openai_key
+                                    ? `${apiKeyInfo.openai_key.substring(
+                                        0,
+                                        4
+                                      )}...${apiKeyInfo.openai_key.slice(-4)}`
+                                    : "Not set"}
                                 </code>
                               </div>
-                             
+
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Fal AI Key:</span>
+                                <span className="text-sm text-gray-600">
+                                  Fal AI Key:
+                                </span>
                                 <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                                  {apiKeyInfo.fal_ai ? 
-                                    `${apiKeyInfo.fal_ai.substring(0, 4)}...${apiKeyInfo.fal_ai.slice(-4)}` : 
-                                    'Not set'}
+                                  {apiKeyInfo.fal_ai
+                                    ? `${apiKeyInfo.fal_ai.substring(
+                                        0,
+                                        4
+                                      )}...${apiKeyInfo.fal_ai.slice(-4)}`
+                                    : "Not set"}
                                 </code>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">LLM Model:</span>
+                                <span className="text-sm text-gray-600">
+                                  LLM Model:
+                                </span>
                                 <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                                  {apiKeyInfo.model || 'Not set'}
+                                  {apiKeyInfo.model || "Not set"}
                                 </code>
                               </div>
                             </div>
@@ -516,28 +626,34 @@ useEffect(()=>{userRefetch()},[])
                         )}
 
                         {/* Update API Keys Form */}
-                        <form onSubmit={handleSubmitApiKeys(handleApiKeysSave)} className="space-y-6">
+                        <form
+                          onSubmit={handleSubmitApiKeys(handleApiKeysSave)}
+                          className="space-y-6"
+                        >
                           <div className="grid gap-6">
-                           
-
                             <div className="space-y-2">
-                              <Label htmlFor="openaiKey">New OpenAI API Key</Label>
+                              <Label htmlFor="openaiKey">
+                                New OpenAI API Key
+                              </Label>
                               <div className="relative">
                                 <Input
-                                  {...registerApiKeys('openaiKey', {
-                                    onChange: (e) => validateOpenAIKey(e.target.value)
+                                  {...registerApiKeys("openaiKey", {
+                                    onChange: (e) =>
+                                      validateOpenAIKey(e.target.value),
                                   })}
                                   type="password"
                                   id="openaiKey"
                                   placeholder="sk-..."
                                   className={`w-full pr-10 ${
-                                    !openaiKeyValidation.isValid || apiKeyErrors.openaiKey 
-                                      ? 'border-red-500' 
-                                      : ''
+                                    !openaiKeyValidation.isValid ||
+                                    apiKeyErrors.openaiKey
+                                      ? "border-red-500"
+                                      : ""
                                   }`}
                                 />
                                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                                  {(!openaiKeyValidation.isValid || apiKeyErrors.openaiKey) && (
+                                  {(!openaiKeyValidation.isValid ||
+                                    apiKeyErrors.openaiKey) && (
                                     <svg
                                       className="h-5 w-5 text-red-500"
                                       fill="none"
@@ -554,45 +670,48 @@ useEffect(()=>{userRefetch()},[])
                                   )}
                                 </div>
                               </div>
-                              
+
                               {/* Error Message */}
-                              {(!openaiKeyValidation.isValid || apiKeyErrors.openaiKey) && (
+                              {(!openaiKeyValidation.isValid ||
+                                apiKeyErrors.openaiKey) && (
                                 <p className="text-sm text-red-500">
-                                  {openaiKeyValidation.error || apiKeyErrors.openaiKey?.message}
+                                  {openaiKeyValidation.error ||
+                                    apiKeyErrors.openaiKey?.message}
                                 </p>
                               )}
 
                               {/* Help Text */}
                               <p className="text-xs text-gray-500">
-                                Format: Must start with "sk-" and contain only letters, numbers, underscores, and hyphens
+                                Format: Must start with "sk-" and contain only
+                                letters, numbers, underscores, and hyphens
                               </p>
                             </div>
-
-                            
 
                             <div className="space-y-2">
                               <Label htmlFor="falKey">New Fal AI Key</Label>
                               <div className="relative">
                                 <Input
-                                  {...registerApiKeys('falKey')}
+                                  {...registerApiKeys("falKey")}
                                   type="password"
                                   id="falKey"
                                   placeholder="fal_..."
-                                  className={`w-full pr-20 ${apiKeyErrors.falKey ? 'border-red-500' : ''}`}
+                                  className={`w-full pr-20 ${
+                                    apiKeyErrors.falKey ? "border-red-500" : ""
+                                  }`}
                                 />
                                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                                   {apiKeyErrors.falKey && (
-                                    <svg 
-                                      className="h-5 w-5 text-red-500" 
-                                      fill="none" 
-                                      viewBox="0 0 24 24" 
+                                    <svg
+                                      className="h-5 w-5 text-red-500"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
                                       stroke="currentColor"
                                     >
-                                      <path 
-                                        strokeLinecap="round" 
-                                        strokeLinejoin="round" 
-                                        strokeWidth={2} 
-                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                       />
                                     </svg>
                                   )}
@@ -604,43 +723,96 @@ useEffect(()=>{userRefetch()},[])
                                 </p>
                               )}
                               <p className="text-xs text-gray-500 mt-1">
-                                Format: fal_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (Starts with 'fal_')
+                                Format: fal_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+                                (Starts with 'fal_')
                               </p>
                             </div>
 
                             <div className="space-y-2">
                               <Label htmlFor="llmModel">LLM Model</Label>
                               <select
-                                {...registerApiKeys('llmModel')}
-                                className={`w-full rounded-md border ${apiKeyErrors.llmModel ? 'border-red-500' : 'border-gray-300'}`}
+                                {...registerApiKeys("llmModel")}
+                                className={`w-full rounded-md border ${
+                                  apiKeyErrors.llmModel
+                                    ? "border-red-500"
+                                    : "border-gray-300"
+                                }`}
                               >
                                 <option value="">Select a model</option>
-                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                                <option value="gpt-4">GPT-4</option>
-                                <option value="claude-3-opus-20240229">Claude 3 Opus</option>
-                                <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                                <option value="gpt-4-turbo-preview">
+                                  GPT-4 Turbo Preview
+                                </option>
+                                
+                                <option value="gpt-4o">
+                                  GPT-4 Omni (Latest)
+                                </option>
+                               
+                                <option value="gpt-4">GPT-4 (Original)</option>
+                                <option value="gpt-3.5-turbo-0125">
+                                  GPT-3.5 Turbo (2024-01-25)
+                                </option>
+                                <option value="gpt-3.5-turbo-16k">
+                                  GPT-3.5 Turbo 16k
+                                </option>
+                                <option value="gpt-4-vision-preview">
+                                  GPT-4 Vision Preview
+                                </option>
+                                <option value="gpt-4-32k">
+                                  GPT-4 32k (Extended Context)
+                                </option>
+                                <option value="text-davinci-003">
+                                  Davinci (Legacy)
+                                </option>
+                                <option value="text-curie-001">
+                                  Curie (Legacy)
+                                </option>
+                                <option value="text-babbage-001">
+                                  Babbage (Legacy)
+                                </option>
+                                <option value="text-ada-001">
+                                  Ada (Legacy)
+                                </option>
                               </select>
                               {apiKeyErrors.llmModel && (
-                                <p className="text-sm text-red-500">{apiKeyErrors.llmModel.message}</p>
+                                <p className="text-sm text-red-500">
+                                  {apiKeyErrors.llmModel.message}
+                                </p>
                               )}
                             </div>
                           </div>
 
                           <div className="flex justify-end pt-6 border-t border-gray-100">
-                            <Button 
-                              type="submit" 
+                            <Button
+                              type="submit"
                               className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white transition-colors duration-200"
                               disabled={isUpdatingKeys}
                             >
                               {isUpdatingKeys ? (
                                 <div className="flex items-center gap-2">
-                                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                  <svg
+                                    className="animate-spin h-4 w-4"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <circle
+                                      className="opacity-25"
+                                      cx="12"
+                                      cy="12"
+                                      r="10"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                      fill="none"
+                                    />
+                                    <path
+                                      className="opacity-75"
+                                      fill="currentColor"
+                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    />
                                   </svg>
                                   <span>Updating...</span>
                                 </div>
-                              ) : 'Update Settings'}
+                              ) : (
+                                "Update Settings"
+                              )}
                             </Button>
                           </div>
                         </form>
@@ -649,7 +821,7 @@ useEffect(()=>{userRefetch()},[])
                   </TabsContent>
                 )}
 
-{userInfo?.role === 'admin' && (
+                {userInfo?.role === "admin" && (
                   <TabsContent value="model-prompt">
                     <ModelPromptTab />
                   </TabsContent>

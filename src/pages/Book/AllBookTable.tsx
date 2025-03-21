@@ -329,55 +329,19 @@ console.log("first+++++++++", book.type === "complete" &&
                         className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden bg-white border border-gray-100"
                         onClick={async (e) => {
                           e.preventDefault();
-                          if (book.type === "incomplete") {
-                            const nextChapter =
-                              (book?.bookChapter?.length ?? 0) + 1;
-                            return navigate(`/books/chapter-configuration`, {
+                          const nextChapter =
+                          (book?.bookChapter?.length ?? 0) + 1;
+                         if (book.type === "incomplete"&&(nextChapter<=book?.numberOfChapters)) {
+                             return navigate(`/books/chapter-configuration`, {
                               state: {
                                 previousContent: JSON.stringify(book),
                                 initialChapter: nextChapter,
                               },
                             });
-                          } else if(book.type === "complete" &&
+                          } else if(book.type === "incomplete" &&
                             !(!!book?.glossary &&
                             !!book?.index &&
                             !!book?.references)) {
-    //                         setIsBookLoading(true);
-    // setLoadingBookId(book.id);
-    //                           try {
-    //                             // Use Promise.race with a timeout to handle long-running requests
-    //                             const timeoutPromise = new Promise(
-    //                               (_, reject) =>
-    //                                 setTimeout(
-    //                                   () =>
-    //                                     reject(new Error("Request timeout")),
-    //                                   30000
-    //                                 )
-    //                             );
-
-    //                             await Promise.race([
-    //                               fetchBookEndContent(book.id).unwrap(),
-    //                               timeoutPromise,
-    //                             ]);
-    //                             await refetchBook();
-    //                             navigate(`/book-modal?id=${book.id}`);
-    //                           } catch (error: any) {
-    //                             if (error.message === "Request timeout") {
-    //                               addToast(
-    //                                 "Request is taking longer than expected. Please try again.",
-    //                                 ToastType.WARNING
-    //                               );
-    //                             } else {
-    //                               addToast(
-    //                                 error?.data?.message ||
-    //                                   "Failed to fetch book end content",
-    //                                 ToastType.ERROR
-    //                               );
-    //                             }
-    //                           }  finally {
-    //                             setIsBookLoading(false);
-    //                             setLoadingBookId(null);
-    //                           }
     const nextChapter =
     (book?.bookChapter?.length ?? 0) + 1;
 
@@ -426,17 +390,12 @@ console.log("first+++++++++", book.type === "complete" &&
                               />
 
                               {/* Status indicator overlay for incomplete books */}
-                              {book.type === "incomplete"?
-                             ( <div className="absolute top-2 left-2 bg-amber-500 text-white rounded-full px-3 py-1 text-xs font-bold shadow-md z-10">
-                                In Progress
-                            </div>):
-                            (book.type === 'complete' &&  !(!!book?.glossary &&
-                              !!book?.index &&
-                              !!book?.references)) && (
+                              {
+                            book.type === 'incomplete' &&  (
                          <div className="absolute top-2 left-2 bg-amber-500 text-white rounded-full px-3 py-1 text-xs font-bold shadow-md z-10">
                         In Progress
-                                </div>
-                              )}
+                                </div>)
+                              }
 
                               {/* Regular overlay with improved UI */}
                               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end p-4">

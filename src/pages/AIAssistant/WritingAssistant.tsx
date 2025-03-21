@@ -1,6 +1,6 @@
 import Layout from '@/components/layout/Layout';
 import { motion } from 'framer-motion';
-import { MessageSquare, Wand2, Save, AlertCircle, BookOpen, Send, Loader2 } from 'lucide-react';
+import { MessageSquare, Wand2, Save, AlertCircle, BookOpen, Send, Loader2, ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,8 @@ import remarkGfm from 'remark-gfm';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AiAssistantType, BookGenre, TargetAudience } from '@/components/chat/ChatDialog';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 interface WritingForm {
   writingGoal: string;
@@ -26,6 +28,15 @@ interface WritingForm {
   writingLevel: string;
 }
 
+const validationSchema = yup.object({
+  writingGoal: yup.string().required('Writing goal is required'),
+  genre: yup.string().required('Genre is required'),
+  targetAudience: yup.string().required('Target audience is required'),
+  currentChallenges: yup.string().optional(),
+  specificArea: yup.string().optional(),
+  writingLevel: yup.string().required('Writing level is required'),
+});
+
 const WritingAssistant = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string>('');
@@ -34,6 +45,7 @@ const WritingAssistant = () => {
   const [generateWriting] = useGetAiAssistantResponseMutation();
 
   const { register, setValue, handleSubmit, formState: { errors } } = useForm<WritingForm>({
+    resolver: yupResolver(validationSchema),
     defaultValues: {
       writingGoal: '',
       genre: '',
@@ -73,11 +85,19 @@ const WritingAssistant = () => {
       <div className="min-h-screen bg-gradient-to-b from-amber-50/80 via-white to-amber-50/50">
         <div className="max-w-[1400px] mx-auto p-6">
           {/* Header Section */}
+          <Button 
+            onClick={() => navigate('/ai-assistant')}
+            className="mr-4 px-4 py-2 hover:bg-amber-100 rounded-md flex items-center bg-amber-50 text-amber-500"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to AI Assistant
+          </Button>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
+          
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-amber-100 rounded-lg">
                 <MessageSquare className="w-6 h-6 text-amber-600" />
@@ -118,6 +138,9 @@ const WritingAssistant = () => {
                           <SelectItem value="edit">Edit Existing Work</SelectItem>
                         </SelectContent>
                       </Select>
+                      {errors.writingGoal && (
+                        <p className="text-sm text-red-500">{errors.writingGoal.message}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -132,6 +155,9 @@ const WritingAssistant = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {errors.genre && (
+                        <p className="text-sm text-red-500">{errors.genre.message}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -146,6 +172,9 @@ const WritingAssistant = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {errors.targetAudience && (
+                        <p className="text-sm text-red-500">{errors.targetAudience.message}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -179,6 +208,9 @@ const WritingAssistant = () => {
                           <SelectItem value="professional">Professional</SelectItem>
                         </SelectContent>
                       </Select>
+                      {errors.writingLevel && (
+                        <p className="text-sm text-red-500">{errors.writingLevel.message}</p>
+                      )}
                     </div>
 
                     <Button

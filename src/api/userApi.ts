@@ -18,7 +18,20 @@ export const userMeApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+    getUserStats: builder.query<{
+      user: UserInterface;
+      stats: {
+        totalBooks: number;
+        completed: number;
+        inProgress: number;
+      }
+    }, void>({
+      query: () => ({
+        url: '/users/me/stats',
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
-export const { useUserMeQuery, useUpdateUserMutation } = userMeApi;
+export const { useUserMeQuery, useUpdateUserMutation, useGetUserStatsQuery } = userMeApi;

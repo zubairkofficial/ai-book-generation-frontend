@@ -697,7 +697,7 @@ console.log("selectedContent",selectedContent)
 
   // Add effect to check if book is complete but missing end content
   useEffect(() => {
-    if (bookData && bookData.type === "complete") {
+    if (bookData && bookData.type === "incomplete"&&bookData.numberOfChapters<=bookData.bookChapter?.length) {
       // Check if any of the end content sections are missing
       const needsEndContent = !bookData.glossary || !bookData.index || !bookData.references;
       

@@ -1,6 +1,6 @@
 import Layout from '@/components/layout/Layout';
 import { motion } from 'framer-motion';
-import { Paintbrush, Wand2, Save, AlertCircle, Image as ImageIcon, Download } from 'lucide-react';
+import { Paintbrush, Wand2, Save, AlertCircle, Image as ImageIcon, Download, ArrowLeft, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,8 @@ import { AiAssistantType } from '@/components/chat/ChatDialog';
 import { TargetAudience } from '@/components/chat/ChatDialog';
 import { BookGenre } from '@/pages/Book/CreateBook';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 interface CoverDesignForm {
   bookTitle: string;
@@ -27,15 +29,24 @@ interface CoverDesignForm {
   numberOfImages: string;
 }
 
+const validationSchema = yup.object({
+  bookTitle: yup.string().required('Book title is required'),
+  genre: yup.string().required('Genre is required'),
+  targetAudience: yup.string().required('Target audience is required'),
+  coreIdea: yup.string().required('Core idea is required'),
+  numberOfImages: yup.string().required('Number of images is required')
+});
+
 const BookCoverDesign = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string>('');
-  const [generatedImage, setGeneratedImage] = useState<string>('');
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [generateCover] = useGetAiAssistantResponseMutation();
 
   const { register, setValue, handleSubmit, formState: { errors } } = useForm<CoverDesignForm>({
+    resolver: yupResolver(validationSchema),
     defaultValues: {
       bookTitle: '',
       genre: '',
@@ -79,8 +90,8 @@ const BookCoverDesign = () => {
       };
 
       const response:any = await generateCover(bookCoverInfo).unwrap();
-      // Update to handle array of image URLs
-      setGeneratedImage(response.response.imageUrls[0]);
+      // Store all image URLs
+      setGeneratedImages(response.response.imageUrls);
       setGeneratedContent(response.information.coreIdea);
       addToast('Cover design generated successfully!', 'success');
     } catch (error) {
@@ -95,11 +106,19 @@ const BookCoverDesign = () => {
       <div className="min-h-screen bg-gradient-to-b from-amber-50/80 via-white to-red-50/50">
         <div className="max-w-[1400px] mx-auto p-6">
           {/* Header Section */}
+          <Button 
+            onClick={() => navigate('/ai-assistant')}
+            className="mr-4 px-4 py-2 hover:bg-amber-100 rounded-md flex items-center bg-amber-50 text-amber-500"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to AI Assistant
+          </Button>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
+          
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-amber-100 rounded-lg">
                 <Paintbrush className="w-6 h-6 text-amber-600" />
@@ -119,97 +138,108 @@ const BookCoverDesign = () => {
               className="lg:col-span-1"
             >
               <Card className="bg-white/50 backdrop-blur-sm">
-              <ScrollArea className="h-[41rem] pr-4">
+                <ScrollArea className="h-[41rem] pr-4">
+                  <CardHeader>
+                    <CardTitle>Design Parameters</CardTitle>
+                    <CardDescription>Define your cover design preferences</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Book Title</Label>
+                        <Input
+                          {...register('bookTitle')}
+                          placeholder="Enter your book title"
+                          className="border-amber-200 focus:ring-amber-500/20 focus:border-amber-500"
+                        />
+                        {errors.bookTitle && (
+                          <p className="text-sm text-red-500">{errors.bookTitle.message}</p>
+                        )}
+                      </div>
 
-                <CardHeader>
-                  <CardTitle>Design Parameters</CardTitle>
-                  <CardDescription>Define your cover design preferences</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Book Title</Label>
-                      <Input
-                        {...register('bookTitle')}
-                        placeholder="Enter your book title"
-                        className="border-amber-200 focus:ring-amber-500/20 focus:border-amber-500"
-                      />
-                    </div>
+                      <div className="space-y-2">
+                        <Label>Genre</Label>
+                        <Select onValueChange={(value) => setValue('genre', value)}>
+                          <SelectTrigger className="border-amber-200">
+                            <SelectValue placeholder="Select genre" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.values(BookGenre).map((genre) => (
+                              <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.genre && (
+                          <p className="text-sm text-red-500">{errors.genre.message}</p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label>Genre</Label>
-                      <Select onValueChange={(value) => setValue('genre', value)}>
-                        <SelectTrigger className="border-amber-200">
-                          <SelectValue placeholder="Select genre" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.values(BookGenre).map((genre) => (
-                            <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                      <div className="space-y-2">
+                        <Label>Target Audience</Label>
+                        <Select onValueChange={(value) => setValue('targetAudience', value)}>
+                          <SelectTrigger className="border-amber-200">
+                            <SelectValue placeholder="Select target audience" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.values(TargetAudience).map((audience) => (
+                              <SelectItem key={audience} value={audience}>{audience}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.targetAudience && (
+                          <p className="text-sm text-red-500">{errors.targetAudience.message}</p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label>Target Audience</Label>
-                      <Select onValueChange={(value) => setValue('targetAudience', value)}>
-                        <SelectTrigger className="border-amber-200">
-                          <SelectValue placeholder="Select target audience" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.values(TargetAudience).map((audience) => (
-                            <SelectItem key={audience} value={audience}>{audience}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                      <div className="space-y-2">
+                        <Label>Core Idea</Label>
+                        <Textarea
+                          {...register('coreIdea')}
+                          placeholder="What's the main concept or message of your book?"
+                          className="border-amber-200 focus:ring-amber-500/20 focus:border-amber-500 min-h-[100px]"
+                        />
+                        {errors.coreIdea && (
+                          <p className="text-sm text-red-500">{errors.coreIdea.message}</p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label>Core Idea</Label>
-                      <Textarea
-                        {...register('coreIdea')}
-                        placeholder="What's the main concept or message of your book?"
-                        className="border-amber-200 focus:ring-amber-500/20 focus:border-amber-500 min-h-[100px]"
-                      />
-                    </div>
+                      <div className="space-y-2">
+                        <Label>Number of Images</Label>
+                        <Select onValueChange={(value) => setValue('numberOfImages', value)}>
+                          <SelectTrigger className="border-amber-200">
+                            <SelectValue placeholder="Select number of images" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 Image</SelectItem>
+                            <SelectItem value="2">2 Images</SelectItem>
+                            <SelectItem value="3">3 Images</SelectItem>
+                            <SelectItem value="4">4 Images</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {errors.numberOfImages && (
+                          <p className="text-sm text-red-500">{errors.numberOfImages.message}</p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label>Number of Images</Label>
-                      <Select onValueChange={(value) => setValue('numberOfImages', value)}>
-                        <SelectTrigger className="border-amber-200">
-                          <SelectValue placeholder="Select number of images" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 Image</SelectItem>
-                          <SelectItem value="2">2 Images</SelectItem>
-                          <SelectItem value="3">3 Images</SelectItem>
-                          <SelectItem value="4">4 Images</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      className="w-full bg-amber-500 hover:bg-amber-600 text-white"
-                      disabled={isGenerating}
-                    >
-                      {isGenerating ? (
-                        <div className="flex items-center gap-2">
-                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          </svg>
-                          <span>Generating...</span>
-                        </div>
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4 mr-2" />
-                          Generate Cover
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
+                      <Button
+                        type="submit"
+                        className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+                        disabled={isGenerating}
+                      >
+                        {isGenerating ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Generating...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Wand2 className="w-4 h-4 mr-2" />
+                            Generate Cover
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </CardContent>
                 </ScrollArea>
               </Card>
             </motion.div>
@@ -221,37 +251,43 @@ const BookCoverDesign = () => {
               className="lg:col-span-2"
             >
               <Card className="bg-white/50 backdrop-blur-sm">
-              <ScrollArea className="h-[41rem] pr-4">
-
-                <CardHeader>
-                  <CardTitle>Generated Design</CardTitle>
-                  <CardDescription>AI-generated cover design and suggestions</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {generatedImage && (
-                    <div className="space-y-4">
-                      <div className="rounded-lg overflow-hidden shadow-lg">
-                        <img 
-                          src={generatedImage} 
-                          alt="Generated book cover" 
-                          className="w-full h-auto"
-                        />
+                <ScrollArea className="h-[41rem] pr-4">
+                  <CardHeader>
+                    <CardTitle>Generated Design</CardTitle>
+                    <CardDescription>AI-generated cover design and suggestions</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {generatedImages.length > 0 ? (
+                      <div className="space-y-8">
+                        {generatedImages.map((imageUrl, index) => (
+                          <div key={index} className="space-y-4">
+                            <div className="rounded-lg overflow-hidden shadow-lg">
+                              <img 
+                                src={imageUrl} 
+                                alt={`Generated book cover ${index + 1}`} 
+                                className="w-full h-auto"
+                              />
+                            </div>
+                            <div className="flex justify-end">
+                              <Button
+                                onClick={() => handleDownloadImage(imageUrl)}
+                                variant="outline"
+                                className="border-amber-200 hover:bg-amber-50"
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                Download Cover {generatedImages.length > 1 ? index + 1 : ''}
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="flex justify-end">
-                        <Button
-                          onClick={() => handleDownloadImage(generatedImage)}
-                          variant="outline"
-                          className="border-amber-200 hover:bg-amber-50"
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Download Cover
-                        </Button>
+                    ) : (
+                      <div className="text-center text-gray-500 mt-20">
+                        <ImageIcon className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                        <p>Your generated cover design will appear here</p>
                       </div>
-                    </div>
-                  )}
-                  
-                
-                </CardContent>
+                    )}
+                  </CardContent>
                 </ScrollArea>
               </Card>
             </motion.div>
