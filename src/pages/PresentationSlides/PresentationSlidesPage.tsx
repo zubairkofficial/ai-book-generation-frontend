@@ -210,12 +210,12 @@ const PresentationSlidesPage = () => {
         <div className="absolute top-0 left-0 w-full h-1 sm:h-2 bg-gradient-to-r from-amber-500 to-amber-600" />
         
         {/* Slide content with improved styling */}
-        <div className="p-3 sm:p-6 md:p-8 bg-gradient-to-b from-gray-50 to-white min-h-[200px] sm:min-h-[300px] md:min-h-[400px]">
+        <div className="p-3 sm:p-6 md:p-8 bg-gradient-to-b from-gray-50 to-white min-h-[350px] sm:min-h-[400px] md:min-h-[600px]">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-6 text-gray-800 border-b pb-2 sm:pb-4 flex items-center">
             <div className="w-1 sm:w-2 h-4 sm:h-8 bg-amber-500 mr-2 sm:mr-4 rounded-full" />
             {slide.title}
           </h2>
-          <div className="prose prose-sm sm:prose-base md:prose-lg max-w-none">
+          <div className="prose prose-sm sm:prose-base md:prose-lg max-w-full overflow-auto ">
             {formatMarkdown(slide.content.replace(`# ${slide.title}`, ''))}
           </div>
         </div>
