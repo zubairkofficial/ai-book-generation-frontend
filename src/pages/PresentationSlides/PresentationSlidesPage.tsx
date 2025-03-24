@@ -205,23 +205,23 @@ const PresentationSlidesPage = () => {
   // Modify the renderSlideContent function
   const renderSlideContent = (slide: Slide, isFullscreen: boolean = false) => {
     return (
-      <div className={`relative bg-white rounded-lg shadow-lg overflow-hidden ${isFullscreen ? 'w-full max-w-5xl' : 'w-full'}`}>
+      <div className={`relative bg-white rounded-lg shadow-lg overflow-hidden h-full ${isFullscreen ? 'w-full max-w-5xl' : 'w-full'}`}>
         {/* Decorative top bar */}
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-purple-500" />
+        <div className="absolute top-0 left-0 w-full h-1 sm:h-2 bg-gradient-to-r from-amber-500 to-amber-600" />
         
         {/* Slide content with improved styling */}
-        <div className="p-8 bg-gradient-to-b from-gray-50 to-white min-h-[400px]">
-          <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-4 flex items-center">
-            <div className="w-2 h-8 bg-blue-500 mr-4 rounded-full" />
+        <div className="p-3 sm:p-6 md:p-8 bg-gradient-to-b from-gray-50 to-white min-h-[200px] sm:min-h-[300px] md:min-h-[400px]">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-6 text-gray-800 border-b pb-2 sm:pb-4 flex items-center">
+            <div className="w-1 sm:w-2 h-4 sm:h-8 bg-amber-500 mr-2 sm:mr-4 rounded-full" />
             {slide.title}
           </h2>
-          <div className="prose max-w-none">
+          <div className="prose prose-sm sm:prose-base md:prose-lg max-w-none">
             {formatMarkdown(slide.content.replace(`# ${slide.title}`, ''))}
           </div>
         </div>
         
         {/* Slide footer */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-purple-500 opacity-50" />
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-amber-600 opacity-50" />
       </div>
     );
   };
@@ -231,12 +231,12 @@ const PresentationSlidesPage = () => {
     if (!isGenerated && !isGenerating) {
       return (
         <div className="flex flex-col items-center justify-center h-full">
-          <div className="bg-white p-8 rounded-lg shadow-lg text-center">
-            <Presentation className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+          <div className="bg-white p-4 sm:p-8 rounded-lg shadow-lg text-center">
+            <Presentation className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-2 sm:mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-1 sm:mb-2">
               No Slides Generated Yet
             </h3>
-            <p className="text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               Select a book and chapters, then click "Generate Slides" to create your presentation.
             </p>
           </div>
@@ -272,21 +272,21 @@ const PresentationSlidesPage = () => {
         </div>
 
         {/* Carousel Thumbnails */}
-        <div className="bg-white p-3 border-t overflow-x-auto shadow-inner">
-          <div className="flex gap-3">
+        <div className="bg-white p-2 sm:p-3 border-t overflow-x-auto shadow-inner">
+          <div className="flex gap-2 sm:gap-3">
             {slides.map((s, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`flex-shrink-0 w-28 h-16 rounded-lg border-2 transition-all transform hover:scale-105 ${
+                className={`flex-shrink-0 w-20 sm:w-28 h-12 sm:h-16 rounded-lg border-2 transition-all transform hover:scale-105 ${
                   currentSlide === index
                     ? 'border-amber-500 shadow-lg scale-105'
                     : 'border-gray-200'
                 }`}
               >
-                <div className="w-full h-full p-2 text-xs overflow-hidden bg-white">
+                <div className="w-full h-full p-1 sm:p-2 text-[10px] sm:text-xs overflow-hidden bg-white">
                   <div className="font-medium truncate">{s.title}</div>
-                  <div className="text-gray-500 line-clamp-1 text-[10px] mt-0.5">
+                  <div className="text-gray-500 line-clamp-1 text-[8px] sm:text-[10px] mt-0.5">
                     {s.content.replace(/[#\-*]/g, '').split('\n').filter(Boolean)[1]}
                   </div>
                 </div>
@@ -515,27 +515,28 @@ const PresentationSlidesPage = () => {
 
   return (
     <Layout>
-      <div className="mx-auto p-4">
-        <div className="flex items-center mb-6">
+      <div className="mx-auto p-2 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4 sm:mb-6">
           <Button 
             onClick={() => navigate('/ai-assistant')}
-            className="mr-4 px-4 py-2 hover:bg-amber-100 rounded-md flex items-center bg-amber-50 text-amber-500"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 hover:bg-amber-100 rounded-md flex items-center bg-amber-50 text-amber-500 w-full sm:w-auto"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to AI Assistant
           </Button>
-          <h1 className="text-3xl font-bold">Presentation Slides Generator</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Presentation Slides Generator</h1>
         </div>
         
-        <div className="grid gap-4 lg:grid-cols-3">
+        {/* Responsive grid layout */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {/* Configuration Panel */}
-          <div className="h-[calc(100vh-8rem)]">
+          <div className="h-[calc(100vh-10rem)] sm:h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] overflow-auto">
             <Card className="h-full">
-              <CardHeader>
-                <CardTitle>Configuration</CardTitle>
-                <CardDescription>Select a book and chapters for your presentation</CardDescription>
+              <CardHeader className="py-3 px-3 sm:px-4">
+                <CardTitle className="text-lg sm:text-xl">Configuration</CardTitle>
+                <CardDescription className="text-sm">Select a book and chapters for your presentation</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6 h-[calc(100%-13rem)] overflow-y-auto">
+              <CardContent className="space-y-4 sm:space-y-6 h-[calc(100%-13rem)] overflow-y-auto px-3 sm:px-6">
                 {/* Book Selection */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">
@@ -567,17 +568,17 @@ const PresentationSlidesPage = () => {
                   </Select>
                 </div>
                 
-                {/* Chapter Selection */}
+                {/* Chapter Selection - add responsive classes */}
                 {selectedBookId && chapters.length > 0 && (
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-2 xs:gap-0">
                       <label className="text-sm font-medium text-gray-700">
                         Select Chapters
                       </label>
                       <Button 
                         onClick={handleSelectAllChapters}
                         disabled={isGenerating}
-                        className="px-3 py-1 text-sm hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md flex items-center"
+                        className="px-2 py-1 text-xs sm:text-sm hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md flex items-center"
                       >
                         {selectedChapters.length === chapters.length ? (
                           <>
@@ -593,7 +594,7 @@ const PresentationSlidesPage = () => {
                       </Button>
                     </div>
                     
-                    <div className="border rounded-md max-h-60 overflow-hidden">
+                    <div className="border rounded-md max-h-40 sm:max-h-60 overflow-hidden">
                       <ScrollArea className="h-60 p-2">
                         {chapters.map((chapter: ChapterData) => (
                           <div key={chapter.id} className="flex items-center space-x-2 py-2">
@@ -685,72 +686,72 @@ const PresentationSlidesPage = () => {
             </Card>
           </div>
           
-          {/* Presentation Preview */}
-          <div className="h-[100vh] col-span-2">
+          {/* Presentation Preview - adjust column span */}
+          <div className="h-[calc(100vh-10rem)] sm:h-[calc(100vh-8rem)] md:col-span-1 lg:col-span-2">
             <Card className="h-full flex flex-col">
-              <CardHeader className="py-3 px-4 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
+              <CardHeader className="py-2 sm:py-3 px-3 sm:px-4 border-b">
+                <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
+                  <div className="flex items-center gap-1">
                     <Button
                       onClick={() => setCurrentSlide(0)}
                       disabled={currentSlide === 0 || !isGenerated}
-                      className="p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1 sm:p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <SkipBack className="h-4 w-4" />
+                      <SkipBack className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                     <Button
                       onClick={goToPreviousSlide}
                       disabled={currentSlide === 0 || !isGenerated}
-                      className="p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1 sm:p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
-                    <span className="text-base font-semibold px-2">
-                      Presentation Preview {isGenerated && slides.length > 0 && `(${currentSlide + 1}/${slides.length})`}
+                    <span className="text-sm sm:text-base font-semibold px-1 sm:px-2">
+                      Preview {isGenerated && slides.length > 0 && `(${currentSlide + 1}/${slides.length})`}
                     </span>
                     <Button
                       onClick={goToNextSlide}
                       disabled={currentSlide === slides.length - 1 || !isGenerated}
-                      className="p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1 sm:p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                     <Button
                       onClick={() => setCurrentSlide(slides.length - 1)}
                       disabled={currentSlide === slides.length - 1 || !isGenerated}
-                      className="p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1 sm:p-1.5 hover:bg-amber-100 bg-amber-50 text-amber-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <SkipForward className="h-4 w-4" />
+                      <SkipForward className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                   {isGenerated && completedSlides.length > 0 && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1 sm:gap-1.5">
                       <Button
                         onClick={handleDownloadPDF}
-                        className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
+                        className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
                       >
-                        <Download className="mr-1.5 h-4 w-4" />
+                        <Download className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                         PDF
                       </Button>
                       <Button
                         onClick={handleExportPPTX}
-                        className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
+                        className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
                       >
-                        <Presentation className="mr-1.5 h-4 w-4" />
+                        <Presentation className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                         PPTX
                       </Button>
                       <Button 
                         onClick={toggleFullscreen}
-                        className="px-3 py-1.5 text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
+                        className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm bg-amber-50 text-amber-500 hover:bg-amber-100"
                       >
-                        <Maximize2 className="mr-1.5 h-4 w-4" />
+                        <Maximize2 className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                         Present
                       </Button>
                     </div>
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-hidden p-4">
+              <CardContent className="flex-1 overflow-hidden p-2 sm:p-4">
                 <div ref={slidesContainerRef} className="h-full overflow-auto">
                   {renderCurrentSlide()}
                 </div>
@@ -760,49 +761,49 @@ const PresentationSlidesPage = () => {
         </div>
       </div>
       
-      {/* Fullscreen Presentation Mode */}
+      {/* Fullscreen Presentation Mode - make responsive */}
       {isFullscreen && (
         <div className="fixed inset-0 bg-gray-900 z-50 overflow-hidden">
-          <div className="absolute top-4 right-4 flex gap-2">
+          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex gap-1 sm:gap-2">
             <Button
               onClick={handleDownloadPDF}
-              className="bg-amber-500/10 hover:bg-amber-500/20 text-white rounded-md flex items-center px-4 py-2"
+              className="bg-amber-500/10 hover:bg-amber-500/20 text-white rounded-md flex items-center px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm"
             >
-              <Download className="h-4 w-4 mr-2" />
-              Download
+              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Download</span>
             </Button>
             <Button
               onClick={() => setIsFullscreen(false)}
-              className="bg-amber-500/10 hover:bg-amber-500/20 text-white rounded-md flex items-center px-4 py-2"
+              className="bg-amber-500/10 hover:bg-amber-500/20 text-white rounded-md flex items-center px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm"
             >
-              <Minimize2 className="h-4 w-4 mr-2" />
-              Exit
+              <Minimize2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Exit</span>
             </Button>
           </div>
           
-          <div className="flex items-center justify-between px-8 h-full">
+          <div className="flex items-center justify-between px-2 sm:px-8 h-full">
             <Button
               onClick={goToPreviousSlide}
               disabled={currentSlide === 0}
-              className="text-white/50 hover:text-white hover:bg-white/10 rounded-full p-4"
+              className="text-white/50 hover:text-white hover:bg-white/10 rounded-full p-2 sm:p-4"
             >
-              <ChevronLeft className="h-8 w-8" />
+              <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
             </Button>
             
-            <div className="flex-1 max-w-6xl mx-8">
+            <div className="flex-1 max-w-6xl mx-2 sm:mx-8">
               {renderSlideContent(slides[currentSlide], true)}
             </div>
             
             <Button
               onClick={goToNextSlide}
               disabled={currentSlide === slides.length - 1}
-              className="text-white/50 hover:text-white hover:bg-white/10 rounded-full p-4"
+              className="text-white/50 hover:text-white hover:bg-white/10 rounded-full p-2 sm:p-4"
             >
-              <ChevronRight className="h-8 w-8" />
+              <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
             </Button>
           </div>
           
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 rounded-full px-4 py-2 text-white/90">
+          <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 rounded-full px-3 py-1 sm:px-4 sm:py-2 text-white/90 text-xs sm:text-sm">
             Slide {currentSlide + 1} of {slides.length}
           </div>
         </div>
