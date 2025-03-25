@@ -230,15 +230,15 @@ const HomePage = () => {
       return (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div key={i} className="flex items-center justify-between p-4 bg-amber-50/50 rounded-lg border border-amber-100/50">
               <div className="flex items-center gap-4">
-                <Skeleton className="h-6 w-6 rounded-full" />
+                <Skeleton className="h-10 w-10 rounded-full bg-amber-100" />
                 <div>
-                  <Skeleton className="h-5 w-48" />
-                  <Skeleton className="h-4 w-24 mt-2" />
+                  <Skeleton className="h-5 w-48 bg-amber-100" />
+                  <Skeleton className="h-4 w-24 mt-2 bg-amber-100" />
                 </div>
               </div>
-              <Skeleton className="h-9 w-16 rounded-md" />
+              <Skeleton className="h-9 w-16 rounded-md bg-amber-100" />
             </div>
           ))}
         </div>
@@ -247,8 +247,10 @@ const HomePage = () => {
 
     if (!recentActivityData?.data?.length) {
       return (
-        <div className="p-8 text-center">
-          <p className="text-gray-500">No recent activity found</p>
+        <div className="p-8 text-center bg-amber-50/50 rounded-lg border border-amber-100">
+          <BookOpen className="h-12 w-12 text-amber-400 mx-auto mb-3 opacity-50" />
+          <p className="text-gray-600 font-medium">No recent activity found</p>
+          <p className="text-sm text-gray-500 mt-1">Activity will appear here once you start creating or editing books</p>
         </div>
       );
     }
@@ -256,22 +258,35 @@ const HomePage = () => {
     return (
       <div className="space-y-4">
         {recentActivityData.data.map((activity, index) => (
-          <div key={`${activity.bookId}-${activity.actionType}-${index}`} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <motion.div 
+            key={`${activity.bookId}-${activity.actionType}-${index}`} 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-white rounded-lg border border-amber-100 hover:shadow-md transition-all duration-200"
+          >
             <div className="flex items-center gap-4">
-              {getActivityIcon(activity.actionType)}
+              <div className="bg-amber-100 p-2 rounded-full">
+                {getActivityIcon(activity.actionType)}
+              </div>
               <div>
-                <p className="font-medium">{activity.actionType} "{activity.bookTitle}"</p>
-                <p className="text-sm text-gray-500">{formatTimeAgo(activity.timestamp)}</p>
+                <p className="font-medium text-gray-800">
+                  <span className="text-amber-600">{activity.actionType}</span> "{activity.bookTitle}"
+                </p>
+                <p className="text-sm text-gray-500 flex items-center mt-1">
+                  <Clock className="w-3.5 h-3.5 mr-1 text-amber-400" />
+                  {formatTimeAgo(activity.timestamp)}
+                </p>
               </div>
             </div>
             <Button 
               variant="outline" 
-              className="text-sm"
+              className="text-sm border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
               onClick={() => navigate(`/book-modal?id=${activity.bookId}`)}
             >
               View
             </Button>
-          </div>
+          </motion.div>
         ))}
       </div>
     );
@@ -567,10 +582,30 @@ const HomePage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-xl shadow-md border border-gray-100 p-6"
+            className="bg-white rounded-xl shadow-md border border-gray-100 p-6 overflow-hidden relative"
           >
-            <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-            {renderRecentActivity()}
+            <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-amber-100 rounded-full opacity-20"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                    <Activity className="w-5 h-5 text-amber-500 mr-2" />
+                    Recent Activity
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">Latest actions performed on the platform</p>
+                </div>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                  onClick={() => refetchRecentActivity()}
+                >
+                  Refresh
+                </Button>
+              </div>
+              {renderRecentActivity()}
+            </div>
           </motion.div>
         )}
       </div>
