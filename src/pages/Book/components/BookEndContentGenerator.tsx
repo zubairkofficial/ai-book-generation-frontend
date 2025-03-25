@@ -60,6 +60,8 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
     index: false,
   });
 
+  console.log("generated",generated,referencesContent,indexContent)
+
   // Add these new states for paragraph selection and regeneration
   const [selectedContent, setSelectedContent] = useState<{ text: string; index: number } | null>(null);
   const [showEditPanel, setShowEditPanel] = useState(false);
@@ -328,6 +330,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
     } else if (activeTab === "references") {
       setActiveTab("index");
     }
+    setStreamingContent("")
   };
 
   // Handle navigating to previous section
