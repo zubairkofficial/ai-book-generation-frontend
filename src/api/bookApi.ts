@@ -197,14 +197,17 @@ interface GenerateBookEndContentRequest {
   additionalInfo?: string;
 }
 
-// Add this interface for book cover design
-interface CoverDesignForm {
+
+// Add this new interface for recent activities
+interface RecentActivity {
   bookTitle: string;
-  genre: string;
-  style: string;
-  mood: string;
-  colorScheme: string;
-  additionalDetails: string;
+  actionType: string;
+  timestamp: string;
+  bookId: number;
+}
+
+interface RecentActivityResponse {
+  data: RecentActivity[];
 }
 
 export const bookApi = baseApi.injectEndpoints({
@@ -410,6 +413,14 @@ export const bookApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+
+    // Add new endpoint for recent activities
+    getRecentActivity: builder.query<RecentActivityResponse, void>({
+      query: () => ({
+        url: '/book-generation/book/recent-activity',
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
@@ -436,4 +447,5 @@ export const {
   useUpdateChapterSummaryMutation,
   useFetchBookEndContentMutation, // New hook for fetching book end content
   useGenerateBookEndContentMutation, // Hook for generating book end content
+  useGetRecentActivityQuery, // New hook for fetching recent activities
 } = bookApi;

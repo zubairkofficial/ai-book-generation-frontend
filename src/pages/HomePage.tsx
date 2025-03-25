@@ -12,14 +12,22 @@ import { useGetAllUserAnalyticsQuery } from '@/api/analyticsApi';
 import { motion } from 'framer-motion';
 import { Clock, Shield, Book } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useGetRecentActivityQuery } from '@/api/bookApi';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Update the interface to match the provided data structure
+
+
+
 
 const HomePage = () => {
   const {data:statsData,refetch:refetchStats}:any = useGetAllStatsQuery();
   const { data:userData,refetch:refetchUser } = useUserMeQuery();
   const { data: userStatsData, refetch: refetchUserStats } = useGetUserStatsQuery();
   const { data: analyticsData } = useGetAllUserAnalyticsQuery();
-  console.log("userData",userData,statsData)
-const navigate = useNavigate();
+  const { data: recentActivityData, isLoading: isLoadingActivity,refetch:refetchRecentActivity } = useGetRecentActivityQuery();
+  const navigate = useNavigate();
+  
   // Format date safely
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
@@ -159,6 +167,7 @@ const navigate = useNavigate();
   useEffect(() => {
     refetchStats();
     refetchUser();
+    refetchRecentActivity()
     if (userData?.role === 'user') {
       refetchUserStats();
     }
@@ -179,6 +188,94 @@ const navigate = useNavigate();
     { name: 'Nov', books: 0 },
     { name: 'Dec', books: 0 }
   ];
+
+  // Helper function to format time ago
+  const formatTimeAgo = (timestamp: string) => {
+    if (!timestamp) return 'N/A';
+    try {
+      const date = parseISO(timestamp);
+      const now = new Date();
+      const diffInHours = Math.round(Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60));
+      
+      if (diffInHours < 1) {
+        return 'Just now';
+      } else if (diffInHours < 24) {
+        return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
+      } else {
+        const days = Math.floor(diffInHours / 24);
+        return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+      }
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  // Function to get the appropriate icon based on action type
+  const getActivityIcon = (actionType: string) => {
+    switch(actionType.toLowerCase()) {
+      case 'created':
+        return <BookOpenCheck className="h-6 w-6 text-amber-500" />;
+      case 'edited':
+        return <Edit className="h-6 w-6 text-green-500" />;
+      case 'started':
+        return <Activity className="h-6 w-6 text-blue-500" />;
+      default:
+        return <Book className="h-6 w-6 text-gray-500" />;
+    }
+  };
+
+  // Replace the existing renderRecentActivity function
+  const renderRecentActivity = () => {
+    if (isLoadingActivity) {
+      return (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-6 w-6 rounded-full" />
+                <div>
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-24 mt-2" />
+                </div>
+              </div>
+              <Skeleton className="h-9 w-16 rounded-md" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (!recentActivityData?.data?.length) {
+      return (
+        <div className="p-8 text-center">
+          <p className="text-gray-500">No recent activity found</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {recentActivityData.data.map((activity, index) => (
+          <div key={`${activity.bookId}-${activity.actionType}-${index}`} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-4">
+              {getActivityIcon(activity.actionType)}
+              <div>
+                <p className="font-medium">{activity.actionType} "{activity.bookTitle}"</p>
+                <p className="text-sm text-gray-500">{formatTimeAgo(activity.timestamp)}</p>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              className="text-sm"
+              onClick={() => navigate(`/book-modal?id=${activity.bookId}`)}
+            >
+              View
+            </Button>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <Layout>
@@ -473,44 +570,7 @@ const navigate = useNavigate();
             className="bg-white rounded-xl shadow-md border border-gray-100 p-6"
           >
             <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <BookOpenCheck className="h-6 w-6 text-amber-500" />
-                  <div>
-                    <p className="font-medium">Created "The Lost City of Atlantis"</p>
-                    <p className="text-sm text-gray-500">2 hours ago</p>
-                  </div>
-                </div>
-                <Button variant="outline" className="text-sm">
-                  View
-                </Button>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <Edit className="h-6 w-6 text-green-500" />
-                  <div>
-                    <p className="font-medium">Edited "The Future of AI"</p>
-                    <p className="text-sm text-gray-500">5 hours ago</p>
-                  </div>
-                </div>
-                <Button variant="outline" className="text-sm">
-                  View
-                </Button>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <Activity className="h-6 w-6 text-blue-500" />
-                  <div>
-                    <p className="font-medium">Started "The Mystery of the Deep"</p>
-                    <p className="text-sm text-gray-500">1 day ago</p>
-                  </div>
-                </div>
-                <Button variant="outline" className="text-sm">
-                  View
-                </Button>
-              </div>
-            </div>
+            {renderRecentActivity()}
           </motion.div>
         )}
       </div>
