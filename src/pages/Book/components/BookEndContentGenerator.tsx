@@ -274,6 +274,23 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
           
           // Save to API
           saveGeneratedContent(fullContent);
+          
+          // Force update and check if all sections are now complete
+          refetchBook().then(() => {
+            // Re-check if all sections are complete after saving
+            if (
+              (activeTab === "glossary" && generated.references && generated.index) ||
+              (activeTab === "references" && generated.glossary && generated.index) ||
+              (activeTab === "index" && generated.glossary && generated.references)
+            ) {
+              // All sections are now complete - force state update
+              setGenerated({
+                glossary: true,
+                references: true,
+                index: true
+              });
+            }
+          });
         }
       };
         // Initialize generation
@@ -281,12 +298,25 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
    if(response){
      setIsGenerating(false);
       addToast("Content generated successfully", ToastType.SUCCESS);
+      
+      // Force update if this was the last section to be generated
+      if (
+        (activeTab === "glossary" && generated.references && generated.index) ||
+        (activeTab === "references" && generated.glossary && generated.index) ||
+        (activeTab === "index" && generated.glossary && generated.references)
+      ) {
+        // All sections are now complete - force state update
+        setGenerated({
+          glossary: true,
+          references: true,
+          index: true
+        });
+      }
+      
       // Safety timeout
-     
-        if (eventSource.readyState !== EventSource.CLOSED) {
-          eventSource.close();
-        }
-     
+      if (eventSource.readyState !== EventSource.CLOSED) {
+        eventSource.close();
+      }
      } 
     } catch (error: any) {
      console.error("Error generating content:", error);
@@ -316,6 +346,18 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
       
       if (response.statusCode === 200) {
         addToast(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} successfully generated!`, ToastType.SUCCESS);
+        
+        // Update the generated state immediately
+        setGenerated(prev => {
+          const updated = { ...prev, [activeTab]: true };
+          
+          // If this was the last section we needed, force refetch to ensure Complete button shows
+          if (updated.glossary && updated.references && updated.index) {
+            refetchBook();
+          }
+          
+          return updated;
+        });
       }
     } catch (error: any) {
       console.error("Error saving content:", error);
@@ -594,7 +636,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
             <div className="space-y-4">
               <div>
                 <Label className="text-sm text-gray-500">Selected Text</Label>
-                <div className="p-3 bg-amber-50 rounded-md mt-1 text-sm">
+                <div className="p-3 bg-amber-50 rounded-md mt-1 text-sm overflow-auto">
                   {selectedContent?.text}
                 </div>
               </div>
