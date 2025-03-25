@@ -87,22 +87,7 @@ const profileSchema = yup.object({
     .string()
     .required("Full name is required")
     .min(2, "Name must be at least 2 characters")
-    .max(50, "Name must not exceed 50 characters")
-    .matches(
-      /^[a-zA-Z\s'-]+$/,
-      "Name can only contain letters, spaces, hyphens, and apostrophes"
-    )
-    .test(
-      "no-consecutive-special",
-      "Cannot contain consecutive special characters",
-      (value) => !value || !/[-']{2,}/.test(value)
-    )
-    .test(
-      "starts-with-letter",
-      "Must start with a letter",
-      (value) => !value || /^[a-zA-Z]/.test(value)
-    )
-    .trim(),
+    .max(50, "Name must not exceed 50 characters"),
   email: yup
     .string()
     .email("Invalid email format")

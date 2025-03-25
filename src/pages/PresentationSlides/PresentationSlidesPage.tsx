@@ -205,7 +205,7 @@ const PresentationSlidesPage = () => {
   // Modify the renderSlideContent function
   const renderSlideContent = (slide: Slide, isFullscreen: boolean = false) => {
     return (
-      <div className={`relative bg-white rounded-lg shadow-lg overflow-hidden h-full ${isFullscreen ? 'w-full max-w-5xl' : 'w-full'}`}>
+      <div className={`relative bg-white rounded-lg shadow-lg md:overflow-hidden overflow-auto  h-full ${isFullscreen ? 'w-full max-w-5xl' : 'w-full'}`}>
         {/* Decorative top bar */}
         <div className="absolute top-0 left-0 w-full h-1 sm:h-2 bg-gradient-to-r from-amber-500 to-amber-600" />
         
@@ -266,13 +266,13 @@ const PresentationSlidesPage = () => {
       <div className="flex flex-col h-full">
         {/* Slide Content */}
         <div className="flex-1 px-4 py-6 bg-gray-50 overflow-auto rounded-lg">
-          <div className="aspect-[16/9] mx-auto transform transition-all duration-300 hover:scale-[1.01]">
+          <div className="aspect-[16/9] mx-auto transform transition-all duration-300 hover:scale-[1.01] ">
             {renderSlideContent(currentSlideContent)}
           </div>
         </div>
 
         {/* Carousel Thumbnails */}
-        <div className="bg-white p-2 sm:p-3 border-t overflow-x-auto shadow-inner">
+        <div className="bg-white p-2 md:max-w-full max-w-[240px] border-t overflow-x-auto shadow-inner">
           <div className="flex gap-2 sm:gap-3">
             {slides.map((s, index) => (
               <button
@@ -515,7 +515,7 @@ const PresentationSlidesPage = () => {
 
   return (
     <Layout>
-      <div className="mx-auto p-2 sm:p-4">
+      <div className="mx-auto p-2 sm:p-4 from-amber-50/80 via-white to-amber-50/50">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4 sm:mb-6">
           <Button 
             onClick={() => navigate('/ai-assistant')}
@@ -677,7 +677,7 @@ const PresentationSlidesPage = () => {
                     </>
                   ) : (
                     <>
-                      <Presentation className="mr-2 h-4 w-4" />
+                      <Presentation className="mr-2 h-4 w-4 " />
                       Generate Slides
                     </>
                   )}
@@ -752,7 +752,7 @@ const PresentationSlidesPage = () => {
                 </div>
               </CardHeader>
               <CardContent className="flex-1 overflow-hidden p-2 sm:p-4">
-                <div ref={slidesContainerRef} className="h-full overflow-auto">
+                <div ref={slidesContainerRef} className="h-full w-full overflow-auto">
                   {renderCurrentSlide()}
                 </div>
               </CardContent>

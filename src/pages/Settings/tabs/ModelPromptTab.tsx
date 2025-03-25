@@ -133,7 +133,7 @@ export const ModelPromptTab = () => {
                 <div className="space-y-6">
                   {/* Model Selection */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Fal-ai Model</Label>
+                    <Label className="text-sm font-medium text-gray-700">Book Cover Fal-ai Model</Label>
                     <select
                       {...register('coverImageModel')}
                       onChange={(e) => handleModelChange(e, 'coverImageModel')}
@@ -167,7 +167,7 @@ export const ModelPromptTab = () => {
 
                   {/* Prompt Input */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Cover Image Prompt</Label>
+                    <Label className="text-sm font-medium text-gray-700">Book Cover Image Prompt</Label>
                     <div className="relative">
                       <textarea
                         {...register('coverImagePrompt')}
@@ -207,7 +207,7 @@ export const ModelPromptTab = () => {
                 <div className="space-y-6">
                   {/* Model Selection */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Fal-ai Model</Label>
+                    <Label className="text-sm font-medium text-gray-700">Chapter Fal-ai Model</Label>
                     <select
                       {...register('chapterImageModel')}
                       onChange={(e) => handleModelChange(e, 'chapterImageModel')}
