@@ -41,3 +41,163 @@
         }
     }
 }
+
+.book-preview-container {
+    max-width: 900px;
+    margin: 0 auto;
+    font-family: 'system-ui', -apple-system, sans-serif;
+}
+
+.book-preview-container h1,
+.book-preview-container h2,
+.book-preview-container h3 {
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.book-preview-container img {
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
+    height: auto;
+}
+
+.book-preview-container .chapter {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #333;
+}
+
+.book-preview-container .chapter h1 {
+    font-size: 1.8rem;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.book-preview-container .chapter h2 {
+    font-size: 1.5rem;
+    margin-top: 2rem;
+}
+
+.book-preview-container .chapter h3 {
+    font-size: 1.3rem;
+    margin-top: 1.5rem;
+}
+
+.book-preview-container .chapter p {
+    margin-bottom: 1.2rem;
+}
+
+.book-preview-container .table-of-contents .toc-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee;
+    transition: all 0.2s ease;
+}
+
+.book-preview-container .table-of-contents .toc-item:hover {
+    background-color: rgba(251, 191, 36, 0.1);
+}
+
+
+/* For RTL content like Urdu */
+
+[dir="rtl"] .book-preview-container .chapter,
+[lang="ar"] .book-preview-container .chapter,
+[lang="ur"] .book-preview-container .chapter {
+    direction: rtl;
+    text-align: right;
+}
+
+
+/* Print styles */
+
+@media print {
+    .book-preview-container button,
+    .book-preview-container nav,
+    .book-preview-container header,
+    .book-preview-container footer {
+        display: none !important;
+    }
+    .book-preview-container {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    .book-preview-container .chapter {
+        page-break-after: always;
+    }
+    .book-preview-container h1,
+    .book-preview-container h2,
+    .book-preview-container h3 {
+        page-break-after: avoid;
+    }
+    .book-preview-container img {
+        max-width: 80%;
+        margin: 1.5rem auto;
+        display: block;
+    }
+}
+
+
+/* Add these styles to your existing preview.css */
+
+.book-preview-container .chapter img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 1.5rem auto;
+    display: block;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.book-preview-container .chapter h1,
+.book-preview-container .chapter h2,
+.book-preview-container .chapter h3 {
+    color: #92400e;
+    /* amber-800 */
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.book-preview-container .glossary-term {
+    font-weight: 600;
+    color: #92400e;
+    /* amber-800 */
+}
+
+.book-preview-container .table-of-contents {
+    border-left: 3px solid #fbbf24;
+    /* amber-400 */
+    padding-left: 1rem;
+}
+
+
+/* Enhanced print styles */
+
+@media print {
+    @page {
+        margin: 2cm;
+    }
+    body {
+        font-family: 'Georgia', serif;
+        font-size: 12pt;
+        line-height: 1.5;
+        color: #000;
+        background: #fff;
+    }
+    .book-preview-container h1 {
+        font-size: 22pt;
+        text-align: center;
+        margin-bottom: 2cm;
+    }
+    .book-preview-container .chapter h2 {
+        font-size: 16pt;
+        page-break-after: avoid;
+    }
+    .book-preview-container .chapter p {
+        orphans: 3;
+        widows: 3;
+    }
+}

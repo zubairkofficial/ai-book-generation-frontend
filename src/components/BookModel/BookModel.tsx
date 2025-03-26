@@ -2,7 +2,8 @@ import { Dispatch,  SetStateAction,  useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Loader2,  Image,
-  BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft, ChevronRight, Check, Pencil
+  BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft, ChevronRight, Check, Pencil,
+  Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFetchBookByIdQuery,   useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
@@ -346,7 +347,17 @@ const BookModel = () => {
           
           {/* Right section: Edit mode toggle with status indicator */}
           <div className="flex items-center">
-            <div className="hidden sm:flex items-center mr-3">
+          <Button
+              variant={editMode ? "default" : "outline"}
+              size="sm"
+             onClick={()=>navigate(`/book-modal/preview?id=${bookId}`)}
+              className={`flex items-center gap-1`}
+            >
+                  <Eye className="h-3.5 w-3.5" />
+                  <span className="font-medium">Preview</span>
+                
+            </Button>
+            <div className="hidden sm:flex items-center mx-3">
               <div className={`w-2 h-2 rounded-full mr-2 ${editMode ? "bg-amber-500" : "bg-gray-300"}`}></div>
               <span className="text-sm font-medium text-gray-600">
                 {editMode ? "Editing Mode" : "View Mode"}
