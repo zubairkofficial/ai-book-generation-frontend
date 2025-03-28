@@ -1,35 +1,31 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image, Font, PDFViewer } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import { BASE_URl } from '@/constant';
 import TurnDownService from 'turndown';
 
 // Register fonts
 Font.register({
-  family: 'Roboto',
+  family: 'Times New Roman',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/roboto/v27/KFOmCnqEu92Fr1Mu4mxP.ttf', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/roboto/v27/KFOlCnqEu92Fr1MmWUlfBBc9.ttf', fontWeight: 700 },
-  ],
+    { src: 'https://fonts.gstatic.com/s/roboto/v27/KFOmCnqEu92Fr1Mu4mxP.ttf', fontWeight: 400, fontStyle: 'normal' },
+    { src: 'https://fonts.gstatic.com/s/roboto/v27/KFOkCnqEu92Fr1MmUI-vBBc9.ttf', fontWeight: 400, fontStyle: 'italic' },
+    { src: 'https://fonts.gstatic.com/s/roboto/v27/KFOlCnqEu92Fr1MmWUlfBBc9.ttf', fontWeight: 700, fontStyle: 'normal' },
+    { src: 'https://fonts.gstatic.com/s/roboto/v27/KFOjCnqEu92Fr1Mu51TzBic6CsI.ttf', fontWeight: 700, fontStyle: 'italic' },
+    { src: 'https://fonts.gstatic.com/s/roboto/v27/KFOkCnqEu92Fr1MmYUtfBBc9.ttf', fontWeight: 900, fontStyle: 'normal' },
+    { src: 'https://fonts.gstatic.com/s/roboto/v27/KFOlCnqEu92Fr1MmSU5fBBc9.ttf', fontWeight: 300, fontStyle: 'normal' },
+ ],
 });
 
-// Add fonts for Arabic/Urdu text
-Font.register({
-  family: 'Noto Sans Arabic',
-  src: 'https://fonts.gstatic.com/s/notosansarabic/v18/nwpxtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlhQ5l3sQWIHPqzCfyG2vu3CBFQLaig.ttf',
-});
+
 
 // Create styles
 const styles = StyleSheet.create({
   page: {
     padding: 42,
-    backgroundColor: '#ffffff',
-    fontFamily: 'Roboto',
+    backgroundColor: '#fdf9e6',
+    fontFamily: 'Times New Roman',
   },
-  arabicText: {
-    fontFamily: 'Noto Sans Arabic',
-    textAlign: 'right',
-    direction: 'rtl',
-  },
+  
   coverPage: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -54,6 +50,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 700,
     marginVertical: 15,
+    textAlign:'start'
   },
   paragraph: {
     fontSize: 12,
@@ -158,6 +155,13 @@ const processMarkdown = (content: string,) => {
       return (
         <Text key={index} style={[{ ...styles.sectionTitle, fontSize: 16 }]}>
           {paragraph.replace(/^## /, '')}
+        </Text>
+      );
+    }
+    if (paragraph.startsWith('### ')) {
+      return (
+        <Text key={index} style={[{ ...styles.sectionTitle, fontSize: 14 }]}>
+          {paragraph.replace(/^### /, '')}
         </Text>
       );
     }

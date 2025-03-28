@@ -32,6 +32,7 @@ import GenerateBookIdeas from "./pages/AIAssistant/GenerateBookIdeas";
 import BookCoverDesign from "./pages/AIAssistant/BookCoverDesign";
 import WritingAssistant from "./pages/AIAssistant/WritingAssistant";
 import BookModal from "./pages/Book/BookModal";
+import BookPreview from "./pages/Book/BookModal";
 
 function App() {
   const dispatch = useDispatch();
@@ -106,7 +107,7 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/response" element={<ResponsePage />} />
             <Route path="/book-modal" element={<BookModel />} />
-            <Route path="/book-modal/preview" element={<BookModal />} />
+            {/* <Route path="/book-modal/preview" element={<BookPreview />} /> */}
             <Route path="/chapter-summary" element={<ChapterSummaryPage />} />
             <Route
               path="/presentation-slides"

@@ -23,6 +23,7 @@ import {
   Loader2,
   ArrowLeft,
   Check,
+  CheckCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -152,6 +153,9 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
   // Add API hooks for end content generation
   const [generateBookEndContent] = useGenerateBookEndContentMutation();
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
+
+  // Add this state to track if the user is deliberately completing the book
+  const [userConfirmedCompletion, setUserConfirmedCompletion] = useState(false);
 
   // Auto-scroll effect
   useEffect(() => {
@@ -307,9 +311,14 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
 
       // Send chapter generation request
       const res: any = await createBookChapter(payload).unwrap();
-      if (currentChapterNo == bookData.numberOfChapters) {
+      
+      // Check if this is the last chapter and mark book as completed if so
+      if (currentChapterNo === getChapterCount()) {
         setIsBookCompleted(true);
+        // Force progress to 100% - this ensures the progress bar shows complete
+        // We put this here to ensure it happens after successful generation
       }
+      
       eventSource.close();
       if (res.statusCode == 200) {
         setConfig((prev) => ({
@@ -358,8 +367,16 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
 
   // Update the progress calculation
   const calculateProgress = () => {
-    const totalChapters = parseTableOfContents().length;
-    return ((currentChapterNo - 1) / totalChapters) * 100;
+    // If we're on the last chapter and have content, return 100%
+    if (currentChapterNo === getChapterCount() && streamedContent) {
+      return 100;
+    }
+    
+    // Otherwise, calculate as before
+    return Math.min(
+      100,
+      Math.round(((currentChapterNo-1) / getChapterCount()) * 100)
+    );
   };
 
   // Update where chapter count is displayed
@@ -796,6 +813,20 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
     }
   }, [bookData]);
 
+  // Determine if user is on the last chapter
+  const isLastChapter = bookData && 
+    bookData.bookChapter && 
+    currentChapterNo === bookData.numberOfChapters;
+
+  // Add a useEffect to update progress when streaming content changes
+  useEffect(() => {
+    // If we're on the last chapter and have content, mark as completed
+    if (currentChapterNo === getChapterCount() && streamedContent && !isGenerating) {
+      // This will trigger the progress calculation to return 100%
+      setIsBookCompleted(true);
+    }
+  }, [streamedContent, currentChapterNo, getChapterCount, isGenerating]);
+
   return (
     <div className="container mx-auto px-4 py-8">
       {endContentMode ? (
@@ -814,8 +845,8 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
             navigate("/books");
           }}
         />
-      ) : isBookCompleted ? (
-        // Show completion UI with option to add end content
+      ) : isBookCompleted && userConfirmedCompletion ? (
+        // Only show completion UI after user confirms completion
         <Card className="p-8 text-center">
           <h2 className="text-2xl font-bold text-amber-800 mb-4">
             🎉 Congratulations!
@@ -858,6 +889,27 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
               {tableOfContents.split("\n").length}
             </p>
           </div>
+
+          {/* Show "Complete Book" button if on last chapter and generation is done */}
+          {isLastChapter && streamedContent && !isGenerating && (
+            <Card className="p-4 mb-6 border-amber-300 border-2 bg-amber-50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-amber-800">This is your final chapter!</h3>
+                  <p className="text-sm text-amber-700">
+                    You can continue editing this chapter. When you're satisfied, click "Complete Chapters".
+                  </p>
+                </div>
+                <Button
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                  onClick={() => setUserConfirmedCompletion(true)}
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Complete Book Chapters
+                </Button>
+              </div>
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {showEditPanel ? (
@@ -1166,11 +1218,23 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
                       >
                         <Edit className="w-4 h-4" />
                       </Button> */}
-                  {streamedContent && (
+                  {streamedContent && currentChapterNo < getChapterCount() && (
                     <Button
                       onClick={handleNextChapter}
                       className="bg-amber-500 hover:bg-amber-600 text-white"
                       disabled={isGenerating}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>Move Forward</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </div>
+                    </Button>
+                  )}
+                  {streamedContent && currentChapterNo === getChapterCount() && (
+                      <Button
+                      onClick={handleNextChapter}
+                      className="bg-amber-500 hover:bg-amber-600 text-white"
+                      disabled={true}
                     >
                       <div className="flex items-center gap-2">
                         <span>Move Forward</span>

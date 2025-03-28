@@ -2,8 +2,7 @@ import { Dispatch,  SetStateAction,  useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Loader2,  Image,
-  BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft, ChevronRight, Check, Pencil,
-  Eye
+  BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft, ChevronRight, Check, Pencil, Eye, Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFetchBookByIdQuery,   useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
@@ -16,6 +15,10 @@ import { TableOfContentsContent } from './TableOfContentsContent';
 import { ChapterContent } from './ChapterContent';
 import { useToast } from '@/context/ToastContext';
 import TurnDownService from 'turndown'
+;
+import { generateBookPDF } from './BookPDFGenerator';
+import BookPreview from '@/pages/Book/BookModal';
+
 const turndown = new TurnDownService();
 
 // Define types for pages and content
@@ -191,7 +194,7 @@ const BookModel = () => {
       <div className={navStyles.desktop}>
        
         
-        {PAGES.map((page) => {
+        {!previewOpen && PAGES.map((page) => {
           // Special handling for edit button
           if (page.id === 'edit') {
             return (
@@ -249,7 +252,7 @@ const BookModel = () => {
       {/* Mobile Navigation */}
       <div className={navStyles.mobile}>
         <div className="flex justify-around items-center">
-          {PAGES.map((page) => {
+          {!previewOpen&& PAGES.map((page) => {
             // Special handling for edit button
             if (page.id === 'edit') {
               return (
@@ -308,7 +311,28 @@ const BookModel = () => {
     </>
   );
 
- 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [nightMode, setNightMode] = useState(false);
+
+  const handleOpenPreview = () => {
+    setPreviewOpen(true);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewOpen(false);
+  };
+
+  // const handleDownloadPDF = async () => {
+  //   if (!book?.data) return;
+    
+  //   try {
+  //     await generateBookPDF(book.data, nightMode);
+  //     addToast("Book PDF downloaded successfully", "success");
+  //   } catch (error) {
+  //     console.error("Error generating PDF:", error);
+  //     addToast("Failed to download PDF", "error");
+  //   }
+  // };
 
   if (isLoading) {
     return (
@@ -347,22 +371,30 @@ const BookModel = () => {
           
           {/* Right section: Edit mode toggle with status indicator */}
           <div className="flex items-center">
-          <Button
-              variant={editMode ? "default" : "outline"}
-              size="sm"
-             onClick={()=>navigate(`/book-modal/preview?id=${bookId}`)}
-              className={`flex items-center gap-1`}
-            >
-                  <Eye className="h-3.5 w-3.5" />
-                  <span className="font-medium">Preview</span>
-                
-            </Button>
-            <div className="hidden sm:flex items-center mx-3">
+            <div className="hidden sm:flex items-center mr-3">
               <div className={`w-2 h-2 rounded-full mr-2 ${editMode ? "bg-amber-500" : "bg-gray-300"}`}></div>
               <span className="text-sm font-medium text-gray-600">
                 {editMode ? "Editing Mode" : "View Mode"}
               </span>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenPreview}
+              className="border-amber-300 text-amber-700 hover:bg-amber-50 mr-2"
+            >
+              <Eye className="h-3.5 w-3.5 mr-1" />
+              <span className="font-medium">Preview</span>
+            </Button>
+            {/* <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadPDF}
+              className="border-amber-300 text-amber-700 hover:bg-amber-50 mr-2"
+            >
+              <Download className="h-3.5 w-3.5 mr-1" />
+              <span className="font-medium">PDF</span>
+            </Button> */}
             {!editMode ? (
             <Button
               variant={editMode ? "default" : "outline"}
@@ -397,7 +429,7 @@ const BookModel = () => {
               letterSpacing: textStyle.letterSpacing
             }}
           >
-            {renderCurrentPageContent(
+            {!previewOpen && renderCurrentPageContent(
               currentPage, 
               book.data, 
               editMode,
@@ -410,6 +442,14 @@ const BookModel = () => {
           </div>
         </div>
       </div>
+
+      {previewOpen && book?.data && (
+        <BookPreview
+          book={book.data}
+          onClose={handleClosePreview}
+          nightMode={nightMode}
+        />
+      )}
     </div>
   );
 };
