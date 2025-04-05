@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Book,
   BookOpen,
+  Download,
   Eye,
   Loader2,
   Plus,
@@ -17,8 +18,6 @@ import {
   useDeleteBookMutation,
   BookStatus,
   useFetchBooksByTypeQuery,
-  useFetchBookEndContentMutation,
-  useFetchBookByIdQuery,
 } from "@/api/bookApi";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -81,12 +80,7 @@ export default function BookTable() {
   const [isBookLoading, setIsBookLoading] = useState(false);
   const [loadingBookId, setLoadingBookId] = useState<number | null>(null);
   const [bookToDelete, setBookToDelete] = useState<number | null>(null);
-  const [fetchBookEndContent] = useFetchBookEndContentMutation();
-  const { refetch: refetchBook } = useFetchBookByIdQuery(loadingBookId || 0, {
-    skip: !loadingBookId,
-  });
-  // const { data: searchData } = useSearchBookQuery({ userId: user.id, searchParams }); // Fetch books with the hook
-  // console.log("searchData", searchData)
+  const [isDownloading, setIsDownloading] = useState(false);
   // Handle the error case
   if (isError) {
     addToast(error?.data?.message || "An error occurred", ToastType.ERROR);
@@ -103,6 +97,66 @@ export default function BookTable() {
 
   // Pagination logic
 
+
+  const handleDownload = async (e: MouseEvent, bookId: number) => {
+    e.stopPropagation();
+    setIsDownloading(true);
+    try {
+      console.log(`Attempting to download PDF for book ID: ${bookId}`);
+      
+      // Create a direct link to download the PDF
+      const pdfUrl = `${BASE_URl}/pdf/generate/${bookId}`;
+      console.log(`PDF URL: ${pdfUrl}`);
+      
+      // Option 1: Using window.open for direct download
+      window.open(pdfUrl, '_blank');
+      
+      // Alternative option using Axios (if window.open doesn't work)
+      /*
+      const response = await axios.get(pdfUrl, {
+        responseType: 'blob',
+        timeout: 60000, // 60 second timeout
+        onDownloadProgress: (progressEvent) => {
+          console.log(`Download progress: ${progressEvent.loaded} bytes`);
+        }
+      });
+      
+      console.log('Response received:', response.status, response.headers);
+      
+      if (response.data) {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `book_${bookId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        console.error('Empty response data');
+        throw new Error('Empty response from server');
+      }
+      */
+      
+      addToast("PDF download initiated. Check your browser downloads.", ToastType.SUCCESS);
+    } catch (error: any) {
+      console.error("Download error details:", error);
+      if (error.response) {
+        console.error("Response error:", error.response.status, error.response.data);
+        addToast(`Error ${error.response.status}: ${error.response.statusText}`, ToastType.ERROR);
+      } else if (error.request) {
+        console.error("Request error - no response received");
+        addToast("No response received from server. The PDF might be too large or the server timed out.", ToastType.ERROR);
+      } else {
+        console.error("Error message:", error.message);
+        addToast(error.message || "Failed to download PDF", ToastType.ERROR);
+      }
+    } finally {
+      setIsDownloading(false);
+    }
+  };
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchTerm(query);
@@ -398,28 +452,46 @@ console.log("first+++++++++", book.type === "complete" &&
                               }
 
                               {/* Regular overlay with improved UI */}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end p-4">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  className="w-full bg-white hover:bg-amber-50 shadow-sm mb-4 transition-all duration-300"
-                                  onClick={(e) => handlePreview(e, book)}
-                                  disabled={isBookLoading}
-                                >
-                                  {isBookLoading &&
-                                  loadingBookId === book.id ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 mr-2 text-amber-600 animate-spin" />
-                                      Loading...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Eye className="w-4 h-4 mr-2 text-amber-600" />
-                                      Preview
-                                    </>
-                                  )}
-                                </Button>
-                              </div>
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-end p-4 gap-2">
+  <Button
+    variant="secondary"
+    size="sm"
+    className="w-full bg-white hover:bg-amber-50 shadow-sm transition-all duration-300"
+    onClick={(e) => handlePreview(e, book)}
+    disabled={isBookLoading}
+  >
+    {isBookLoading && loadingBookId === book.id ? (
+      <>
+        <Loader2 className="w-4 h-4 mr-2 text-amber-600 animate-spin" />
+        Loading...
+      </>
+    ) : (
+      <>
+        <Eye className="w-4 h-4 mr-2 text-amber-600" />
+        Preview
+      </>
+    )}
+  </Button>
+  
+  {book.type === 'complete' && (
+    <Button
+      variant="secondary"
+      size="sm"
+      className="w-full bg-white hover:bg-green-50 shadow-sm transition-all duration-300"
+      onClick={(e) => handleDownload(e, book.id)}
+      disabled={isDownloading}
+    >
+      {isDownloading ? (
+        <Loader2 className="w-4 h-4 mr-2 animate-spin text-green-600" />
+      ) : (
+        <>
+          <Download className="w-4 h-4 mr-2 text-green-600" />
+          Download PDF
+        </>
+      )}
+    </Button>
+  )}
+</div>
                             </>
                           )}
                         </div>

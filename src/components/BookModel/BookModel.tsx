@@ -347,16 +347,7 @@ const BookModel = () => {
           
           {/* Right section: Edit mode toggle with status indicator */}
           <div className="flex items-center">
-          <Button
-              variant={editMode ? "default" : "outline"}
-              size="sm"
-             onClick={()=>navigate(`/book-modal/preview?id=${bookId}`)}
-              className={`flex items-center gap-1`}
-            >
-                  <Eye className="h-3.5 w-3.5" />
-                  <span className="font-medium">Preview</span>
-                
-            </Button>
+         
             <div className="hidden sm:flex items-center mx-3">
               <div className={`w-2 h-2 rounded-full mr-2 ${editMode ? "bg-amber-500" : "bg-gray-300"}`}></div>
               <span className="text-sm font-medium text-gray-600">

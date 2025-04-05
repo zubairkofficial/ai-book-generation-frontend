@@ -421,10 +421,18 @@ export const bookApi = baseApi.injectEndpoints({
         method: 'GET',
       }),
     }),
+    // Add to your existing endpoints in bookApi
+getBookHtmlContent: builder.query<any, number>({
+  query: (bookId) => ({
+    url: `/book-generation/${bookId}/html-content/generate`,
+    method: 'GET',
+  }),
+}),
   }),
 });
 
 export const {
+  useLazyGetBookHtmlContentQuery,
   useFetchBooksQuery, // Hook to fetch all books
   useFetchBooksByTypeQuery, // Hook to fetch all books
   useGenerateBookMutation, // Hook to generate a new book
