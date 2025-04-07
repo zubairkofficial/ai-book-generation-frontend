@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { ModelPromptTab } from "./tabs/ModelPromptTab";
 import { Card } from "@/components/ui/card";
+import { useFetchSettingsQuery } from "@/api/settingsApi";
 
 // Add validation schemas
 const passwordSchema = yup.object({
@@ -66,7 +67,18 @@ const apiKeysSchema = yup.object({
         return /^sk-[a-zA-Z0-9_-]+$/i.test(value);
       }
     ),
-
+  stripeApiKey: yup
+    .string()
+    .nullable()
+    .transform((value) => value || null)
+    .test(
+      "is-empty-or-valid",
+      "Invalid Stripe API key format",
+      function (value) {
+        if (!value) return true;
+        return /^sk_(?:test|live)_[a-zA-Z0-9_]+$/i.test(value);
+      }
+    ),
   falKey: yup
     .string()
     .nullable()
@@ -106,24 +118,19 @@ interface ApiKeysFormData {
   openaiKey?: string | null;
   falKey?: string | null;
   llmModel?: string | null;
+  stripeApiKey?: string | null;
 }
 
-// Add interface for API keys payload
-interface UpdateApiKeysPayload {
-  id: number;
-  model?: string;
-  openai_key?: string;
-  fal_ai?: string;
-}
+
 
 const SettingsPage = () => {
   const { data: userInfo, refetch: userRefetch } = useUserMeQuery();
 
   // Only fetch API keys if user is admin
-  const { data: apiKeyInfo } = useFetchApiKeysQuery(undefined, {
+  const { data: apiKeyInfo,refetch:refetchApiKey } = useFetchApiKeysQuery(undefined, {
     skip: userInfo?.role !== "admin",
   });
-
+console.log("stripe_api_key",apiKeyInfo)
   const [updateUser, { isLoading }] = useUpdateUserMutation();
   const { addToast } = useToast(); // Use custom toast hook
   const [updateApiKeys, { isLoading: isUpdatingKeys }] =
@@ -131,6 +138,15 @@ const SettingsPage = () => {
 
   // Add real-time validation state
   const [openaiKeyValidation, setOpenaiKeyValidation] = useState({
+    isValid: true,
+    error: "",
+  });
+
+  // Add settings API query and mutation
+  const { data: settingsData } = useFetchSettingsQuery();
+
+  // Add Stripe key validation state
+  const [stripeKeyValidation, setStripeKeyValidation] = useState({
     isValid: true,
     error: "",
   });
@@ -189,12 +205,25 @@ const SettingsPage = () => {
       resetApiKeys({
         id: apiKeyInfo.id,
         openaiKey: "",
-        dalleKey: "",
+        stripeApiKey: "",
         falKey: "",
         llmModel: apiKeyInfo.model || "",
       });
     }
   }, [apiKeyInfo, resetApiKeys]);
+
+  // Update the useEffect to include Stripe API key when settings data is available
+  useEffect(() => {
+    if (apiKeyInfo && settingsData) {
+      resetApiKeys({
+        id: apiKeyInfo.id,
+        openaiKey: "",
+        stripeApiKey: "",
+        falKey: "",
+        llmModel: apiKeyInfo.model || "",
+      });
+    }
+  }, [apiKeyInfo, settingsData, resetApiKeys]);
 
   // Function to validate OpenAI key in real-time
   const validateOpenAIKey = (value: string) => {
@@ -212,6 +241,26 @@ const SettingsPage = () => {
     }
 
     setOpenaiKeyValidation({
+      isValid: !error,
+      error,
+    });
+  };
+
+  // Function to validate Stripe API key in real-time
+  const validateStripeAPIKey = (value: string) => {
+    let error = "";
+
+    if (value) {
+      if (!value.startsWith("sk_test_") && !value.startsWith("sk_live_")) {
+        error = 'API key must start with "sk_test_" or "sk_live_"';
+      } else if (value.length < 20) {
+        error = "API key must be at least 20 characters";
+      } else if (!/^sk_(?:test|live)_[a-zA-Z0-9_]+$/i.test(value)) {
+        error = "API key can only contain letters, numbers, and underscores";
+      }
+    }
+
+    setStripeKeyValidation({
       isValid: !error,
       error,
     });
@@ -263,18 +312,28 @@ const SettingsPage = () => {
 
   // Update API keys handler with better error handling
   const handleApiKeysSave = async (data: ApiKeysFormData) => {
+   console.log("data",data)
     try {
-      const payload: UpdateApiKeysPayload = {
-        id: Number(apiKeyInfo?.id) || Number(data.id), // Always include ID if it exists in apiKeyInfo
+      // Update API keys
+      const apiKeysPayload = {
+        id: Number(apiKeyInfo?.id) || Number(data.id), 
         ...(data.llmModel && { model: data.llmModel }),
         ...(data.openaiKey && { openai_key: data.openaiKey }),
         ...(data.falKey && { fal_ai: data.falKey }),
+        ...(data.stripeApiKey && { stripe_api_key: data.stripeApiKey }),
       };
 
-      await updateApiKeys(payload).unwrap();
+      // Make both API calls if needed
+      if (data.openaiKey || data.falKey || data.llmModel||data.stripeApiKey) {
+        await updateApiKeys(apiKeysPayload).unwrap();
+        refetchApiKey()
+      }
+      
+      
       resetApiKeys({
         id: apiKeyInfo?.id,
         openaiKey: "",
+        stripeApiKey: "",
         falKey: "",
         llmModel: apiKeyInfo?.model || "",
       });
@@ -606,6 +665,19 @@ const SettingsPage = () => {
                                   {apiKeyInfo.model || "Not set"}
                                 </code>
                               </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">
+                                  Stripe API Key:
+                                </span>
+                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                                {apiKeyInfo.stripe_api_key
+                                    ? `${apiKeyInfo.stripe_api_key.substring(
+                                        0,
+                                        4
+                                      )}...${apiKeyInfo.stripe_api_key.slice(-4)}`
+                                    : "Not set"}
+                                </code>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -710,6 +782,52 @@ const SettingsPage = () => {
                               <p className="text-xs text-gray-500 mt-1">
                                 Format: fal_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
                                 (Starts with 'fal_')
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="stripeApiKey">Stripe API Key</Label>
+                              <div className="relative">
+                                <Input
+                                  {...registerApiKeys("stripeApiKey", {
+                                    onChange: (e) => validateStripeAPIKey(e.target.value),
+                                  })}
+                                  type="password"
+                                  id="stripeApiKey"
+                                  placeholder="sk_test_..."
+                                  className={`w-full pr-10 ${
+                                    !stripeKeyValidation.isValid || apiKeyErrors.stripeApiKey
+                                      ? "border-red-500"
+                                      : ""
+                                  }`}
+                                />
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                  {(!stripeKeyValidation.isValid || apiKeyErrors.stripeApiKey) && (
+                                    <svg
+                                      className="h-5 w-5 text-red-500"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                      />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              {/* Error Message */}
+                              {(!stripeKeyValidation.isValid || apiKeyErrors.stripeApiKey) && (
+                                <p className="text-sm text-red-500">
+                                  {stripeKeyValidation.error || apiKeyErrors.stripeApiKey?.message}
+                                </p>
+                              )}
+                              {/* Help Text */}
+                              <p className="text-xs text-gray-500">
+                                Format: Must start with "sk_test_" or "sk_live_" for production
                               </p>
                             </div>
 

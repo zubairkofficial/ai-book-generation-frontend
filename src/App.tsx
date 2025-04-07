@@ -32,6 +32,7 @@ import GenerateBookIdeas from "./pages/AIAssistant/GenerateBookIdeas";
 import BookCoverDesign from "./pages/AIAssistant/BookCoverDesign";
 import WritingAssistant from "./pages/AIAssistant/WritingAssistant";
 import BookModal from "./pages/Book/BookModal";
+import PaymentPage from "./pages/Settings/PaymentPage";
 
 function App() {
   const dispatch = useDispatch();
@@ -100,6 +101,8 @@ function App() {
             <Route path="/ai-assistant/book-ideas" element={<GenerateBookIdeas />} />
             <Route path="/ai-assistant/cover-design" element={<BookCoverDesign />} />
             <Route path="/ai-assistant/writing" element={<WritingAssistant />} />
+            <Route path="/payment" element={<PaymentPage />} />
+          
             {user?.role === "admin" && (
               <Route path="/analytics" element={<AnalyticsPage />} />
             )}{" "}
