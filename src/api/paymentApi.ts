@@ -11,8 +11,6 @@ export interface PaymentPlan {
   popularPlan?: boolean;
 }
 
-
-
 // Payment request interface
 export interface CreatePaymentRequest {
   cardNumber:string;
@@ -23,6 +21,25 @@ export interface CreatePaymentRequest {
     expiryMonth?: number;
     expiryYear?: number;
     saveCard:boolean
+}
+
+// Card interface
+export interface SavedCard {
+  id: string;
+  cardNumber: string; // Likely masked/last 4 digits only
+  cardHolderName: string;
+  expiryMonth: number;
+  expiryYear: number;
+  brand?: string;
+  isDefault?: boolean;
+  status:string;
+}
+
+// Payment with existing card request interface
+export interface ExistingCardPaymentRequest {
+  amount: number;
+  saveCard:boolean;
+  // Add any other fields needed for the request
 }
 
 export const paymentApi = baseApi.injectEndpoints({
@@ -36,12 +53,36 @@ export const paymentApi = baseApi.injectEndpoints({
       }),
     }),
 
-   
+    // Make payment with existing card
+    payWithExistingCard: builder.mutation<any, { cardId: number; payload: ExistingCardPaymentRequest }>({
+      query: ({ cardId, payload }) => ({
+        url: `/payments/exist-card/${cardId}`,
+        method: 'POST',
+        body: payload,
+      }),
+    }),
+
+    // New endpoint to get saved cards
+    getSavedCards: builder.query<SavedCard[], void>({
+      query: () => ({
+        url: '/payments/card',
+        method: 'GET',
+      }),
+    }),
+
+    // Delete a saved card
+    deleteCard: builder.mutation<{ success: boolean }, number>({
+      query: (cardId) => ({
+        url: `/payments/card/${cardId}`,
+        method: 'DELETE',
+      }),
+    }),
   }),
 });
 
 export const {
-  
   useCreatePaymentMutation,
- 
+  useGetSavedCardsQuery,
+  useDeleteCardMutation,
+  usePayWithExistingCardMutation,
 } = paymentApi; 

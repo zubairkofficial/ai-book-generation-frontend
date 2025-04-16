@@ -1,0 +1,28 @@
+/* Add this to your CSS file */
+.category-slider .slick-dots {
+    bottom: -30px;
+  }
+  
+  .category-slider .slick-dots li button:before {
+    font-size: 8px;
+    color: #fbbf24;
+    opacity: 0.5;
+  }
+  
+  .category-slider .slick-dots li.slick-active button:before {
+    opacity: 1;
+    color: #f59e0b;
+  }
+  
+  .category-slider .slick-prev,
+  .category-slider .slick-next {
+    z-index: 10;
+  }
+  
+  .category-slider .slick-prev {
+    left: -10px;
+  }
+  
+  .category-slider .slick-next {
+    right: -10px;
+  }

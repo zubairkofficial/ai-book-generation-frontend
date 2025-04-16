@@ -1,0 +1,71 @@
+/* Add to your global CSS or component styles */
+
+.package-slider .slick-track {
+    display: flex;
+    gap: 16px;
+    padding: 8px 0 16px;
+}
+
+.package-slider .slick-slide {
+    height: auto;
+    opacity: 0.5;
+    transform: scale(0.9);
+    transition: all 0.3s ease;
+}
+
+.package-slider .slick-slide>div {
+    height: 100%;
+}
+
+.package-slider .slick-center {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.package-slider .slick-prev,
+.package-slider .slick-next {
+    z-index: 10;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.package-slider .slick-prev:hover,
+.package-slider .slick-next:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.package-slider .slick-prev:before,
+.package-slider .slick-next:before {
+    font-family: 'slick';
+    color: #d97706;
+    opacity: 0.9;
+}
+
+.package-slider .slick-dots {
+    bottom: -5px;
+}
+
+.package-slider .slick-dots li button:before {
+    font-size: 8px;
+    color: #d97706;
+    opacity: 0.4;
+}
+
+.package-slider .slick-dots li.slick-active button:before {
+    opacity: 0.9;
+    color: #d97706;
+}
+
+@media (max-width: 768px) {
+    .package-slider .slick-prev {
+        left: -10px;
+    }
+    .package-slider .slick-next {
+        right: -10px;
+    }
+}

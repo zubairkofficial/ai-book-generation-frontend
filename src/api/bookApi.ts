@@ -219,6 +219,12 @@ export const bookApi = baseApi.injectEndpoints({
         method: 'GET',
       }),
     }),
+    landingFetchBooks: builder.query({
+      query: () => ({
+        url: '/book-generation/landing/all',
+        method: 'GET',
+      }),
+    }),
     fetchBooksByType: builder.query<FetchBooksResponse, { status?: BookStatus }>({
       query: ({ status = BookStatus.DRAFT }) => ({
         url: `/book-generation/search/${status}`,
@@ -434,6 +440,7 @@ getBookHtmlContent: builder.query<any, number>({
 export const {
   useLazyGetBookHtmlContentQuery,
   useFetchBooksQuery, // Hook to fetch all books
+  useLandingFetchBooksQuery, // Hook to fetch all books
   useFetchBooksByTypeQuery, // Hook to fetch all books
   useGenerateBookMutation, // Hook to generate a new book
   useCreateChapterMutation, // Hook to generate a new book

@@ -9,6 +9,7 @@ export interface UserInterface {
     password: string;
     phoneNumber: string | null;
     isEmailVerified: boolean;
+    availableAmount:number;
     twoFactorSecret: string | null;
     role: string;
   }

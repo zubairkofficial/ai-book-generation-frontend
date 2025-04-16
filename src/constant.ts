@@ -1,7 +1,7 @@
 //baseUrl
-// export const BASE_URl="http://localhost:3000/api/v1"
+export const BASE_URl="http://localhost:3000/api/v1"
 //live url
-export const BASE_URl="http://54.167.10.76/backend/api/v1"
+// export const BASE_URl="http://54.167.10.76/backend/api/v1"
 export enum ToastType {
     SUCCESS = 'success',
     ERROR = 'error',
@@ -59,3 +59,93 @@ export const NAV_STYLES = {
   }
 };
 
+export const BookGenresWithImages = [
+  {
+    name: "Fiction",
+    image: "/images/fiction.jpg"
+  },
+  {
+    name: "Non-Fiction",
+    image: "/images/non-fiction.jpg"
+  },
+  {
+    name: "Mystery",
+    image: "/images/mystery.jpg"
+  },
+  {
+    name: "Science Fiction",
+    image: "/images/science-fiction.jpg"
+  },
+  {
+    name: "Fantasy",
+    image: "/images/fantasy.jpg"
+  },
+  {
+    name: "Romance",
+    image: "/images/romance.jpg"
+  },
+  {
+    name: "Business",
+    image: "/images/business.jpg"
+  },
+  {
+    name: "Professional",
+    image: "/images/professional.jpg"
+  },
+  {
+    name: "Education",
+    image: "/images/education.jpg"
+  },
+  {
+    name: "Health",
+    image: "/images/health.jpg"
+  },
+  {
+    name: "History",
+    image: "/images/history.jpg"
+  },
+  {
+    name: "Literature",
+    image: "/images/literature.jpg"
+  },
+  {
+    name: "Travel",
+    image: "/images/travel.jpg"
+  },
+  {
+    name: "Technology",
+    image: "/images/technology.jpg"
+  },
+  {
+    name: "Sports",
+    image: "/images/sports.jpg"
+  },
+  {
+    name: "Science",
+    image: "/images/science-fiction.jpg"
+  },
+  {
+    name: "Politics",
+    image: "/images/politics.jpg"
+  },
+  {
+    name: "Philosophy",
+    image: "/images/philosophy.jpg"
+  },
+  {
+    name: "Religion",
+    image: "/images/religion.jpg"
+  },
+  {
+    name: "Art",
+    image: "/images/art.jpg"
+  },
+  {
+    name: "Music",
+    image: "/images/music.jpg"
+  },
+  {
+    name: "Comedy",
+    image: "/images/comedy.jpg"
+  }
+];

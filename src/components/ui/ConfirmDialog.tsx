@@ -6,6 +6,7 @@ interface ConfirmDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
+  isLoading?: boolean;
   description: string;
   confirmText?: string;
   cancelText?: string;
@@ -16,6 +17,7 @@ const ConfirmDialog = ({
   onClose,
   onConfirm,
   title,
+  isLoading,
   description,
   confirmText = "Delete",
   cancelText = "Cancel"
@@ -31,7 +33,7 @@ const ConfirmDialog = ({
           <Button variant="outline" onClick={onClose}>
             {cancelText}
           </Button>
-          <Button variant="destructive" onClick={onConfirm}>
+          <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
             {confirmText}
           </Button>
         </DialogFooter>

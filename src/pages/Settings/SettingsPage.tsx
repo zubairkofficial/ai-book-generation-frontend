@@ -130,7 +130,7 @@ const SettingsPage = () => {
   const { data: apiKeyInfo,refetch:refetchApiKey } = useFetchApiKeysQuery(undefined, {
     skip: userInfo?.role !== "admin",
   });
-console.log("stripe_api_key",apiKeyInfo)
+console.log("stripe_key",apiKeyInfo)
   const [updateUser, { isLoading }] = useUpdateUserMutation();
   const { addToast } = useToast(); // Use custom toast hook
   const [updateApiKeys, { isLoading: isUpdatingKeys }] =
@@ -320,7 +320,7 @@ console.log("stripe_api_key",apiKeyInfo)
         ...(data.llmModel && { model: data.llmModel }),
         ...(data.openaiKey && { openai_key: data.openaiKey }),
         ...(data.falKey && { fal_ai: data.falKey }),
-        ...(data.stripeApiKey && { stripe_api_key: data.stripeApiKey }),
+        ...(data.stripeApiKey && { stripe_key: data.stripeApiKey }),
       };
 
       // Make both API calls if needed
@@ -670,11 +670,11 @@ console.log("stripe_api_key",apiKeyInfo)
                                   Stripe API Key:
                                 </span>
                                 <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                                {apiKeyInfo.stripe_api_key
-                                    ? `${apiKeyInfo.stripe_api_key.substring(
+                                {apiKeyInfo.stripe_key
+                                    ? `${apiKeyInfo.stripe_key.substring(
                                         0,
                                         4
-                                      )}...${apiKeyInfo.stripe_api_key.slice(-4)}`
+                                      )}...${apiKeyInfo.stripe_key.slice(-4)}`
                                     : "Not set"}
                                 </code>
                               </div>

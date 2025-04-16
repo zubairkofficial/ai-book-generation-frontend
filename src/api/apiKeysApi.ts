@@ -3,7 +3,7 @@ import { baseApi } from './baseApi';
 interface ApiKeysResponse {
   openai_key: string;
   fal_ai: string;
-  stripe_api_key: string;
+  stripe_key: string;
   model: string;
   id: number;
 }

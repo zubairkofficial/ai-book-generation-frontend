@@ -1,44 +1,58 @@
 import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Card } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { CreditCard, Coins, Shield, CheckCircle, ArrowRight } from 'lucide-react';
+import {  Coins, Shield, CheckCircle, ArrowRight } from 'lucide-react';
 import PaymentCard from '@/components/payment/PaymentCard';
 import { useToast } from '@/context/ToastContext';
 import { ToastType } from '@/constant';
-import { useCreatePaymentMutation } from '@/api/paymentApi';
+import { useCreatePaymentMutation, usePayWithExistingCardMutation } from '@/api/paymentApi';
 import { useNavigate } from 'react-router-dom';
+import { useUserMeQuery } from '@/api/userApi';
 
 const PaymentPage = () => {
   const [amount, setAmount] = useState('50');
+  const [selectedCardId, setSelectedCardId] = useState<string | undefined>(undefined);
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [createPayment, { isLoading }] = useCreatePaymentMutation();
-
+  const [existingCardPayment, { isLoading: isExistingCardLoading}] = usePayWithExistingCardMutation();
+  const { refetch: refetchUser } = useUserMeQuery();
+  
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount(e.target.value);
   };
 
   const handleAddCard = async (formData: any) => {
     try {
-      // Transform form data to match API requirements
-      const paymentData = {
-        cardNumber: formData.cardNumber.replace(/\s/g, ''),
-        cardHolderName: formData.cardName,
-        amount: parseFloat(amount),
-        currency: 'USD',
-        cvc: formData.cvc,
-        expiryMonth: parseInt(formData.expiryDate.split('/')[0], 10),
-        expiryYear: parseInt(`20${formData.expiryDate.split('/')[1]}`, 10),
-        saveCard: formData.saveCard
-      };
-
-      await createPayment(paymentData).unwrap();
+      console.log("paymentData========", formData);
+      await createPayment(formData).unwrap();
       addToast('Payment successful! Your account has been recharged.', ToastType.SUCCESS);
+      await refetchUser();
+      navigate(-1);
+    } catch (error: any) {
+      addToast(error?.data?.message || 'Payment failed. Please try again.', ToastType.ERROR);
+    }
+  };
+
+  const handleSavedCardSelect = (cardId: string) => {
+    setSelectedCardId(cardId);
+  };
+
+  const handleExistingCardPayment = async (cardId: number, paymentAmount: number, saveCard: boolean) => {
+    try {
+      const payload = {
+        amount: paymentAmount,
+        saveCard
+      };
       
-      // Redirect to homepage after successful payment
-      setTimeout(() => navigate('/home'), 2000);
+      await existingCardPayment({
+         cardId,
+        payload
+      }).unwrap();
       
+      addToast('Payment successful! Your account has been recharged.', ToastType.SUCCESS);
+      await refetchUser();
+      navigate(-1);
     } catch (error: any) {
       addToast(error?.data?.message || 'Payment failed. Please try again.', ToastType.ERROR);
     }
@@ -75,7 +89,10 @@ const PaymentPage = () => {
             <div className="lg:col-span-7">
               <PaymentCard
                 onAddNewCard={handleAddCard}
-                isLoading={isLoading}
+                onSavedMethodSelect={handleSavedCardSelect}
+                onExistingCardPayment={handleExistingCardPayment}
+                selectedMethodId={selectedCardId}
+                isLoading={isLoading || isExistingCardLoading}
                 amount={amount}
                 onAmountChange={handleAmountChange}
               />

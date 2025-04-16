@@ -33,6 +33,8 @@ import BookCoverDesign from "./pages/AIAssistant/BookCoverDesign";
 import WritingAssistant from "./pages/AIAssistant/WritingAssistant";
 import BookModal from "./pages/Book/BookModal";
 import PaymentPage from "./pages/Settings/PaymentPage";
+import SubscriptionPage from '@/pages/SubscriptionPage';
+import PackageManagementPage from '@/pages/admin/PackageManagementPage';
 
 function App() {
   const dispatch = useDispatch();
@@ -115,6 +117,8 @@ function App() {
               path="/presentation-slides"
               element={<PresentationSlidesPage />}
             />
+            <Route path="/subscription" element={<SubscriptionPage />} />
+            {user?.role === "admin" && (  <Route path="/admin/packages" element={<PackageManagementPage />} />)}
           </Route>
 
           {/* Response Page */}

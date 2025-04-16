@@ -12,6 +12,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
+
 import Layout from "@/components/layout/Layout";
 import {
   useFetchBooksQuery,
@@ -32,6 +33,8 @@ import {
 } from "@/components/ui/select";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/context/ToastContext";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 
 interface BookData {
   id: number;
@@ -57,6 +60,8 @@ interface BookData {
 export default function BookTable() {
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const {  user } = useSelector((state: RootState) => state.auth);
+ 
   const [selectedStatus, setSelectedStatus] = useState<BookStatus>(
     BookStatus.ALL
   );
@@ -280,6 +285,7 @@ console.log("first+++++++++", book.type === "complete" &&
                     Manage, organize and create your book collection
                   </p>
                 </div>
+               {/* {user?.role==="user" && */}
                 <Button
                   className="bg-amber-500 hover:bg-amber-600 text-white shadow-md transition-all duration-300 transform hover:scale-105"
                   onClick={() => navigate("/books/add")}
@@ -287,6 +293,7 @@ console.log("first+++++++++", book.type === "complete" &&
                   <Plus className="w-4 h-4 mr-2" />
                   Create New Book
                 </Button>
+                {/* } */}
               </div>
             </div>
 

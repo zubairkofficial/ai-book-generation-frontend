@@ -9,11 +9,9 @@ import { useToast } from '@/context/ToastContext'; // Import custom toast hook
 import { ToastType } from '@/constant';
 
 import { useGenerateBookMutation } from "@/api/authApi";
-import DOMPurify from "dompurify"; // For sanitizing HTML
 import * as yup from "yup"; // Import Yup
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
-import { useCreateChapterMutation, useFetchBooksQuery } from "@/api/bookApi";
 import ChapterConfiguration from './ChapterConfiguration';
 import { ArrowLeft, ArrowRight, Loader2, Wand2 } from 'lucide-react';
 import { AlertCircle } from 'lucide-react';
