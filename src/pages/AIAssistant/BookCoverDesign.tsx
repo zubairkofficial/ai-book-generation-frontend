@@ -95,7 +95,7 @@ const BookCoverDesign = () => {
       setGeneratedContent(response.information.coreIdea);
       addToast('Cover design generated successfully!', 'success');
     } catch (error) {
-      addToast('Failed to generate cover design', 'error');
+      addToast(error.data.message.message??'Failed to generate cover design', 'error');
     } finally {
       setIsGenerating(false);
     }

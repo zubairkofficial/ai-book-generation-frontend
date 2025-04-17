@@ -30,6 +30,7 @@ const packageSchema = z.object({
   imageLimit: z.number().int().positive({ message: "Image limit must be a positive integer" }),
   modelType: z.string().min(3, { message: "Model type must be specified" }),
   imageModelType: z.string().min(3, { message: "Image model type must be specified" }),
+  imageModelURL: z.string().url({ message: "Must be a valid URL" }).optional().or(z.literal('')),
   isActive: z.boolean(),
   features: z.record(z.string(), z.string()).optional(),
 });
@@ -163,6 +164,7 @@ const PackageManagementPage = () => {
     setValue("imageLimit", pkg.imageLimit);
     setValue("modelType", pkg.modelType);
     setValue("imageModelType", pkg.imageModelType);
+    setValue("imageModelURL", pkg.imageModelURL || '');
     setValue("isActive", pkg.isActive);
     
     // Set features
@@ -360,6 +362,18 @@ const PackageManagementPage = () => {
                       />
                       {errors.imageModelType && (
                         <p className="mt-1 text-sm text-red-600">{errors.imageModelType.message}</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Image Model URL</label>
+                      <Input
+                        {...register("imageModelURL")}
+                        placeholder="e.g. https://api.example.com/image-model"
+                        className={errors.imageModelURL ? "border-red-300 focus:ring-red-500" : "focus:ring-amber-500"}
+                      />
+                      {errors.imageModelURL && (
+                        <p className="mt-1 text-sm text-red-600">{errors.imageModelURL.message}</p>
                       )}
                     </div>
                     
@@ -822,6 +836,14 @@ const PackageManagementPage = () => {
                                     <p className="text-xs text-gray-500">Image Model</p>
                                     <p className="font-medium text-amber-700 truncate" title={pkg.imageModelType}>{pkg.imageModelType}</p>
                                   </div>
+                                  {pkg.imageModelURL && (
+                                    <div className="bg-amber-50 rounded-md p-2 text-center col-span-2">
+                                      <p className="text-xs text-gray-500">Image Model URL</p>
+                                      <p className="font-medium text-amber-700 truncate" title={pkg.imageModelURL}>
+                                        {pkg.imageModelURL}
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
                                 
                                 <div className="mt-4">

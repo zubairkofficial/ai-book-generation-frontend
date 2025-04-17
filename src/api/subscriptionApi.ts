@@ -13,6 +13,7 @@ export interface SubscriptionPackage {
   imageLimit: number;
   modelType: string;
   imageModelType: string;
+  imageModelURL?: string;
   isActive: boolean;
   features: Record<string, string>;
 }
@@ -54,6 +55,7 @@ export interface CreatePackageRequest {
   imageLimit: number;
   modelType: string;
   imageModelType: string;
+  imageModelURL?: string;
   isActive: boolean;
   features: Record<string, string>;
 }
@@ -67,6 +69,7 @@ export interface UpdatePackageRequest {
   imageLimit: number;
   modelType: string;
   imageModelType: string;
+  imageModelURL?: string;
   isActive: boolean;
   features: Record<string, string>;
 }

@@ -88,7 +88,7 @@ const GenerateBookIdeas = () => {
       setGeneratedContent(response.response.generatedText);
       addToast("Ideas generated successfully!", "success");
     } catch (error) {
-      addToast("Failed to generate ideas", "error");
+      addToast(error?.data?.message.message??"Failed to generate ideas", "error");
     } finally {
       setIsGenerating(false);
     }

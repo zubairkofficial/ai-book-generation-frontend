@@ -74,7 +74,7 @@ const WritingAssistant = () => {
       setGeneratedContent(response.response.generatedText);
       addToast('Content generated successfully!', 'success');
     } catch (error) {
-      addToast('Failed to generate content', 'error');
+      addToast(error?.data.message.message??'Failed to generate content', 'error');
     } finally {
       setIsGenerating(false);
     }
