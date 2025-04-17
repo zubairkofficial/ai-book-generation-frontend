@@ -13,7 +13,7 @@ export const AIModelLabels: Record<AIModel, string> = {
 }; 
 
 export const AIDomainURLs: Record<AIModel, string> = {
-    [AIModel.FAL_AI_XL]: 'https://queue.fal.run/fal-ai/flux-pro/v1.1-ultra',
+    [AIModel.FAL_AI_XL]: 'https://queue.fal.run/fal-ai/flux-pro/v1.1',
     [AIModel.FAL_AI_V2]: 'https://queue.fal.run/fal-ai/flux-pro/v1.1',
     [AIModel.STABLE_DIFFUSION]: 'https://api.stablediffusionapi.com/v3',
     [AIModel.STABLE_DIFFUSION_XL]: 'https://api.stablediffusionapi.com/v3-xl'
