@@ -20,6 +20,8 @@ import { BookGenre } from '@/pages/Book/CreateBook';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { isErrorType } from '@/common/errorHandle';
+import { ToastType } from '@/constant';
 
 interface CoverDesignForm {
   bookTitle: string;
@@ -94,9 +96,21 @@ const BookCoverDesign = () => {
       setGeneratedImages(response.response.imageUrls);
       setGeneratedContent(response.information.coreIdea);
       addToast('Cover design generated successfully!', 'success');
-    } catch (error) {
-      addToast(error.data.message.message??'Failed to generate cover design', 'error');
-    } finally {
+    } catch (error: unknown) {
+      // Type guard to check if the error is of type ErrorType
+      if (isErrorType(error)) {
+          console.error("Failed to generate book cover image:", error);
+          addToast(error.data.message.message ?? "Failed to generate Book cover image. Please try again.", ToastType.ERROR);
+      } else if (error instanceof Error) {
+          // Handle generic Error
+          console.error("Failed to generate book cover image:", error.message);
+          addToast("Failed to generate Book cover image. Please try again.", ToastType.ERROR);
+      } else {
+          // Handle unexpected error types
+          console.error("Failed to generate book cover image: Unknown error occurred");
+          addToast("Failed to generate Book cover image. Please try again.", ToastType.ERROR);
+      }
+  } finally {
       setIsGenerating(false);
     }
   };

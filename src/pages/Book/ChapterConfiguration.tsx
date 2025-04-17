@@ -70,8 +70,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
         ? JSON.parse(previousContent || "{}")
         : previousContent || {};
     } catch (error) {
-      console.error("Error parsing book data:", error);
-      return {};
+      addToast(error.data.message.message,ToastType.ERROR)
     }
   };
 
@@ -323,6 +322,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
       setIsGenerating(false);
 
     } catch (error) {
+      addToast(error?.data.message.message??'Error generating chapter',ToastType.ERROR)
       console.error('Error generating chapter:', error);
       setIsGenerating(false);
     }

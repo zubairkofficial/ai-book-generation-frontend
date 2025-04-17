@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
-import { BASE_URl } from '@/constant';
+import { BASE_URl, ToastType } from '@/constant';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -95,6 +95,18 @@ const PresentationSlidesPage = () => {
     }
   };
   
+
+  function isErrorType(error: unknown): error is ErrorType {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'data' in error &&
+        typeof (error as any).data === 'object' &&
+        'message' in (error as any).data &&
+        typeof (error as any).data.message === 'object' &&
+        'message' in (error as any).data.message
+    );
+}
   // Handle "Select All" functionality
   const handleSelectAllChapters = () => {
     if (selectedChapters.length === chapters.length) {
@@ -149,10 +161,24 @@ const PresentationSlidesPage = () => {
       } else {
         throw new Error("Invalid response format");
       }
-    } catch (error) {
-      console.error("Failed to generate slides:", error);
-      addToast("Failed to generate presentation slides. Please try again.", "error");
-    } finally {
+    } catch (error: unknown) {
+      // Type guard to check if the error is of type ErrorType
+      if (isErrorType(error)) {
+          console.error("Failed to generate slides:", error);
+          addToast(error.data.message.message ?? "Failed to generate presentation slides. Please try again.", ToastType.ERROR);
+      } else if (error instanceof Error) {
+          // Handle generic Error
+          console.error("Failed to generate slides:", error.message);
+          addToast("Failed to generate presentation slides. Please try again.", ToastType.ERROR);
+      } else {
+          // Handle unexpected error types
+          console.error("Failed to generate slides: Unknown error occurred");
+          addToast("Failed to generate presentation slides. Please try again.", ToastType.ERROR);
+      }
+  }
+  
+  // Type guard to check if the error is of type ErrorType
+  finally {
       setIsGenerating(false);
     }
   };

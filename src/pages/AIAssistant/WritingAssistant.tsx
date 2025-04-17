@@ -18,6 +18,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AiAssistantType, BookGenre, TargetAudience } from '@/components/chat/ChatDialog';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { isErrorType } from '@/common/errorHandle';
+import { ToastType } from '@/constant';
 
 interface WritingForm {
   writingGoal: string;
@@ -73,9 +75,21 @@ const WritingAssistant = () => {
       
       setGeneratedContent(response.response.generatedText);
       addToast('Content generated successfully!', 'success');
-    } catch (error) {
-      addToast(error?.data.message.message??'Failed to generate content', 'error');
-    } finally {
+    } catch (error: unknown) {
+      // Type guard to check if the error is of type ErrorType
+      if (isErrorType(error)) {
+          console.error("Failed to generate slides:", error);
+          addToast(error.data.message.message ?? "Failed to generate writing assistant. Please try again.", ToastType.ERROR);
+      } else if (error instanceof Error) {
+          // Handle generic Error
+          console.error("Failed to generate slides:", error.message);
+          addToast("Failed to generate writing assistant. Please try again.", ToastType.ERROR);
+      } else {
+          // Handle unexpected error types
+          console.error("Failed to generate slides: Unknown error occurred");
+          addToast("Failed to generate writing assistant. Please try again.", ToastType.ERROR);
+      }
+  } finally {
       setIsGenerating(false);
     }
   };

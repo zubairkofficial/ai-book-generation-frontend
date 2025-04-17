@@ -32,6 +32,8 @@ import { useGetAiAssistantResponseMutation } from "@/api/aiAssistantApi";
 import { BookGenre, TargetAudience } from "@/components/chat/ChatDialog";
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { isErrorType } from "@/common/errorHandle";
+import { ToastType } from "@/constant";
 
 interface BookIdeaForm {
   genre: BookGenre;
@@ -87,9 +89,21 @@ const GenerateBookIdeas = () => {
 
       setGeneratedContent(response.response.generatedText);
       addToast("Ideas generated successfully!", "success");
-    } catch (error) {
-      addToast(error?.data?.message.message??"Failed to generate ideas", "error");
-    } finally {
+    } catch (error: unknown) {
+      // Type guard to check if the error is of type ErrorType
+      if (isErrorType(error)) {
+          console.error("Failed to generate book idea:", error);
+          addToast(error.data.message.message ?? "Failed to generate book idea. Please try again.", ToastType.ERROR);
+      } else if (error instanceof Error) {
+          // Handle generic Error
+          console.error("Failed to generate book idea:", error.message);
+          addToast("Failed to generate book idea. Please try again.", ToastType.ERROR);
+      } else {
+          // Handle unexpected error types
+          console.error("Failed to generate book idea: Unknown error occurred");
+          addToast("Failed to generate book idea. Please try again.", ToastType.ERROR);
+      }
+  } finally {
       setIsGenerating(false);
     }
   };

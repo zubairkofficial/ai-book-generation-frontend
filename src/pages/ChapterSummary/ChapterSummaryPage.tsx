@@ -40,7 +40,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/context/ToastContext";
-import { BASE_URl } from "@/constant";
+import { BASE_URl, ToastType } from "@/constant";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -53,6 +53,7 @@ import SummaryPDF from "./SummaryPDF";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
+import { isErrorType } from "@/common/errorHandle";
 
 interface BookData {
   id: number;
@@ -223,11 +224,22 @@ const ChapterSummaryPage = () => {
       }).unwrap();
       setIsGenerating(false);
       setIsStreamComplete(true);
-    } catch (error) {
-      console.error("Error generating summary:", error);
-      addToast("Error generating summary", "error");
-      setIsGenerating(false);
-    }
+    } catch (error: unknown) {
+      // Type guard to check if the error is of type ErrorType
+      if (isErrorType(error)) {
+          console.error("Failed to generate chapter summary:", error);
+          addToast(error.data.message.message ?? "Failed to generate chapter summary. Please try again.", ToastType.ERROR);
+      } else if (error instanceof Error) {
+          // Handle generic Error
+          console.error("Failed to generate chapter summary:", error.message);
+          addToast("Failed to generate chapter summary. Please try again.", ToastType.ERROR);
+      } else {
+          // Handle unexpected error types
+          console.error("Failed to generate chapter summary: Unknown error occurred");
+          addToast("Failed to generate chapter summary. Please try again.", ToastType.ERROR);
+      }
+      setIsGenerated(false)
+  }
   };
 
   // Handle applying the summary
