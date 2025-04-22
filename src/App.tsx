@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { jwtDecode } from "jwt-decode";
-import LandingPage from "./pages/LandingPage";
+import LandingPage from "./pages/LandingPage/LandingPage";
 import { ThemeProvider } from "next-themes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -21,7 +21,6 @@ import CreateBook from "./pages/Book/CreateBook";
 import HomePage from "./pages/HomePage";
 import SettingsPage from "./pages/Settings/SettingsPage";
 import { RootState } from "./store/store"; // Import RootState
-import ResponsePage from "@/pages/ResponsePage/ResponsePage";
 import BookModel from "./components/BookModel/BookModel";
 import "react-quill/dist/quill.snow.css";
 import "./styles/editor.css";
@@ -33,7 +32,7 @@ import BookCoverDesign from "./pages/AIAssistant/BookCoverDesign";
 import WritingAssistant from "./pages/AIAssistant/WritingAssistant";
 import BookModal from "./pages/Book/BookModal";
 import PaymentPage from "./pages/Settings/PaymentPage";
-import SubscriptionPage from '@/pages/SubscriptionPage';
+import SubscriptionPage from '@/pages/SubscriptionPage/SubscriptionPage';
 import PackageManagementPage from '@/pages/admin/PackageManagementPage';
 
 function App() {
@@ -109,7 +108,6 @@ function App() {
               <Route path="/analytics" element={<AnalyticsPage />} />
             )}{" "}
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/response" element={<ResponsePage />} />
             <Route path="/book-modal" element={<BookModel />} />
             <Route path="/book-modal/preview" element={<BookModal />} />
             <Route path="/chapter-summary" element={<ChapterSummaryPage />} />

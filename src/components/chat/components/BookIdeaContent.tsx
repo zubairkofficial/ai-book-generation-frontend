@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { ContentProps } from '../types/chat.types';
-import { AiAssistantType } from '../ChatDialog';
+import { AiAssistantType } from '@/types/enum';
 
 const BookIdeaContent = ({ responseData, generatedContent }: ContentProps) => {
   return (

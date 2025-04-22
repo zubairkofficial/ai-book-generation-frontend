@@ -1,4 +1,4 @@
-import { AiAssistantType } from "../ChatDialog";
+import { AiAssistantType } from "@/types/enum";
 
 export interface ChatDialogProps {
   isOpen: boolean;

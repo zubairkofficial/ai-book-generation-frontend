@@ -70,7 +70,8 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
         ? JSON.parse(previousContent || "{}")
         : previousContent || {};
     } catch (error) {
-      addToast(error.data.message.message,ToastType.ERROR)
+      console.error("Error parsing book data:", error);
+      return {};
     }
   };
 
@@ -306,9 +307,6 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
 
       // Send chapter generation request
       const res: any = await createBookChapter(payload).unwrap();
-      if (currentChapterNo == bookData.numberOfChapters) {
-        setIsBookCompleted(true);
-      }
       eventSource.close();
       if (res.statusCode == 200) {
         setConfig((prev) => ({
@@ -322,8 +320,8 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
       setIsGenerating(false);
 
     } catch (error) {
-      addToast(error?.data.message.message??'Error generating chapter',ToastType.ERROR)
       console.error('Error generating chapter:', error);
+      addToast(error?.data.message.message??"Error generating chapter",ToastType.ERROR)
       setIsGenerating(false);
     }
   };
@@ -503,9 +501,15 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
   };
 
   const handleNextChapter = () => {
-    setCurrentChapterNo((prev) => prev + 1);
-    setStreamedContent("");
-    setChapterImages([]);
+    if (currentChapterNo === bookData.numberOfChapters) {
+      // If this is the last chapter, set isBookCompleted to true instead of incrementing
+      setIsBookCompleted(true);
+    } else {
+      // For all other chapters, increment as normal
+      setCurrentChapterNo((prev) => prev + 1);
+      setStreamedContent("");
+      setChapterImages([]);
+    }
   };
 
   const handleRegenerateParagraph = async (
@@ -1173,7 +1177,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
                       disabled={isGenerating}
                     >
                       <div className="flex items-center gap-2">
-                        <span>Move Forward</span>
+                        <span>{currentChapterNo === bookData.numberOfChapters ? "Complete Chapters" : "Move Forward"}</span>
                         <ArrowRight className="w-4 h-4" />
                       </div>
                     </Button>

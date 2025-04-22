@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion } from 'framer-motion';
-import { Loader2, PlusCircle, Edit,  X, Check, Package, Shield, Sparkles, Zap, ChevronDown, Search } from 'lucide-react';
+import { Loader2, PlusCircle, Edit,  X, Check, Package, Shield, Sparkles, Zap, ChevronDown, Search, Fullscreen } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,26 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import './PackageManager.css';
 
+// Add these model option constants at the top of the file, after imports
+const AI_MODEL_OPTIONS = [
+  { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
+  { value: "gpt-4", label: "GPT-4" },
+  { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+  { value: "gpt-4o", label: "GPT-4o" }, // New model
+
+];
+
+const IMAGE_MODEL_OPTIONS = [
+  { value: "flux-lora", label: "Flux Lora", url: "https://queue.fal.run/fal-ai/flux-lora" },
+  { value: "flux-general", label: "Flux General", url: "https://queue.fal.run/fal-ai/flux-general" },
+  { value: "stable-diffusion-v35-large", label: "Stable Diffusion V35 Large", url: "https://queue.fal.run/fal-ai/ideogram/v2" },
+  { value: "ideogram-v2", label: "Ideogram V2", url: "https://queue.fal.run/fal-ai/ideogram/v2" },
+  { value: "flux-dev", label: "Flux dev", url: "https://queue.fal.run/fal-ai/flux/dev" },
+  { value: "hidream-i1-dev", label: "Hidream-i1-dev", url: "https://queue.fal.run/fal-ai/hidream-i1-dev" },
+  { value: "hidream-i1-full", label: "Hidream", url: "https://queue.fal.run/fal-ai/hidream-i1-full" },
+  { value: "recraft-V3", label: "Recraft V3", url: "https://queue.fal.run/fal-ai/recraft-v3" },
+];
+
 // Schema for package validation
 const packageSchema = z.object({
   name: z.string().min(3, { message: "Package name must be at least 3 characters" }),
@@ -30,7 +50,7 @@ const packageSchema = z.object({
   imageLimit: z.number().int().positive({ message: "Image limit must be a positive integer" }),
   modelType: z.string().min(3, { message: "Model type must be specified" }),
   imageModelType: z.string().min(3, { message: "Image model type must be specified" }),
-  imageModelURL: z.string().url({ message: "Must be a valid URL" }).optional().or(z.literal('')),
+  imageModelURL: z.string().url({ message: "Must be a valid URL" }).optional().or(z.literal('')).or(z.null()),
   isActive: z.boolean(),
   features: z.record(z.string(), z.string()).optional(),
 });
@@ -60,7 +80,7 @@ const PackageManagementPage = () => {
     feature: ''
   });
   
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<PackageFormValues>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, control, watch } = useForm<PackageFormValues>({
     resolver: zodResolver(packageSchema),
     defaultValues: {
       isActive: true,
@@ -215,6 +235,31 @@ const PackageManagementPage = () => {
     return <Check className="h-4 w-4 text-green-500 flex-shrink-0" />;
   };
 
+  // Handle image model type change
+  const handleImageModelTypeChange = (value: string) => {
+    setValue("imageModelType", value);
+    
+    // Auto-select URL based on selected image model
+    const selectedModel = IMAGE_MODEL_OPTIONS.find(model => model.value === value);
+    if (selectedModel) {
+      setValue("imageModelURL", selectedModel.url);
+    } else {
+      setValue("imageModelURL", "");
+    }
+  };
+
+  // Function to handle AI model type selection
+  const handleAIModelTypeChange = (value: string) => {
+    setValue("modelType", value);
+  };
+
+  // Check if the current image model needs a URL
+  const needsImageModelUrl = (imageModelType: string) => {
+    return IMAGE_MODEL_OPTIONS.some(model => 
+      model.value === imageModelType && model.url !== ""
+    );
+  };
+
   if (userLoading || packagesLoading) {
     return (
       <Layout>
@@ -343,11 +388,20 @@ const PackageManagementPage = () => {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">AI Model Type</label>
-                      <Input
+                      <select
                         {...register("modelType")}
-                        placeholder="e.g. Advanced AI Model"
-                        className={errors.modelType ? "border-red-300 focus:ring-red-500" : "focus:ring-amber-500"}
-                      />
+                        onChange={(e) => handleAIModelTypeChange(e.target.value)}
+                        className={`w-full h-10 px-3 rounded-md border ${
+                          errors.modelType ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-amber-500"
+                        } focus:outline-none focus:ring-2 focus:ring-opacity-50`}
+                      >
+                        <option value="">Select AI Model</option>
+                        {AI_MODEL_OPTIONS.map((model) => (
+                          <option key={model.value} value={model.value}>
+                            {model.label}
+                          </option>
+                        ))}
+                      </select>
                       {errors.modelType && (
                         <p className="mt-1 text-sm text-red-600">{errors.modelType.message}</p>
                       )}
@@ -355,37 +409,54 @@ const PackageManagementPage = () => {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Image Model Type</label>
-                      <Input
+                      <select
                         {...register("imageModelType")}
-                        placeholder="e.g. Premium Image Model"
-                        className={errors.imageModelType ? "border-red-300 focus:ring-red-500" : "focus:ring-amber-500"}
-                      />
+                        onChange={(e) => handleImageModelTypeChange(e.target.value)}
+                        className={`w-full h-10 px-3 rounded-md border ${
+                          errors.imageModelType ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-amber-500"
+                        } focus:outline-none focus:ring-2 focus:ring-opacity-50`}
+                      >
+                        <option value="">Select Image Model</option>
+                        {IMAGE_MODEL_OPTIONS.map((model) => (
+                          <option key={model.value} value={model.value}>
+                            {model.label}
+                          </option>
+                        ))}
+                      </select>
                       {errors.imageModelType && (
                         <p className="mt-1 text-sm text-red-600">{errors.imageModelType.message}</p>
                       )}
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Image Model URL</label>
-                      <Input
-                        {...register("imageModelURL")}
-                        placeholder="e.g. https://api.example.com/image-model"
-                        className={errors.imageModelURL ? "border-red-300 focus:ring-red-500" : "focus:ring-amber-500"}
-                      />
-                      {errors.imageModelURL && (
-                        <p className="mt-1 text-sm text-red-600">{errors.imageModelURL.message}</p>
-                      )}
-                    </div>
-                    
                     <div className="flex items-center space-x-2">
-                      <Switch 
-                        {...register("isActive")} 
-                        defaultChecked
-                        onCheckedChange={(checked) => setValue("isActive", checked)}
-                        className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                      <Controller
+                        name="isActive"
+                        control={control}
+                        render={({ field }) => (
+                          <Switch 
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                          />
+                        )}
                       />
                       <label className="text-sm font-medium text-gray-700">Active Package</label>
                     </div>
+                    {/* Only show Image Model URL field if needed */}
+                    {needsImageModelUrl(watch("imageModelType")) && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Image Model URL</label>
+                        <Input
+                          {...register("imageModelURL")}
+                          readOnly
+                          className={`bg-gray-50 ${
+                            errors.imageModelURL ? "border-red-300 focus:ring-red-500" : "focus:ring-amber-500"
+                          }`}
+                        />
+                        {errors.imageModelURL && (
+                          <p className="mt-1 text-sm text-red-600">{errors.imageModelURL.message}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   
                   <div>

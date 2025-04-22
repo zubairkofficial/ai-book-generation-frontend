@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -26,14 +25,13 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { AiAssistantType } from "@/components/chat/ChatDialog";
 import { useToast } from "@/context/ToastContext";
 import { useGetAiAssistantResponseMutation } from "@/api/aiAssistantApi";
-import { BookGenre, TargetAudience } from "@/components/chat/ChatDialog";
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { isErrorType } from "@/common/errorHandle";
 import { ToastType } from "@/constant";
+import { AiAssistantType, BookGenre,TargetAudience } from "@/types/enum";
 
 interface BookIdeaForm {
   genre: BookGenre;

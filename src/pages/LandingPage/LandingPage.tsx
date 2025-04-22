@@ -1,12 +1,12 @@
 import { Bell, Search,  ArrowRight } from "lucide-react"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import Slider from "react-slick"
 import "slick-carousel/slick/slick.css"
 import "slick-carousel/slick/slick-theme.css"
 import "./LandingPage.css"
 import { Button } from "@/components/ui/button"
 import { AnimatedSection } from "./AnimatedSection"
-import { BookCarousel } from "./BookCarousel"
+import { BookCarousel } from "../BookCarousel"
 import { Link, useNavigate } from "react-router-dom"
 import {  useLandingFetchBooksQuery } from "@/api/bookApi"
 import { BookGenresWithImages } from "@/constant"
@@ -14,6 +14,7 @@ import { motion } from "framer-motion"
 import { ChevronDown } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { PenTool, Star } from "lucide-react"
+import CircularGallery from "../CircularGallery/CircularGallery "
 
 export default function Home() {
 
@@ -22,6 +23,8 @@ export default function Home() {
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const intervalRef = useRef<number | null>(null);
   const navigate=useNavigate()
+  const [rotation, setRotation] = useState(0);
+
   useEffect(() => {
     const startCarousel = () => {
       intervalRef.current = window.setInterval(() => {
@@ -52,7 +55,7 @@ export default function Home() {
 
   
  
-
+  
   const handleGetStarted = () => {
     navigate("/home");
   };
@@ -150,7 +153,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-6 leading-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-amber-800"
+                className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 pb-4 leading-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-amber-800"
               >
                 Transform Ideas into Books with AI Magic
               </motion.h1>
@@ -166,7 +169,10 @@ export default function Home() {
             
             <div ref={carouselRef} className="overflow-x-auto rounded-xl shadow-lg border border-amber-100">
               {refetchAllBooks?.data ? (
-                <BookCarousel books={refetchAllBooks.data} />
+                <div style={{ height: '600px', position: 'relative' }}>
+                <CircularGallery bend={3} textColor="#ffffff" borderRadius={0.05} books={refetchAllBooks.data} />
+              </div>
+                // <BookCarousel books={refetchAllBooks.data} />
               ) : (
                 <div className="flex justify-center items-center h-64 bg-amber-50">
                   <div className="flex flex-col items-center gap-3">
@@ -311,7 +317,7 @@ export default function Home() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Feature cards like in AllBookTable */}
+              {/* AI-Powered Writing */}
               <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden bg-white border border-gray-100 p-6">
                 <div className="flex flex-col items-center text-center">
                   <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
@@ -326,11 +332,108 @@ export default function Home() {
                 </div>
               </Card>
               
-              {/* More feature cards... */}
+              {/* Cover Image Generation */}
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden bg-white border border-gray-100 p-6">
+                <div className="flex flex-col items-center text-center">
+                  <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-amber-600">
+                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                      <circle cx="9" cy="9" r="2" />
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-amber-600 transition-colors">Cover Image Generation</h3>
+                  <p className="text-gray-600 mb-4">Create stunning book covers instantly with our AI image generator tailored to your book's theme</p>
+                  <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full flex items-center justify-center">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 mr-1"></span>
+                    Premium Feature
+                  </span>
+                </div>
+              </Card>
+              
+              {/* Book Core Idea Generation */}
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden bg-white border border-gray-100 p-6">
+                <div className="flex flex-col items-center text-center">
+                  <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-amber-600">
+                      <path d="M2 12h1" />
+                      <path d="M6 12h1" />
+                      <path d="M10 12h1" />
+                      <path d="m15.6 8.5-.87.5m-5.37-3 .5.87m4 6.93.5.87m-6.37-3 .5-.87m12.74 3L12 8" />
+                      <path d="M20 12a8 8 0 0 0-8-8" />
+                      <path d="M12 20a8 8 0 0 0 8-8" />
+                      <circle cx="12" cy="12" r="2" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-amber-600 transition-colors">Core Idea Generation</h3>
+                  <p className="text-gray-600 mb-4">Develop compelling book concepts and storylines with AI-powered brainstorming assistance</p>
+                  <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full flex items-center justify-center">
+                    <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                    Basic Feature
+                  </span>
+                </div>
+              </Card>
+              
+              {/* Writing Tips & Guidance */}
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden bg-white border border-gray-100 p-6">
+                <div className="flex flex-col items-center text-center">
+                  <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-amber-600">
+                      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-amber-600 transition-colors">Writing Tips & Guidance</h3>
+                  <p className="text-gray-600 mb-4">Receive personalized suggestions to improve your writing style, structure, and narrative flow</p>
+                  <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full flex items-center justify-center">
+                    <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                    Basic Feature
+                  </span>
+                </div>
+              </Card>
+              
+              {/* Chapter Summary Generation */}
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden bg-white border border-gray-100 p-6">
+                <div className="flex flex-col items-center text-center">
+                  <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-amber-600">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <path d="M14 2v6h6" />
+                      <path d="M16 13H8" />
+                      <path d="M16 17H8" />
+                      <path d="M10 9H8" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-amber-600 transition-colors">Chapter Summaries</h3>
+                  <p className="text-gray-600 mb-4">Generate concise summaries of your chapters to maintain coherence and track narrative progression</p>
+                  <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full flex items-center justify-center">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 mr-1"></span>
+                    Premium Feature
+                  </span>
+                </div>
+              </Card>
+              
+              {/* Book Presentation Generation */}
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden bg-white border border-gray-100 p-6">
+                <div className="flex flex-col items-center text-center">
+                  <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-amber-600">
+                      <path d="M3 3v18h18" />
+                      <path d="m7 12 4-4 4 4 6-6" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-amber-600 transition-colors">Book Presentations</h3>
+                  <p className="text-gray-600 mb-4">Transform your book into compelling presentations for marketing, pitches, or reader engagement</p>
+                  <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full flex items-center justify-center">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 mr-1"></span>
+                    Premium Feature
+                  </span>
+                </div>
+              </Card>
             </div>
           </div>
         </section>
-        
+
         {/* Testimonials like HomePage "Top Contributor" */}
         <section className="py-16 bg-gradient-to-b from-amber-50/30 to-white">
           <div className="container mx-auto px-4">

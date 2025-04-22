@@ -138,6 +138,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
           }
         }
       } catch (error) {
+        addToast(error?.data.message.message??error.message,ToastType.ERROR)
         console.error("Error loading content:", error);
       } finally {
         setIsInitialLoading(false);
@@ -320,7 +321,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
      } 
     } catch (error: any) {
      console.error("Error generating content:", error);
-      addToast(error.message || "Failed to generate content", ToastType.ERROR);
+      addToast(error?.data.message.message || "Failed to generate content", ToastType.ERROR);
       setIsGenerating(false);
     }
   };

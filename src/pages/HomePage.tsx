@@ -1,5 +1,4 @@
 import Layout from '@/components/layout/Layout';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpenCheck,  Edit, Activity, User, Users, BookOpen, BarChart3, Library, PenTool, Star, Check } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts';

@@ -10,6 +10,7 @@ export interface SubscriptionPackage {
   price: string;
   durationDays: number;
   tokenLimit: number;
+  totalTokens:number;
   imageLimit: number;
   modelType: string;
   imageModelType: string;

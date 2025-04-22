@@ -1,6 +1,6 @@
 import Layout from '@/components/layout/Layout';
 import { motion } from 'framer-motion';
-import { Paintbrush, Wand2, Save, AlertCircle, Image as ImageIcon, Download, ArrowLeft, Loader2 } from 'lucide-react';
+import { Paintbrush, Wand2, Image as ImageIcon, Download, ArrowLeft, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -11,17 +11,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
 import { useGetAiAssistantResponseMutation } from '@/api/aiAssistantApi'; // You'll need to create this API endpoint
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { Textarea } from '@/components/ui/textarea';
-import { AiAssistantType } from '@/components/chat/ChatDialog';
-import { TargetAudience } from '@/components/chat/ChatDialog';
 import { BookGenre } from '@/pages/Book/CreateBook';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { isErrorType } from '@/common/errorHandle';
 import { ToastType } from '@/constant';
+import { AiAssistantType,TargetAudience } from '@/types/enum';
 
 interface CoverDesignForm {
   bookTitle: string;

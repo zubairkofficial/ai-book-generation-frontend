@@ -1,4 +1,4 @@
-import { AiAssistantType } from '@/components/chat/ChatDialog';
+import { AiAssistantType } from '@/types/enum';
 import { baseApi } from './baseApi';
 
 
