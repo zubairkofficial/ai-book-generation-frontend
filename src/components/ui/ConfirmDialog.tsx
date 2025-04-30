@@ -29,7 +29,6 @@ const ConfirmDialog = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="mt-2">
           <p className="text-sm text-gray-500">

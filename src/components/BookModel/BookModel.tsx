@@ -1,4 +1,4 @@
-import { Dispatch,  SetStateAction,  useState } from 'react';
+import { Dispatch,  SetStateAction,  useEffect,  useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Loader2,  Image,
@@ -78,7 +78,7 @@ const BookModel = () => {
 
   // Add navigate function
   const navigate = useNavigate();
-
+useEffect(()=>{refetchBook()},[])
   // Handle image update
   const handleImageUpdate = async (file: File, type: 'cover' | 'backCover') => {
     if (!bookId) return;

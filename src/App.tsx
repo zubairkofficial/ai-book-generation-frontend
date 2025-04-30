@@ -35,6 +35,7 @@ import PaymentPage from "./pages/Settings/PaymentPage";
 import SubscriptionPage from '@/pages/SubscriptionPage/SubscriptionPage';
 import PackageManagementPage from '@/pages/admin/PackageManagementPage';
 import FreeSubscriptionsPage from "@/components/admin/FreeSubscriptionsPage";
+import NotFoundPage from "./components/NotFound404";
 
 function App() {
   const dispatch = useDispatch();
@@ -124,7 +125,7 @@ function App() {
           {/* Response Page */}
 
           {/* 404 Not Found Page (Optional) */}
-          <Route path="*" element={<div>404 Not Found</div>} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
 
         {/* Toast Notifications */}

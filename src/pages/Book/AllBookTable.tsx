@@ -60,8 +60,7 @@ interface BookData {
 export default function BookTable() {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const {  user } = useSelector((state: RootState) => state.auth);
- 
+
   const [selectedStatus, setSelectedStatus] = useState<BookStatus>(
     BookStatus.ALL
   );

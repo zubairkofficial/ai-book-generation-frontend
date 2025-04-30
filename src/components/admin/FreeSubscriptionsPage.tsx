@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useGetFreeSubscriptionUsersQuery } from '@/api/userApi';
 import { useCreateAndUpdateFreeSubscriptionMutation } from '@/api/subscriptionApi';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,8 +22,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarIcon, Check, Edit2, Loader2, RefreshCw, X, Search, ChevronDown, Gift } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/context/ToastContext';
-
-import { Switch } from '@/components/ui/switch';
 import { ToastType } from '@/constant';
 
 const FreeSubscriptionsPage = () => {
@@ -52,6 +50,7 @@ const FreeSubscriptionsPage = () => {
     fullAccess: ''
   });
 
+  useEffect(()=>{refetch()},[])
   // Filter users based on search criteria
   const filteredUsers = useMemo(() => {
     if (!users) return [];
