@@ -21,6 +21,7 @@ const SubscriptionPage = () => {
   const { refetch:refetchUser } = useUserMeQuery();
   const { data: packages, isLoading: packagesLoading, error,refetch:refetchPackages } = useGetSubscriptionPackagesQuery({includeInactive: false});
   const { data: currentSubscriptions, refetch: refetchSubscription } = useGetCurrentSubscriptionQuery();
+  const [autoRenew, setAutoRenew] = useState(false);
   
   // if (packagesLoading) {
   //   return (
@@ -64,7 +65,7 @@ const SubscriptionPage = () => {
   // Check if this specific package is the user's current plan
   const isCurrentPlan = (packageId: number) => {
     if (!currentSubscriptions || !Array.isArray(currentSubscriptions)) return false;
-    return currentSubscriptions.some(sub => sub.package.id === packageId);
+    return currentSubscriptions.some(sub => sub.package?.id === packageId);
   };
 
   // Updated handler to show confirmation dialog first
@@ -81,7 +82,7 @@ const SubscriptionPage = () => {
       const payload = {
         packageId: selectedPackageId,
         cancelExisting: false,
-        autoRenew: false,
+        autoRenew: autoRenew,
       };
       
       const response = await subscribeToPackage(payload).unwrap();
@@ -178,7 +179,9 @@ const SubscriptionPage = () => {
             <div key={index} className="border-t pt-4 border-amber-100 first:border-0 first:pt-0">
               <div className="flex flex-col md:flex-row justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">{subscription.package.name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {subscription.package?.name || "Free Subscription"}
+                  </h3>
                   <p className="text-sm text-gray-600 mt-1">
                     Expires: {new Date(subscription.endDate).toLocaleDateString()} 
                     ({subscription.daysRemaining} days remaining)
@@ -186,16 +189,18 @@ const SubscriptionPage = () => {
                 </div>
                 <div className="mt-2 md:mt-0 flex items-center gap-2">
                   <span className="inline-flex bg-amber-100 text-amber-800 text-sm px-3 py-1 rounded-full font-medium">
-                    {subscription.package.modelType}
+                    {subscription.package?.modelType || "Basic"}
                   </span>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="border-red-300 text-red-600 hover:bg-red-50"
-                    onClick={() => handleUnsubscribeClick(subscription.package.id)}
-                  >
-                    Unsubscribe
-                  </Button>
+                  {subscription.package && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-red-300 text-red-600 hover:bg-red-50"
+                      onClick={() => handleUnsubscribeClick(subscription.package?.id)}
+                    >
+                      Unsubscribe
+                    </Button>
+                  )}
                 </div>
               </div>
               
@@ -416,6 +421,34 @@ const SubscriptionPage = () => {
           onConfirm={handleSubscribe}
           confirmText="Subscribe"
           onClose={() => setShowConfirmDialog(false)}
+          customContent={
+            <div className="mt-6 mb-2">
+              <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
+                <div className="flex items-center">
+                  <Clock className="h-5 w-5 text-amber-600 mr-2" />
+                  <span className="text-sm font-medium text-amber-800">Auto-Renewal</span>
+                </div>
+                <button
+                  type="button"
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    autoRenew ? 'bg-amber-500' : 'bg-gray-200'
+                  }`}
+                  onClick={() => setAutoRenew(!autoRenew)}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      autoRenew ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                {autoRenew
+                  ? "Your subscription will automatically renew at the end of the billing period."
+                  : "Your subscription will expire at the end of the billing period."}
+              </p>
+            </div>
+          }
         />
 
         {/* Unsubscribe Confirmation Dialog */}

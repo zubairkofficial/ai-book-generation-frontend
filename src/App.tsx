@@ -34,6 +34,7 @@ import BookModal from "./pages/Book/BookModal";
 import PaymentPage from "./pages/Settings/PaymentPage";
 import SubscriptionPage from '@/pages/SubscriptionPage/SubscriptionPage';
 import PackageManagementPage from '@/pages/admin/PackageManagementPage';
+import FreeSubscriptionsPage from "@/components/admin/FreeSubscriptionsPage";
 
 function App() {
   const dispatch = useDispatch();
@@ -117,6 +118,7 @@ function App() {
             />
             <Route path="/subscription" element={<SubscriptionPage />} />
             {user?.role === "admin" && (  <Route path="/admin/packages" element={<PackageManagementPage />} />)}
+            <Route path="/free-subscriptions" element={<FreeSubscriptionsPage />} />
           </Route>
 
           {/* Response Page */}

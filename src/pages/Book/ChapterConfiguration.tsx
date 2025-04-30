@@ -257,9 +257,13 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
         return;
       }
 
+      // Clear existing content first
       setIsGenerating(true);
       setStreamedContent("");
       setChapterImages([]);
+
+      // Create a variable to track accumulated content
+      let accumulatedContent = ""; 
 
       const payload = {
         minWords: +input.minLength,
@@ -272,17 +276,21 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
         noOfImages: Number(input.noOfImages),
       };
 
+      // Create a new EventSource for this generation
       const eventSource = new EventSource(
         `${BASE_URl}/book-chapter/chapter-stream?token=${token}`
       );
-
+      
+      // Handle streaming messages
       eventSource.onmessage = (event) => {
         try {
           if (!editableContent) {
             const data = JSON.parse(event.data);
             if (data.text) {
-              // For regeneration, we want to accumulate the content
-              handleStreamedContent(data.text);
+              // Add to our accumulation variable first
+              accumulatedContent += data.text;
+              // Set the complete content each time (not appending in the state update itself)
+              setStreamedContent(accumulatedContent);
             } else if (data.type === "image") {
               setChapterImages((prev) => [
                 ...prev,
@@ -295,10 +303,12 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
           }
         } catch (error) {
           // If parsing fails, treat it as raw text
-          handleStreamedContent(event.data);
+          accumulatedContent += event.data;
+          setStreamedContent(accumulatedContent);
         }
       };
 
+      // Handle errors 
       eventSource.onerror = (error) => {
         console.error("Stream error:", error);
         eventSource.close();
@@ -307,7 +317,10 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
 
       // Send chapter generation request
       const res: any = await createBookChapter(payload).unwrap();
+      
+      // Make sure to close the EventSource
       eventSource.close();
+      
       if (res.statusCode == 200) {
         setConfig((prev) => ({
           ...prev,
@@ -319,9 +332,9 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
 
       setIsGenerating(false);
 
-    } catch (error) {
+    } catch (error:any) {
       console.error('Error generating chapter:', error);
-      addToast(error?.data.message.message??"Error generating chapter",ToastType.ERROR)
+      addToast(error?.data?.message?.message ?? "Error generating chapter", ToastType.ERROR);
       setIsGenerating(false);
     }
   };

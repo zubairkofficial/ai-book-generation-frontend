@@ -10,6 +10,7 @@ interface ConfirmDialogProps {
   description: string;
   confirmText?: string;
   cancelText?: string;
+  customContent?: React.ReactNode;
 }
 
 const ConfirmDialog = ({
@@ -20,7 +21,8 @@ const ConfirmDialog = ({
   isLoading,
   description,
   confirmText = "Delete",
-  cancelText = "Cancel"
+  cancelText = "Cancel",
+  customContent
 }: ConfirmDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -29,6 +31,13 @@ const ConfirmDialog = ({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        <div className="mt-2">
+          <p className="text-sm text-gray-500">
+            {description}
+          </p>
+          
+          {customContent}
+        </div>
         <DialogFooter className="flex gap-2 justify-end mt-4">
           <Button variant="outline" onClick={onClose}>
             {cancelText}

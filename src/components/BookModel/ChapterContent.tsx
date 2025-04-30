@@ -255,65 +255,7 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
         </div>
       )}
 
-      {/* Chapter Summary Card */}
-      <div className="mt-12 relative">
-        <div className="absolute -top-3 left-6 bg-white px-3 py-1 rounded-full border shadow-sm">
-          <div className="flex items-center gap-2 text-amber-700">
-            <BookMarked className="w-4 h-4" />
-            <span className="text-sm font-semibold">Chapter Summary</span>
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-8 border border-amber-100 shadow-inner">
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 mt-1">
-              <AlignLeft className="w-5 h-5 text-amber-600" />
-            </div>
-            <div className="space-y-4">
-              {/* Key Points */}
-              <div className="prose prose-amber">
-                <p className="text-gray-700 leading-relaxed">
-                  {chapter.chapterSummary}
-                </p>
-              </div>
-              
-              {/* Quick Navigation */}
-              <div className="pt-4 border-t border-amber-200/50">
-                <div className="flex items-center justify-between text-sm">
-                  {/* Previous Chapter Button */}
-                  {hasPrevious && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handlePrevious}
-                      className="text-amber-700 hover:text-amber-900 hover:bg-amber-100"
-                    >
-                      ← Previous Chapter
-                    </Button>
-                  )}
-                  
-                  {/* Chapter Indicator */}
-                  <span className="text-amber-700 font-medium">
-                    Chapter {chapter.chapterNo} of {totalChapters}
-                  </span>
-                  
-                  {/* Next Chapter Button */}
-                  {hasNext && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleNext}
-                      className="text-amber-700 hover:text-amber-900 hover:bg-amber-100"
-                    >
-                      Next Chapter →
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+     
     </div>
   );
 }; 

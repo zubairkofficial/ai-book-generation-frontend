@@ -12,6 +12,7 @@ import {
   Home,
   CreditCard,
   Package,
+  Users,
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { logout } from '@/features/auth/authSlice';
@@ -53,6 +54,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       ? [
           { path: '/analytics', icon: <BarChart className="h-4 w-4" />, label: 'User Analytics' },
           { path: '/admin/packages', icon: <Package className="h-4 w-4" />, label: 'Manage Packages' },
+          { path: '/free-subscriptions', icon: <Users className="h-4 w-4" />, label: 'Free Subscriptions' },
         ] 
       : []),
     { path: '/settings', icon: <Settings className="h-4 w-4" />, label: 'Settings' },

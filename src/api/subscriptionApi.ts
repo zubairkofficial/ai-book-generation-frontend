@@ -75,6 +75,16 @@ export interface UpdatePackageRequest {
   features: Record<string, string>;
 }
 
+export interface FreeSubscriptionUpdateRequest {
+  userId: number;
+  startDate?: string;
+  endDate?: string;
+  tokenLimit?: number;
+  imageLimit?: number;
+  status?: string;
+  fullModelAccess?: boolean;
+}
+
 export const subscriptionApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createSubscriptionPackage: builder.mutation<SubscriptionPackage, CreatePackageRequest>({
@@ -136,6 +146,14 @@ export const subscriptionApi = baseApi.injectEndpoints({
         method: 'POST',
       }),
     }),
+
+    createAndUpdateFreeSubscription: builder.mutation<any, FreeSubscriptionUpdateRequest>({
+      query: (payload) => ({
+        url: '/subscription/free-subscription',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -148,4 +166,5 @@ export const {
   useDeleteSubscriptionPackageMutation,
   useUpdateSubscriptionPackageMutation,
   useUnsubscribeFromPackageMutation,
+  useCreateAndUpdateFreeSubscriptionMutation,
 } = subscriptionApi; 

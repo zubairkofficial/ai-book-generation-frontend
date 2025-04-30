@@ -18,7 +18,7 @@ export const useAuth = () => {
 
   const handleSignIn = async (credentials: { email: string; password: string }) => {
     try {
-      const response = await signIn(credentials).unwrap();
+      const response:any = await signIn(credentials).unwrap();
       dispatch(setCredentials(response));
     } catch (error) {
       console.error('Sign in failed:', error);

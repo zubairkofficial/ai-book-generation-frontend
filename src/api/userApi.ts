@@ -31,7 +31,13 @@ export const userMeApi = baseApi.injectEndpoints({
         method: 'GET',
       }),
     }),
+    getFreeSubscriptionUsers: builder.query<any[], void>({
+      query: () => ({
+        url: '/users/free-subscription',
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
-export const { useUserMeQuery, useUpdateUserMutation, useGetUserStatsQuery } = userMeApi;
+export const { useUserMeQuery, useUpdateUserMutation, useGetUserStatsQuery, useGetFreeSubscriptionUsersQuery } = userMeApi;
