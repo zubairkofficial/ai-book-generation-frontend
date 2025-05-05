@@ -169,22 +169,20 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
       if (selectedText) {
         const range = selection?.getRangeAt(0);
         let element = range?.commonAncestorContainer as Element;
-
+        
         // If the selected node is a text node, get its parent
         if (element.nodeType === Node.TEXT_NODE) {
           element = element.parentElement as Element;
         }
-
+        
         // Find the closest parent with data-paragraph-index
-        const paragraphElement = element.closest("[data-paragraph-index]");
+        const paragraphElement = element.closest('[data-paragraph-index]');
         if (paragraphElement) {
-          const index = parseInt(
-            paragraphElement.getAttribute("data-paragraph-index") || "-1"
-          );
+          const index = parseInt(paragraphElement.getAttribute('data-paragraph-index') || '-1');
           if (index !== -1) {
-            setSelectedContent({
-              text: selectedText,
-              index: index, // Store the actual index
+            setSelectedContent({ 
+              text: selectedText, 
+              index: index
             });
             setShowEditPanel(true);
           }
@@ -192,8 +190,8 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
       }
     };
 
-    document.addEventListener("mouseup", handleSelection);
-    return () => document.removeEventListener("mouseup", handleSelection);
+    document.addEventListener('mouseup', handleSelection);
+    return () => document.removeEventListener('mouseup', handleSelection);
   }, []);
 
   const handleChange = (name: keyof ChapterConfig, value: string) => {
@@ -404,64 +402,23 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
   // Function to format chapter content with proper error handling
   const formatChapterContent = (content: string) => {
     if (!content) return null;
-
-    try {
-      const parts = content.split(/###\s*/);
-
-      return parts
-        .map((part, index) => {
-          if (index === 0) {
-            return formatTextContent(part);
-          }
-
-          try {
-            const [imageInfo, ...textParts] = part.split("]");
-            if (!imageInfo) return null;
-
-            // Extract title and URL with improved regex patterns
-            const titleMatch = imageInfo.match(/###\s*"([^"]+)"|"([^"]+)"/);
-            const urlMatch = textParts[0].match(/\((http[^)]+)\)/);
-
-            if (!titleMatch || !urlMatch) return formatTextContent(part);
-
-            const title = (titleMatch[1] || titleMatch[2]).replace(
-              /^###\s*/,
-              ""
-            ); // Remove ### if present
-            const imageUrl = urlMatch[1];
-
-            // Get the remaining text after the URL
-            const remainingText = textParts[0].split(")")[1];
-
-            return (
-              <React.Fragment key={index}>
-                <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3 text-center">
-                  {title}
-                </h3>
-                <div className="my-6">
-                  <img
-                    src={formatImageUrl(imageUrl)}
-                    alt={title}
-                    className="rounded-lg shadow-lg w-full max-w-2xl mx-auto"
-                    onError={(e) => {
-                      console.error("Image failed to load:", imageUrl);
-                      e.currentTarget.src = "/placeholder-image.png";
-                      e.currentTarget.className =
-                        "rounded-lg shadow-lg w-full max-w-2xl mx-auto opacity-50";
-                    }}
-                  />
-                </div>
-                {formatTextContent(remainingText)}
-              </React.Fragment>
-            );
-          } catch (error) {
-            return formatTextContent(part);
-          }
-        })
-        .filter(Boolean);
-    } catch (error) {
-       return formatTextContent(content);
-    }
+    
+    // Split content into paragraphs
+    const paragraphs = content.split(/\n\n+/);
+    
+    return (
+      <div className="prose prose-amber max-w-none">
+        {paragraphs.map((paragraph, index) => (
+          <div 
+            key={index} 
+            data-paragraph-index={index}
+            className="mb-4 paragraph-selectable hover:bg-amber-50 p-1 rounded transition-colors"
+          >
+            <ReactMarkdown>{paragraph}</ReactMarkdown>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   // Function to format text content with error handling

@@ -2,6 +2,7 @@ import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import { Book, Globe, User, BookOpen, Bookmark, PenTool, Save, X } from 'lucide-react';
 import { useUpdateBookCoverMutation } from '@/api/bookApi';
 import { useToast } from '@/context/ToastContext';
+import { ToastType } from '@/constant';
 
 interface CoverContentProps {
   bookData: any;
@@ -62,8 +63,11 @@ export const CoverContent: React.FC<CoverContentProps> = ({ bookData, editMode, 
         refetchBook();
       }
     } catch (error) {
-      console.error(`Error updating ${field}:`, error);
-      addToast(`Failed to update ${field}`, "error");
+      if (error instanceof Error) {
+        addToast(error.message, ToastType.ERROR);
+      } else {
+        addToast("error on update book chapter", ToastType.ERROR);
+      }
     }
   };
 

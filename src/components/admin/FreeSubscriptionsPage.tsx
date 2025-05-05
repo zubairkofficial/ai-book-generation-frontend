@@ -47,7 +47,17 @@ const FreeSubscriptionsPage = () => {
     name: '',
     email: '',
     status: '',
-    fullAccess: ''
+    fullAccess: '',
+    startDate: '',
+    endDate: '',
+    minTokens: '',
+    maxTokens: '',
+    minTokensUsed: '',
+    maxTokensUsed: '',
+    minImages: '',
+    maxImages: '',
+    minImagesUsed: '',
+    maxImagesUsed: ''
   });
 
   useEffect(()=>{refetch()},[])
@@ -58,19 +68,58 @@ const FreeSubscriptionsPage = () => {
     return users.filter(user => {
       const userName = (user.name || '').toLowerCase();
       const userEmail = (user.email || '').toLowerCase();
-      const subscriptionStatus = user.userSubscription?.length > 0 
-        ? user.userSubscription[0].status.toLowerCase() 
-        : '';
-      const hasFullAccess = user.userSubscription?.length > 0 
-        ? (user.userSubscription[0].fullModelAccess ? 'enabled' : 'limited') 
-        : '';
+      const subscription = user.userSubscription?.length > 0 ? user.userSubscription[0] : null;
+      const subscriptionStatus = subscription ? subscription.status.toLowerCase() : '';
+      const hasFullAccess = subscription ? (subscription.fullModelAccess ? 'enabled' : 'limited') : '';
       
-      return (
-        (searchTerms.name === '' || userName.includes(searchTerms.name.toLowerCase())) &&
-          (searchTerms.email === '' || userEmail.includes(searchTerms.email.toLowerCase())) &&
-          (searchTerms.status === '' || subscriptionStatus === searchTerms.status.toLowerCase()) &&
-          (searchTerms.fullAccess === '' || hasFullAccess === searchTerms.fullAccess.toLowerCase())
-      );
+      // Get date values for comparison
+      const startDate = subscription ? new Date(subscription.startDate) : null;
+      const endDate = subscription ? new Date(subscription.endDate) : null;
+      
+      // Get numeric values for comparison
+      const tokensUsed = subscription ? subscription.tokensUsed : 0;
+      const totalTokens = subscription ? subscription.totalTokens : 0;
+      const imagesUsed = subscription ? subscription.imagesGenerated : 0;
+      const totalImages = subscription ? subscription.totalImages : 0;
+      
+      // Build filter conditions
+      const nameMatch = searchTerms.name === '' || userName.includes(searchTerms.name.toLowerCase());
+      const emailMatch = searchTerms.email === '' || userEmail.includes(searchTerms.email.toLowerCase());
+      const statusMatch = searchTerms.status === '' || subscriptionStatus === searchTerms.status.toLowerCase();
+      const accessMatch = searchTerms.fullAccess === '' || hasFullAccess === searchTerms.fullAccess.toLowerCase();
+      
+      // Date filters
+      const startDateMatch = !searchTerms.startDate || !startDate || 
+                             startDate >= new Date(searchTerms.startDate);
+      const endDateMatch = !searchTerms.endDate || !endDate || 
+                           endDate <= new Date(searchTerms.endDate);
+      
+      // Token filters
+      const minTokensMatch = !searchTerms.minTokens || 
+                             totalTokens >= parseInt(searchTerms.minTokens);
+      const maxTokensMatch = !searchTerms.maxTokens || 
+                             totalTokens <= parseInt(searchTerms.maxTokens);
+      const minTokensUsedMatch = !searchTerms.minTokensUsed || 
+                                tokensUsed >= parseInt(searchTerms.minTokensUsed);
+      const maxTokensUsedMatch = !searchTerms.maxTokensUsed || 
+                                tokensUsed <= parseInt(searchTerms.maxTokensUsed);
+      
+      // Image filters
+      const minImagesMatch = !searchTerms.minImages || 
+                             totalImages >= parseInt(searchTerms.minImages);
+      const maxImagesMatch = !searchTerms.maxImages || 
+                             totalImages <= parseInt(searchTerms.maxImages);
+      const minImagesUsedMatch = !searchTerms.minImagesUsed || 
+                                imagesUsed >= parseInt(searchTerms.minImagesUsed);
+      const maxImagesUsedMatch = !searchTerms.maxImagesUsed || 
+                                imagesUsed <= parseInt(searchTerms.maxImagesUsed);
+      
+      return nameMatch && emailMatch && statusMatch && accessMatch &&
+             startDateMatch && endDateMatch &&
+             minTokensMatch && maxTokensMatch &&
+             minTokensUsedMatch && maxTokensUsedMatch &&
+             minImagesMatch && maxImagesMatch &&
+             minImagesUsedMatch && maxImagesUsedMatch;
     });
   }, [users, searchTerms]);
 
@@ -159,6 +208,34 @@ const FreeSubscriptionsPage = () => {
     });
   };
 
+  // Add this function to handle more complex search filters
+  const handleAdvancedSearchToggle = () => {
+    setShowAdvancedSearch(!showAdvancedSearch);
+  };
+
+  // Add state for advanced search panel
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  
+  // Add this function to clear all search filters
+  const clearAllFilters = () => {
+    setSearchTerms({
+      name: '',
+      email: '',
+      status: '',
+      fullAccess: '',
+      startDate: '',
+      endDate: '',
+      minTokens: '',
+      maxTokens: '',
+      minTokensUsed: '',
+      maxTokensUsed: '',
+      minImages: '',
+      maxImages: '',
+      minImagesUsed: '',
+      maxImagesUsed: ''
+    });
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -239,12 +316,7 @@ const FreeSubscriptionsPage = () => {
                   <span className="text-xs font-medium text-gray-500 mr-2">Filters:</span>
                   <button 
                     className="text-xs text-amber-600 hover:text-amber-800 font-medium flex items-center"
-                    onClick={() => setSearchTerms({
-                      name: '',
-                      email: '',
-                      status: '',
-                      fullAccess: ''
-                    })}
+                    onClick={clearAllFilters}
                   >
                     Clear All
                   </button>
@@ -309,58 +381,198 @@ const FreeSubscriptionsPage = () => {
                     </div>
                   </div>
 
-                  {/* Model Access Filter Pill */}
-                  <div className="relative group hover:z-20">
-                    <div className={`px-3 py-1.5 text-sm rounded-full border flex items-center gap-1 cursor-pointer transition-all ${
-                      searchTerms.fullAccess
-                        ? searchTerms.fullAccess === 'enabled' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-100 border-gray-200 text-gray-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                    }`}>
-                      <span className={`w-2 h-2 rounded-full mr-2 ${
-                        searchTerms.fullAccess === 'enabled' 
-                          ? 'bg-green-500' 
-                          : searchTerms.fullAccess === 'limited' 
-                            ? 'bg-gray-400' 
-                            : 'bg-gray-300'
-                      }`}></span>
-                      {searchTerms.fullAccess ? `Access: ${searchTerms.fullAccess}` : 'Model Access'}
-                      <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+                 
+                </div>
+              </div>
+
+              {/* Advanced Search Toggle Button */}
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={handleAdvancedSearchToggle}
+                  className="text-sm flex items-center gap-2 border-amber-200 text-amber-700"
+                >
+                  {showAdvancedSearch ? (
+                    <>
+                      <ChevronDown className="h-4 w-4" />
+                      Hide Advanced Filters
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4" />
+                      Show Advanced Filters
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Advanced Search Panel */}
+              {showAdvancedSearch && (
+                <div className="mt-4 p-4 bg-amber-50/50 border border-amber-100 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Date Range Section */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium text-amber-800">Date Range</h3>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="startDate" className="text-xs">Start Date (from)</Label>
+                        <div className="relative">
+                          <CalendarIcon className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <Input
+                            id="startDate"
+                            type="date"
+                            value={searchTerms.startDate}
+                            onChange={(e) => handleSearchChange('startDate', e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="endDate" className="text-xs">End Date (until)</Label>
+                        <div className="relative">
+                          <CalendarIcon className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <Input
+                            id="endDate"
+                            type="date"
+                            value={searchTerms.endDate}
+                            onChange={(e) => handleSearchChange('endDate', e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
                     </div>
                     
-                    {/* Model Access Dropdown */}
-                    <div className="absolute left-0 top-full mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-10 
-                                  invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300 
-                                  cursor-default transform translate-y-1 group-hover:translate-y-0">
-                      <div className="absolute -top-3 left-0 right-0 h-3 bg-transparent"></div>
+                    {/* Token Limits Section */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium text-amber-800">Token Usage</h3>
                       
-                      <label className="text-xs font-medium text-gray-500 mb-1 block">Model Access</label>
-                      <div className="space-y-2">
-                        <button 
-                          className="w-full text-left px-3 py-2 rounded flex items-center bg-gray-50 hover:bg-green-50 text-sm transition-colors"
-                          onClick={() => handleSearchChange('fullAccess', 'enabled')}
-                        >
-                          <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-                          Full Access Enabled
-                        </button>
-                        <button 
-                          className="w-full text-left px-3 py-2 rounded flex items-center bg-gray-50 hover:bg-gray-100 text-sm transition-colors"
-                          onClick={() => handleSearchChange('fullAccess', 'limited')}
-                        >
-                          <span className="w-3 h-3 rounded-full bg-gray-400 mr-2"></span>
-                          Limited Access
-                        </button>
-                        <button 
-                          className="w-full text-left px-3 py-2 rounded flex items-center bg-gray-50 hover:bg-amber-50 text-sm transition-colors"
-                          onClick={() => handleSearchChange('fullAccess', '')}
-                        >
-                          <span className="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
-                          All Access Types
-                        </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="minTokens" className="text-xs">Min Total Tokens</Label>
+                          <Input
+                            id="minTokens"
+                            type="number"
+                            placeholder="Min"
+                            value={searchTerms.minTokens}
+                            onChange={(e) => handleSearchChange('minTokens', e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="maxTokens" className="text-xs">Max Total Tokens</Label>
+                          <Input
+                            id="maxTokens"
+                            type="number"
+                            placeholder="Max"
+                            value={searchTerms.maxTokens}
+                            onChange={(e) => handleSearchChange('maxTokens', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="minTokensUsed" className="text-xs">Min Tokens Used</Label>
+                          <Input
+                            id="minTokensUsed"
+                            type="number"
+                            placeholder="Min"
+                            value={searchTerms.minTokensUsed}
+                            onChange={(e) => handleSearchChange('minTokensUsed', e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="maxTokensUsed" className="text-xs">Max Tokens Used</Label>
+                          <Input
+                            id="maxTokensUsed"
+                            type="number"
+                            placeholder="Max"
+                            value={searchTerms.maxTokensUsed}
+                            onChange={(e) => handleSearchChange('maxTokensUsed', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Image Limits Section */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium text-amber-800">Image Usage</h3>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="minImages" className="text-xs">Min Total Images</Label>
+                          <Input
+                            id="minImages"
+                            type="number"
+                            placeholder="Min"
+                            value={searchTerms.minImages}
+                            onChange={(e) => handleSearchChange('minImages', e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="maxImages" className="text-xs">Max Total Images</Label>
+                          <Input
+                            id="maxImages"
+                            type="number"
+                            placeholder="Max"
+                            value={searchTerms.maxImages}
+                            onChange={(e) => handleSearchChange('maxImages', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="minImagesUsed" className="text-xs">Min Images Used</Label>
+                          <Input
+                            id="minImagesUsed"
+                            type="number"
+                            placeholder="Min"
+                            value={searchTerms.minImagesUsed}
+                            onChange={(e) => handleSearchChange('minImagesUsed', e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="maxImagesUsed" className="text-xs">Max Images Used</Label>
+                          <Input
+                            id="maxImagesUsed"
+                            type="number"
+                            placeholder="Max"
+                            value={searchTerms.maxImagesUsed}
+                            onChange={(e) => handleSearchChange('maxImagesUsed', e.target.value)}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Filter Actions */}
+                  <div className="flex justify-end mt-4 space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={clearAllFilters}
+                      className="border-red-200 text-red-600 hover:bg-red-50"
+                    >
+                      <X className="h-4 w-4 mr-1.5" />
+                      Clear All Filters
+                    </Button>
+                    
+                    <Button 
+                      size="sm"
+                      onClick={() => setShowAdvancedSearch(false)}
+                      className="bg-amber-500 hover:bg-amber-600 text-white"
+                    >
+                      <Check className="h-4 w-4 mr-1.5" />
+                      Apply Filters
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <div className="overflow-x-auto">
               <Table className="min-w-full border-collapse">
@@ -641,19 +853,7 @@ const FreeSubscriptionsPage = () => {
                   </Select>
                 </div>
 
-                {/* <div className="flex items-center justify-between border p-3 rounded-md bg-amber-50/40">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="fullModelAccess" className="text-sm font-medium">Full Model Access</Label>
-                    <p className="text-xs text-gray-500">Allow user to access all AI and image models</p>
-                  </div>
-                  <Switch 
-                    id="fullModelAccess"
-                    checked={formData.fullModelAccess}
-                    onCheckedChange={(checked) => setFormData({ ...formData, fullModelAccess: checked })}
-                    className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
-                  />
-                </div> */}
-              </div>
+               </div>
               
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Subscription Period</h3>
@@ -676,7 +876,7 @@ const FreeSubscriptionsPage = () => {
                             mode="single"
                             selected={formData.startDate ? new Date(formData.startDate) : undefined}
                             onSelect={(date) => date && setFormData({ ...formData, startDate: date.toISOString() })}
-                            initialFocus
+                            autoFocus
                           />
                         </PopoverContent>
                       </Popover>

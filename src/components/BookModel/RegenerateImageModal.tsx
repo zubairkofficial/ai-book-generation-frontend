@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRegenerateImageMutation } from '@/api/bookApi';
 import { Loader2 } from 'lucide-react';
+import { ToastType } from '@/constant';
+import { useToast } from '@/context/ToastContext';
 
 interface RegenerateImageModalProps {
   isOpen: boolean;
@@ -15,7 +17,7 @@ interface RegenerateImageModalProps {
 export const RegenerateImageModal = ({ isOpen, onClose, bookId, imageType }: RegenerateImageModalProps) => {
   const [additionalContent, setAdditionalContent] = useState('');
   const [regenerateImage, { isLoading }] = useRegenerateImageMutation();
-
+const {addToast}=useToast()
   // Add validation and debug logging
   console.log("RegenerateImageModal props:", { isOpen, bookId, imageType });
 
@@ -40,7 +42,12 @@ export const RegenerateImageModal = ({ isOpen, onClose, bookId, imageType }: Reg
 
       setAdditionalContent('');
       onClose();
-    } catch (error) {
+    } catch (error:any) {
+      if (error instanceof Error) {
+        addToast(error.message, ToastType.ERROR);
+      } else {
+        addToast(error.data.message.message, ToastType.ERROR);
+      }
       console.error('Failed to regenerate image:', error);
     }
   };
