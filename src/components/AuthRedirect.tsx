@@ -11,6 +11,7 @@ const AuthRedirect = () => {
     if (token) {
       navigate('/home'); // Redirect to home if the user is logged in
     }
+    navigate("/auth")
   }, [token, navigate]);
 
   return null;

@@ -160,7 +160,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           <Button
             onClick={handleLogout}
             variant="ghost"
-            className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50/80 transition-all duration-200 rounded-lg py-2 text-sm"
+            className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50/80 transition-all duration-200 rounded-lg py-2 text-sm -z-50"
           >
             <LogOut className="mr-2 h-4 w-4" />
             Logout

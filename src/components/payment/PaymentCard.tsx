@@ -474,7 +474,7 @@ const PaymentCard = ({
                     Processing...
                   </>
                 ) : (
-                  'Add Payment Method'
+                  'Purchase'
                 )}
               </Button>
             </div>

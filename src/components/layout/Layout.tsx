@@ -62,7 +62,7 @@ const Layout = ({ children }: LayoutProps) => {
     </main>
   
     {/* Footer */}
-    <footer className="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-md text-center text-sm text-gray-500 z-50">
+    <footer className="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-md text-center text-sm text-gray-500 z-10">
       <p> 2025 AI Book Legacy. All rights reserved.</p>
     </footer>
   </div>

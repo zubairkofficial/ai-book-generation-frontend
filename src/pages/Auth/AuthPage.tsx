@@ -32,7 +32,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex">
       {/* Form Section (30%) */}
       <div className="w-full md:w-[30%] p-8 flex flex-col justify-center">
-        <Link to="/" className="flex items-center gap-2 mb-8">
+        <Link to="/home" className="flex items-center gap-2 mb-8">
           <BookOpenCheck className="h-8 w-8 text-amber-500" />
           <span className="text-2xl font-bold">AI BOOK GENERATION</span>
         </Link>

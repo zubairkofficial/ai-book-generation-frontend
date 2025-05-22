@@ -508,7 +508,7 @@ class App {
   ) {
     document.documentElement.classList.remove("no-js");
     this.container = container;
-    this.scroll = { ease: 0.05, current: 0, target: 0, last: 0 };
+    this.scroll = { ease: 0.001, current: 0, target: 0, last: 0 };
     this.onCheckDebounce = debounce(this.onCheck.bind(this), 200);
     this.books = books;
     this.createRenderer();
@@ -646,7 +646,7 @@ class App {
   onTouchMove(e: MouseEvent | TouchEvent) {
     if (!this.isDown) return;
     const x = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const distance = (this.start - x) * 0.05;
+    const distance = (this.start - x) * 0.02;
     this.scroll.target = (this.scroll.position ?? 0) + distance;
   }
 
@@ -656,7 +656,7 @@ class App {
   }
 
   onWheel() {
-    this.scroll.target += 2;
+    this.scroll.target += 1;
     this.onCheckDebounce();
   }
 

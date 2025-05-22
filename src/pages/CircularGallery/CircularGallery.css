@@ -3,8 +3,13 @@
     height: 100%;
     overflow: hidden;
     cursor: grab;
-  }
-  
-  .circular-gallery:active {
+    transition: transform 0.3s ease-out;
+}
+
+.circular-gallery:active {
     cursor: grabbing;
-  }
+}
+
+.circular-gallery * {
+    transition: transform 0.3s ease-out;
+}

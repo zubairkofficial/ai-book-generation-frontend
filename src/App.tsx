@@ -63,7 +63,7 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
+          {/* <Route path="/" element={<LandingPage />} /> */}
 
           {/* Auth: Sign In / Sign Up */}
           <Route
@@ -93,6 +93,7 @@ function App() {
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
+           <Route path="/" element={<HomePage />} />
             <Route path="/books/add" element={<CreateBook />} />
             <Route
               path="/books/chapter-configuration"
@@ -119,7 +120,7 @@ function App() {
             />
             <Route path="/subscription" element={<SubscriptionPage />} />
             {user?.role === "admin" && (  <Route path="/admin/packages" element={<PackageManagementPage />} />)}
-            <Route path="/free-subscriptions" element={<FreeSubscriptionsPage />} />
+            {user?.role === "admin" && (<Route path="/free-subscriptions" element={<FreeSubscriptionsPage />} />)}
           </Route>
 
           {/* Response Page */}
