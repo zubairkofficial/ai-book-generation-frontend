@@ -1,7 +1,7 @@
 //baseUrl
 // export const BASE_URl="http://localhost:3000/api/v1"
 //live url
-export const BASE_URl="http://154.209.157.115/backend/api/v1"
+export const BASE_URl="http://aibooklegacy.com/backend/api/v1"
 export enum ToastType {
     SUCCESS = 'success',
     ERROR = 'error',
