@@ -66,55 +66,49 @@ const FreeSubscriptionsPage = () => {
     if (!users) return [];
     
     return users.filter(user => {
+      const searchQuery = (searchTerms.name || searchTerms.email || '').toLowerCase();
       const userName = (user.name || '').toLowerCase();
       const userEmail = (user.email || '').toLowerCase();
       const subscription = user.userSubscription?.length > 0 ? user.userSubscription[0] : null;
       const subscriptionStatus = subscription ? subscription.status.toLowerCase() : '';
       const hasFullAccess = subscription ? (subscription.fullModelAccess ? 'enabled' : 'limited') : '';
       
-      // Get date values for comparison
-      const startDate = subscription ? new Date(subscription.startDate) : null;
-      const endDate = subscription ? new Date(subscription.endDate) : null;
-      
-      // Get numeric values for comparison
-      const tokensUsed = subscription ? subscription.tokensUsed : 0;
-      const totalTokens = subscription ? subscription.totalTokens : 0;
-      const imagesUsed = subscription ? subscription.imagesGenerated : 0;
-      const totalImages = subscription ? subscription.totalImages : 0;
+      // Combined name or email search
+      const searchMatch = searchQuery === '' || 
+                         userName.includes(searchQuery) || 
+                         userEmail.includes(searchQuery);
       
       // Build filter conditions
-      const nameMatch = searchTerms.name === '' || userName.includes(searchTerms.name.toLowerCase());
-      const emailMatch = searchTerms.email === '' || userEmail.includes(searchTerms.email.toLowerCase());
       const statusMatch = searchTerms.status === '' || subscriptionStatus === searchTerms.status.toLowerCase();
       const accessMatch = searchTerms.fullAccess === '' || hasFullAccess === searchTerms.fullAccess.toLowerCase();
       
       // Date filters
-      const startDateMatch = !searchTerms.startDate || !startDate || 
-                             startDate >= new Date(searchTerms.startDate);
-      const endDateMatch = !searchTerms.endDate || !endDate || 
-                           endDate <= new Date(searchTerms.endDate);
+      const startDateMatch = !searchTerms.startDate || !subscription?.startDate || 
+                             new Date(subscription.startDate) >= new Date(searchTerms.startDate);
+      const endDateMatch = !searchTerms.endDate || !subscription?.endDate || 
+                           new Date(subscription.endDate) <= new Date(searchTerms.endDate);
       
       // Token filters
       const minTokensMatch = !searchTerms.minTokens || 
-                             totalTokens >= parseInt(searchTerms.minTokens);
+                             (subscription?.totalTokens || 0) >= parseInt(searchTerms.minTokens);
       const maxTokensMatch = !searchTerms.maxTokens || 
-                             totalTokens <= parseInt(searchTerms.maxTokens);
+                             (subscription?.totalTokens || 0) <= parseInt(searchTerms.maxTokens);
       const minTokensUsedMatch = !searchTerms.minTokensUsed || 
-                                tokensUsed >= parseInt(searchTerms.minTokensUsed);
+                                (subscription?.tokensUsed || 0) >= parseInt(searchTerms.minTokensUsed);
       const maxTokensUsedMatch = !searchTerms.maxTokensUsed || 
-                                tokensUsed <= parseInt(searchTerms.maxTokensUsed);
+                                (subscription?.tokensUsed || 0) <= parseInt(searchTerms.maxTokensUsed);
       
       // Image filters
       const minImagesMatch = !searchTerms.minImages || 
-                             totalImages >= parseInt(searchTerms.minImages);
+                             (subscription?.totalImages || 0) >= parseInt(searchTerms.minImages);
       const maxImagesMatch = !searchTerms.maxImages || 
-                             totalImages <= parseInt(searchTerms.maxImages);
+                             (subscription?.totalImages || 0) <= parseInt(searchTerms.maxImages);
       const minImagesUsedMatch = !searchTerms.minImagesUsed || 
-                                imagesUsed >= parseInt(searchTerms.minImagesUsed);
+                                (subscription?.imagesGenerated || 0) >= parseInt(searchTerms.minImagesUsed);
       const maxImagesUsedMatch = !searchTerms.maxImagesUsed || 
-                                imagesUsed <= parseInt(searchTerms.maxImagesUsed);
+                                (subscription?.imagesGenerated || 0) <= parseInt(searchTerms.maxImagesUsed);
       
-      return nameMatch && emailMatch && statusMatch && accessMatch &&
+      return searchMatch && statusMatch && accessMatch &&
              startDateMatch && endDateMatch &&
              minTokensMatch && maxTokensMatch &&
              minTokensUsedMatch && maxTokensUsedMatch &&
@@ -295,19 +289,24 @@ const FreeSubscriptionsPage = () => {
                 
                 {/* Search Input */}
                 <div className="relative w-full md:w-72">
-      <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-      <input
-        type="text"
-        placeholder="Search by name or email..."
-        className="pl-10 pr-4 w-full h-10 text-sm rounded-md border border-gray-300 bg-white shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500 transition duration-200 ease-in-out"
-        value={searchTerms.name || searchTerms.email}
-        onChange={(e) => {
-          handleSearchChange('name', e.target.value);
-          handleSearchChange('email', e.target.value);
-        }}
-        aria-label="Search by name or email"
-      />
-    </div>
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    className="pl-10 pr-4 w-full h-10 text-sm rounded-md border border-gray-300 bg-white shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500 transition duration-200 ease-in-out"
+                    value={searchTerms.name || searchTerms.email || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSearchTerms(prev => ({
+                        ...prev,
+                        name: value,
+                        email: value
+                      }));
+                      setCurrentPage(1); // Reset to first page when search changes
+                    }}
+                    aria-label="Search by name or email"
+                  />
+                </div>
               </div>
 
               {/* Filter Pills - Professional dropdown filters */}
