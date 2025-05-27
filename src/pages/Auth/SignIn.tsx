@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSignInMutation } from '@/api/authApi';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setCredentials } from '@/features/auth/authSlice';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import * as yup from 'yup';
 import { useToast } from '@/context/ToastContext'; // Import custom toast hook
 import ToastContainer from '@/components/Toast/ToastContainer';
 import { ToastType } from '@/constant';
+import { RootState } from '@/store/store';
 
 // Define the validation schema using yup
 const signInSchema = yup.object().shape({
@@ -31,12 +32,17 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [showPassword, setShowPassword] = useState(false);
-
+const { token } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const [signIn] = useSignInMutation();
   const navigate = useNavigate();
   const { addToast } = useToast(); // Use custom toast hook
 
+  useEffect(() => {
+  if (token) {
+    navigate('/home');
+  }
+}, [token, navigate]);
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
