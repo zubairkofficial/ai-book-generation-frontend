@@ -44,10 +44,10 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   };
   const navItems = [
     { path: '/home', icon: <Home className="h-4 w-4" />, label: 'Home' },
-    { path: '/books', icon: <BookOpen className="h-4 w-4" />, label: 'My Books' },
+    { path: '/books', icon: <BookOpen className="h-4 w-4" />,  label: user?.role === 'admin' ? 'AI Books' : 'My Books' },
     { path: '/ai-assistant', icon: <Sparkles className="h-4 w-4" />, label: 'AI Assistant' },
     ...(user?.role === 'user' ?[
-    { path: '/payment', icon: <CreditCard className="h-4 w-4" />, label: 'Recharge' },
+    // { path: '/payment', icon: <CreditCard className="h-4 w-4" />, label: 'Recharge' },
     { path: '/subscription', icon: <Package className="h-4 w-4" />, label: 'Subscription Plans' },
  ]:[]),
     // Conditionally include admin links for admin users
@@ -142,18 +142,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                 <p className="text-xs text-gray-500 truncate">
                   {trimText(user?.email ?? "", 18)}
                 </p>
-                {user?.role=="user" && <div className="mt-1 flex items-center gap-1.5 bg-amber-50 rounded-md px-2 py-0.5">
-                  <CreditCard className="h-3 w-3 text-amber-600" />
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs text-gray-600">Balance:</span>
-                    <span className="text-xs font-medium text-amber-700">
-                      {user?.availableAmount?.toLocaleString('en-US', {
-                        style: 'currency',
-                        currency: 'USD',
-                      }) ?? '0.00'}
-                    </span>
-                  </div>
-                </div>}
+               
               </div>
             </div>
           </div>

@@ -32,44 +32,44 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [showPassword, setShowPassword] = useState(false);
-const { token } = useSelector((state: RootState) => state.auth);
+  const { token } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const [signIn] = useSignInMutation();
   const navigate = useNavigate();
   const { addToast } = useToast(); // Use custom toast hook
 
   useEffect(() => {
-  if (token) {
-    navigate('/home');
-  }
-}, [token, navigate]);
-  // Handle form submission
+    if (token) {
+      navigate('/home');
+    }
+  }, [token, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      // Validate the form data against the schema
       await signInSchema.validate({ email, password }, { abortEarly: false });
-      setErrors({}); // Clear any previous errors
-
+      setErrors({});
       setIsLoading(true);
 
-      // Call the sign-in API
       const response: any = await signIn({ email, password }).unwrap();
 
-      if (response?.message === 'OTP sent to your email. Please verify to log in.') {
-        navigate(`/verify-otp`, { state: { email } });
-        addToast('Please verify your OTP to log in.', ToastType.WARNING); // Custom toast
+      // Handle different response statuses
+      if (response?.status === 'UNVERIFIED_EMAIL') {
+        navigate('/auth/verify-email', { state: { email } });
+        addToast('Please verify your email first. Check your inbox for verification link.', ToastType.WARNING);
+      } else if (response?.status === 'OTP_REQUIRED') {
+        navigate('/verify-otp', { state: { email } });
+        addToast('Please verify your OTP to log in.', ToastType.WARNING);
       } else if (response?.accessToken) {
         dispatch(setCredentials(response));
         navigate('/home');
-        addToast('Logged in successfully!', ToastType.SUCCESS); // Custom toast
+        addToast('Logged in successfully!', ToastType.SUCCESS);
       } else {
-        addToast('Unexpected response. Please try again.', ToastType.ERROR); // Custom toast
+        addToast('Unexpected response. Please try again.', ToastType.ERROR);
       }
     } catch (error: any) {
       if (error.name === 'ValidationError') {
-        // Handle validation errors
         const validationErrors: { [key: string]: string } = {};
         error.inner.forEach((err: yup.ValidationError) => {
           if (err.path) {
@@ -78,9 +78,8 @@ const { token } = useSelector((state: RootState) => state.auth);
         });
         setErrors(validationErrors);
       } else {
-        // Handle API errors
         console.error('Sign-in failed:', error);
-        addToast(error?.data?.message || 'Invalid email or password. Please try again.', ToastType.ERROR); // Custom toast
+        addToast(error?.data?.message || 'Invalid email or password. Please try again.', ToastType.ERROR);
       }
     } finally {
       setIsLoading(false);
@@ -97,7 +96,7 @@ const { token } = useSelector((state: RootState) => state.auth);
           <Input
             id="email"
             type="email"
-            placeholder="you@example.com"
+            // placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={`w-full ${
@@ -110,7 +109,7 @@ const { token } = useSelector((state: RootState) => state.auth);
         </div>
 
         {/* Password Field */}
-        <div className="space-y-2 relative">
+        <div className="relative space-y-2">
           <Label htmlFor="password">Password</Label>
           <Input
             id="password"
@@ -124,7 +123,7 @@ const { token } = useSelector((state: RootState) => state.auth);
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 top-6 text-amber-500 right-3 flex items-center "
+            className="absolute inset-y-0 top-6 text-amber-500 right-3 flex items-center"
           >
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>

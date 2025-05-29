@@ -1,22 +1,27 @@
 import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { motion } from 'framer-motion';
-import {  Coins, Shield, CheckCircle, ArrowRight } from 'lucide-react';
+import { Coins, Shield, CheckCircle, ArrowRight, Clock } from 'lucide-react';
 import PaymentCard from '@/components/payment/PaymentCard';
 import { useToast } from '@/context/ToastContext';
 import { ToastType } from '@/constant';
 import { useCreatePaymentMutation, usePayWithExistingCardMutation } from '@/api/paymentApi';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserMeQuery } from '@/api/userApi';
+import { useSubscribeToPackageMutation } from '@/api/subscriptionApi';
 
 const PaymentPage = () => {
-  const [amount, setAmount] = useState('50');
+  const location = useLocation();
+  const packageData = location.state?.packageData;
+  const [amount, setAmount] = useState(packageData?.price || '50');
+  const [autoRenew, setAutoRenew] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | undefined>(undefined);
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [createPayment, { isLoading }] = useCreatePaymentMutation();
   const [existingCardPayment, { isLoading: isExistingCardLoading}] = usePayWithExistingCardMutation();
   const { refetch: refetchUser } = useUserMeQuery();
+  const [subscribeToPackage] = useSubscribeToPackageMutation();
   
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount(e.target.value);
@@ -24,8 +29,16 @@ const PaymentPage = () => {
 
   const handleAddCard = async (formData: any) => {
     try {
-      console.log("paymentData========", formData);
       await createPayment(formData).unwrap();
+      
+      if (packageData) {
+        await subscribeToPackage({
+          packageId: packageData.id,
+          cancelExisting: false,
+          autoRenew
+        }).unwrap();
+      }
+      
       addToast('Payment successful! Your account has been recharged.', ToastType.SUCCESS);
       await refetchUser();
       navigate(-1);
@@ -49,6 +62,14 @@ const PaymentPage = () => {
          cardId,
         payload
       }).unwrap();
+
+      if (packageData) {
+        await subscribeToPackage({
+          packageId: packageData.id,
+          cancelExisting: false,
+          autoRenew
+        }).unwrap();
+      }
       
       addToast('Payment successful! Your account has been recharged.', ToastType.SUCCESS);
       await refetchUser();
@@ -73,10 +94,10 @@ const PaymentPage = () => {
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 flex items-center">
                     <Coins className="w-8 h-8 mr-3 text-amber-500" />
-                    Account Recharge
+                    {packageData ? 'Subscribe to Package' : 'Account Recharge'}
                   </h1>
                   <p className="text-sm text-gray-600">
-                    Add credits to your account securely and quickly
+                    {packageData ? `Subscribe to ${packageData.name} package` : 'Add credits to your account securely and quickly'}
                   </p>
                 </div>
               </div>
@@ -87,6 +108,54 @@ const PaymentPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Payment form column */}
             <div className="lg:col-span-7">
+              {packageData && (
+                <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-amber-800">Package Details</h3>
+                    <span className="text-2xl font-bold text-amber-600">${packageData.price}</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Duration:</span>
+                      <span className="font-medium">{packageData.durationDays} days</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Token Limit:</span>
+                      <span className="font-medium">{packageData.tokenLimit.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Image Limit:</span>
+                      <span className="font-medium">{packageData.imageLimit.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-amber-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Clock className="h-5 w-5 text-amber-600 mr-2" />
+                        <span className="text-sm font-medium text-amber-800">Auto-Renewal</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          autoRenew ? 'bg-amber-500' : 'bg-gray-200'
+                        }`}
+                        onClick={() => setAutoRenew(!autoRenew)}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            autoRenew ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      {autoRenew
+                        ? "Your subscription will automatically renew at the end of the billing period."
+                        : "Your subscription will expire at the end of the billing period."}
+                    </p>
+                  </div>
+                </div>
+              )}
               <PaymentCard
                 onAddNewCard={handleAddCard}
                 onSavedMethodSelect={handleSavedCardSelect}
@@ -95,6 +164,7 @@ const PaymentPage = () => {
                 isLoading={isLoading || isExistingCardLoading}
                 amount={amount}
                 onAmountChange={handleAmountChange}
+                disableAmountChange={!!packageData}
               />
             </div>
 

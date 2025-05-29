@@ -61,8 +61,8 @@ export default function SignUp() {
       // Call the sign-up API
      const response= await signUp({ email, password, name }).unwrap();
      if(response){ 
-     navigate('/home'); // Redirect to home page
-     addToast('Account created successfully!',ToastType.SUCCESS);
+      addToast('Account created successfully! Please check your email for verification.',ToastType.SUCCESS);
+      navigate('/auth/verify-email', { state: { email } });
 }
     } catch (error: any) {
       if (error.name === 'ValidationError') {
@@ -95,7 +95,7 @@ export default function SignUp() {
           <Label htmlFor="name">Name</Label>
           <Input
             id="name"
-            placeholder="John Doe"
+            // placeholder="John Doe"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -105,7 +105,7 @@ export default function SignUp() {
           {/* <Label htmlFor="phoneNumber">Phone Number</Label>
           <Input
             id="phoneNumber"
-            placeholder="+1XXXXXXXXXX"
+            // placeholder="+1XXXXXXXXXX"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
           />
@@ -116,7 +116,7 @@ export default function SignUp() {
           <Input
             id="email"
             type="email"
-            placeholder="you@example.com"
+            // placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />

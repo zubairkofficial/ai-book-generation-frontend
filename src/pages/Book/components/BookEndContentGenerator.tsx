@@ -137,7 +137,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
             setGenerated(prev => ({ ...prev, index: true }));
           }
         }
-      } catch (error) {
+      } catch (error:any) {
         addToast(error?.data.message.message??error.message,ToastType.ERROR)
         console.error("Error loading content:", error);
       } finally {

@@ -39,11 +39,11 @@ export const ModelPromptTab = () => {
     resolver: yupResolver(settingsSchema),
     defaultValues: {
       coverImagePrompt: '',
-      coverImageModel: null,
-      coverImageDomainUrl: null,
+      coverImageModel: AIModel.FLUX_DEV,
+      coverImageDomainUrl: AIDomainURLs[AIModel.FLUX_DEV],
       chapterImagePrompt: '',
-      chapterImageModel: null,
-      chapterImageDomainUrl: null,
+      chapterImageModel: AIModel.FLUX_DEV,
+      chapterImageDomainUrl: AIDomainURLs[AIModel.FLUX_DEV],
     }
   });
 

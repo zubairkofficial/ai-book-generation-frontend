@@ -18,6 +18,7 @@ interface PaymentCardProps {
   isLoading?: boolean;
   amount?: string;
   onAmountChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  disableAmountChange?: boolean;
 }
 
 const PaymentCard = ({
@@ -28,6 +29,7 @@ const PaymentCard = ({
   isLoading = false,
   amount = '',
   onAmountChange,
+  disableAmountChange = false
 }: PaymentCardProps) => {
   const [cardDetails, setCardDetails] = useState({
     cardNumber: '',
@@ -214,13 +216,14 @@ const PaymentCard = ({
                 type="number"
                 placeholder="50.00"
                 min="50"
-                value={onAmountChange ? amount : cardDetails.amount}
-                onChange={handleInputChange}
+                value={amount}
+                onChange={onAmountChange}
+                disabled={disableAmountChange}
                 className={`pl-10 transition-all duration-200 ${
                   errors.amount 
                     ? 'border-red-300 focus:ring-red-200' 
                     : 'border-gray-200 focus:border-amber-300 focus:ring-amber-100'
-                } group-hover:border-amber-200`}
+                } group-hover:border-amber-200 ${disableAmountChange ? 'bg-gray-100' : ''}`}
               />
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-hover:text-amber-500 transition-colors">$</span>
               
@@ -244,9 +247,9 @@ const PaymentCard = ({
             )}
             
             {/* Additional UI for payment summary */}
-            {(onAmountChange ? amount : cardDetails.amount) && 
+            {amount && 
              !errors.amount && 
-             parseFloat(onAmountChange ? amount : cardDetails.amount) >= 50 && (
+             parseFloat(amount) >= 50 && (
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -254,7 +257,7 @@ const PaymentCard = ({
               >
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Amount:</span>
-                  <span className="font-medium text-gray-800">${onAmountChange ? amount : cardDetails.amount}</span>
+                  <span className="font-medium text-gray-800">${amount}</span>
                 </div>
                 <div className="flex justify-between text-sm mt-1">
                   <span className="text-gray-600">Processing fee:</span>
@@ -263,7 +266,7 @@ const PaymentCard = ({
                 <div className="border-t border-amber-200 my-2"></div>
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-gray-700">Total:</span>
-                  <span className="text-amber-600">${onAmountChange ? amount : cardDetails.amount}</span>
+                  <span className="text-amber-600">${amount}</span>
                 </div>
               </motion.div>
             )}

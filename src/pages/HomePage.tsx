@@ -13,11 +13,73 @@ import { Clock, Shield, Book } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGetRecentActivityQuery } from '@/api/bookApi';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useGetCurrentSubscriptionQuery } from '@/api/subscriptionApi';
+import { useGetTokenSettingsQuery } from '@/api/tokenSettingsApi';
 
-// Update the interface to match the provided data structure
+// Add interfaces at the top of the file
+interface SubscriptionUsage {
+  package: {
+    id: number;
+    name: string;
+  };
+  tokensUsed: number;
+  tokenLimit: number;
+  imagesGenerated: number;
+  imageLimit: number;
+  startDate: string;
+  endDate: string;
+  daysRemaining: number;
+}
 
+interface TokenSettings {
+  creditsPerModelToken: number;
+  creditsPerImageToken: number;
+}
 
+// Add these interfaces at the top with the other interfaces
+interface Credits {
+  gptCredits: {
+    used: number;
+    total: number;
+  };
+  imageCredits: {
+    used: number;
+    total: number;
+  };
+}
 
+interface BaseCard {
+  id: number;
+  metric: string;
+  icon: JSX.Element;
+  navigateTo?: string;
+}
+
+interface AdminCard extends BaseCard {
+  value: number;
+  type: 'admin';
+  bgcolor: string;
+  iconbg: string;
+  iconcolor: string;
+}
+
+interface UserCard extends BaseCard {
+  value: number;
+  type: 'user';
+  color: 'amber' | 'green' | 'blue';
+}
+
+interface WelcomeCard extends BaseCard {
+  value: string;
+  subValue: string;
+  role: string;
+  joinDate: string;
+  verificationStatus: boolean;
+  isWelcomeCard: true;
+  credits: Credits | null;
+}
+
+type StatCard = AdminCard | UserCard;
 
 const HomePage = () => {
   const {data:statsData,refetch:refetchStats}:any = useGetAllStatsQuery();
@@ -25,6 +87,8 @@ const HomePage = () => {
   const { data: userStatsData, refetch: refetchUserStats } = useGetUserStatsQuery();
   const { data: analyticsData } = useGetAllUserAnalyticsQuery();
   const { data: recentActivityData, isLoading: isLoadingActivity,refetch:refetchRecentActivity } = useGetRecentActivityQuery();
+  const { data: currentSubscriptions } = useGetCurrentSubscriptionQuery();
+  const { data: tokenSettings } = useGetTokenSettingsQuery();
   const navigate = useNavigate();
   
   // Format date safely
@@ -69,6 +133,9 @@ const HomePage = () => {
   const getUserWelcomeCard = () => {
     if (!userData) return null;
     
+    // Get the active subscription if any
+    const activeSubscription = currentSubscriptions?.find(sub => sub.package?.id);
+    
     return {
       id: 1,
       metric: 'Welcome to AI Book Legacy',
@@ -78,16 +145,27 @@ const HomePage = () => {
       joinDate: userData?.createdAt,
       verificationStatus: userData?.isEmailVerified ?? false,
       icon: <User className="h-6 w-6 text-amber-500" />,
-      isWelcomeCard: true
+      isWelcomeCard: true,
+      credits: activeSubscription ? {
+        gptCredits: {
+          used: Math.round(activeSubscription.tokensUsed / Number(tokenSettings?.creditsPerModelToken || 1)),
+          total: activeSubscription.tokenLimit,
+        },
+        imageCredits: {
+          used: Math.round(activeSubscription.imagesGenerated / Number(tokenSettings?.creditsPerImageToken || 1)),
+          total: activeSubscription.imageLimit,
+        }
+      } : null
     };
   };
   
-  const getUserStatCards = () => {
+  const getUserStatCards = (): UserCard[] => {
     if (!userStatsData) return [];
     
     return [
       {
         id: 2,
+        type: 'user',
         metric: 'Total Books',
         value: userStatsData.stats.totalBooks ?? 0,
         icon: <BookOpenCheck className="h-6 w-6 text-amber-500" />,
@@ -96,6 +174,7 @@ const HomePage = () => {
       },
       {
         id: 3,
+        type: 'user',
         metric: 'Completed Books',
         value: userStatsData.stats.completed ?? 0,
         icon: <Check className="h-6 w-6 text-green-500" />,
@@ -104,6 +183,7 @@ const HomePage = () => {
       },
       {
         id: 4,
+        type: 'user',
         metric: 'In Progress',
         value: userStatsData.stats.inProgress ?? 0,
         icon: <Edit className="h-6 w-6 text-blue-500" />,
@@ -114,10 +194,11 @@ const HomePage = () => {
   };
 
   // Admin-specific stats cards
-  const getAdminStatsCards = () => {
+  const getAdminStatsCards = (): AdminCard[] => {
     return [
       {
         id: 1,
+        type: 'admin',
         metric: 'Total Users',
         value: processedAnalytics?.totalUsers || 0,
         icon: <Users className="w-6 h-6 text-blue-600" />,
@@ -128,6 +209,7 @@ const HomePage = () => {
       },
       {
         id: 2,
+        type: 'admin',
         metric: 'Total Books',
         value: processedAnalytics?.totalBooks || 0,
         icon: <BookOpen className="w-6 h-6 text-amber-600" />,
@@ -138,6 +220,7 @@ const HomePage = () => {
       },
       {
         id: 3,
+        type: 'admin',
         metric: 'Active Users',
         value: processedAnalytics?.activeUsers || 0,
         icon: <PenTool className="w-6 h-6 text-green-600" />,
@@ -148,6 +231,7 @@ const HomePage = () => {
       },
       {
         id: 4,
+        type: 'admin',
         metric: 'Avg Books/User',
         value: processedAnalytics?.avgBooksPerUser || 0,
         icon: <BarChart3 className="w-6 h-6 text-purple-600" />,
@@ -401,6 +485,45 @@ const HomePage = () => {
                     Joined: {formatDate(welcomeCard.joinDate)}
                   </Badge>
                 </div>
+
+                {welcomeCard.credits && (
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div className="bg-amber-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500">GPT Credits</p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-sm font-medium text-amber-700">
+                          {welcomeCard.credits.gptCredits.used.toLocaleString()} / {welcomeCard.credits.gptCredits.total.toLocaleString()}
+                        </span>
+                        <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-amber-500 rounded-full" 
+                            style={{ 
+                              width: `${Math.min((welcomeCard.credits.gptCredits.used / welcomeCard.credits.gptCredits.total) * 100, 100)}%` 
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-amber-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500">Image Credits</p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-sm font-medium text-amber-700">
+                        
+                          {welcomeCard.credits.imageCredits.used.toLocaleString()} / {welcomeCard.credits.imageCredits.total.toLocaleString()}
+                        </span>
+                        <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-amber-500 rounded-full" 
+                            style={{ 
+                              
+                              width: `${Math.min((welcomeCard.credits.imageCredits.used / welcomeCard.credits.imageCredits.total) * 100, 100)}%` 
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <Button 
@@ -424,16 +547,20 @@ const HomePage = () => {
               transition={{ delay: 0.1 + (index * 0.1) }}
               whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
               className={`bg-gradient-to-br ${
-                card.color === 'green' ? 'from-white to-green-50 hover:from-green-50 hover:to-green-100' :
-                card.color === 'blue' ? 'from-white to-blue-50 hover:from-blue-50 hover:to-blue-100' :
-                'from-white to-amber-50 hover:from-amber-50 hover:to-amber-100'
+                card.type === 'user' ? (
+                  card.color === 'green' ? 'from-white to-green-50 hover:from-green-50 hover:to-green-100' :
+                  card.color === 'blue' ? 'from-white to-blue-50 hover:from-blue-50 hover:to-blue-100' :
+                  'from-white to-amber-50 hover:from-amber-50 hover:to-amber-100'
+                ) : card.bgcolor
               } p-6 rounded-xl shadow-sm border border-gray-100 cursor-pointer overflow-hidden relative`}
               onClick={() => card.navigateTo && navigate(card.navigateTo)}
             >
               <div className={`absolute -right-8 -top-8 w-24 h-24 rounded-full opacity-20 ${
-                card.color === 'green' ? 'bg-green-200' :
-                card.color === 'blue' ? 'bg-blue-200' :
-                'bg-amber-200'
+                card.type === 'user' ? (
+                  card.color === 'green' ? 'bg-green-200' :
+                  card.color === 'blue' ? 'bg-blue-200' :
+                  'bg-amber-200'
+                ) : card.iconbg
               }`}></div>
               
               <div className="flex justify-between items-center">
@@ -442,9 +569,11 @@ const HomePage = () => {
                   <h3 className="text-3xl font-bold text-gray-900">{card.value}</h3>
                 </div>
                 <div className={`${
-                  card.color === 'green' ? 'bg-green-100 text-green-600' :
-                  card.color === 'blue' ? 'bg-blue-100 text-blue-600' :
-                  'bg-amber-100 text-amber-600'
+                  card.type === 'user' ? (
+                    card.color === 'green' ? 'bg-green-100 text-green-600' :
+                    card.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                    'bg-amber-100 text-amber-600'
+                  ) : `${card.iconbg} ${card.iconcolor}`
                 } p-3 rounded-lg shadow-sm z-10`}>
                   {card.icon}
                 </div>
@@ -452,14 +581,18 @@ const HomePage = () => {
               
               <div className="mt-4 pt-4 border-t border-gray-100 flex items-center text-sm">
                 <BookOpen className={`w-4 h-4 mr-1 ${
-                  card.color === 'green' ? 'text-green-500' :
-                  card.color === 'blue' ? 'text-blue-500' :
-                  'text-amber-500'
+                  card.type === 'user' ? (
+                    card.color === 'green' ? 'text-green-500' :
+                    card.color === 'blue' ? 'text-blue-500' :
+                    'text-amber-500'
+                  ) : card.iconcolor
                 }`} />
                 <span className="text-gray-600">
-                  {card.color === 'green' ? 'Finished books' :
-                   card.color === 'blue' ? 'Work in progress' :
-                   'Your collection'}
+                  {card.type === 'user' ? (
+                    card.color === 'green' ? 'Finished books' :
+                    card.color === 'blue' ? 'Work in progress' :
+                    'Your collection'
+                  ) : 'Total count'}
                 </span>
               </div>
             </motion.div>

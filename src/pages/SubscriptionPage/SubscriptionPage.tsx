@@ -8,6 +8,8 @@ import { useToast } from '@/context/ToastContext';
 import { ToastType } from '@/constant';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useUserMeQuery } from '@/api/userApi';
+import { useNavigate } from 'react-router-dom';
+import { useGetTokenSettingsQuery } from '@/api/tokenSettingsApi';
 
 const SubscriptionPage = () => {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
@@ -22,7 +24,8 @@ const SubscriptionPage = () => {
   const { data: packages, isLoading: packagesLoading, error,refetch:refetchPackages } = useGetSubscriptionPackagesQuery({includeInactive: false});
   const { data: currentSubscriptions, refetch: refetchSubscription } = useGetCurrentSubscriptionQuery();
   const [autoRenew, setAutoRenew] = useState(false);
-  
+  const navigate = useNavigate();
+  const { data: tokenSettings } = useGetTokenSettingsQuery();
   // if (packagesLoading) {
   //   return (
   //     <Layout>
@@ -70,8 +73,12 @@ const SubscriptionPage = () => {
 
   // Updated handler to show confirmation dialog first
   const handleSubscribeClick = (packageId: number) => {
-    setSelectedPackageId(packageId);
-    setShowConfirmDialog(true);
+    const selectedPackage = packages?.find(pkg => pkg.id === packageId);
+    navigate('/payment', { 
+      state: { 
+        packageData: selectedPackage 
+      } 
+    });
   };
 
   // Actual subscription handler when confirmed
@@ -206,18 +213,21 @@ const SubscriptionPage = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-gray-700">Token Usage</h4>
+                  <h4 className="text-sm font-semibold text-gray-700">Credits GPT Usage</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Used: {subscription.tokensUsed.toLocaleString()}</span>
+                      <span>Used: {Math.round(subscription.tokensUsed / Number(tokenSettings?.creditsPerModelToken || 1)).toLocaleString()}</span>
                       <span>Limit: {subscription.tokenLimit.toLocaleString()}</span>
                     </div>
+                    {/* <div className="text-xs text-gray-500 mt-1">
+                      1 credit = {tokenSettings?.creditsPerModelToken || 1} model tokens
+                    </div> */}
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div 
                         className="bg-amber-600 h-2.5 rounded-full" 
                         style={{ 
                           width: `${Math.min(
-                            (subscription.tokensUsed / subscription.tokenLimit) * 100, 
+                            ((subscription.tokensUsed / Number(tokenSettings?.creditsPerModelToken || 1)) / subscription.tokenLimit) * 100, 
                             100
                           )}%` 
                         }}
@@ -227,18 +237,21 @@ const SubscriptionPage = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-gray-700">Image Usage</h4>
+                  <h4 className="text-sm font-semibold text-gray-700">Image Credits Usage</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Generated: {subscription.imagesGenerated.toLocaleString()}</span>
+                      <span>Generated: {Math.round(subscription.imagesGenerated / Number(tokenSettings?.creditsPerImageToken || 1)).toLocaleString()}</span>
                       <span>Limit: {subscription.imageLimit.toLocaleString()}</span>
                     </div>
+                    {/* <div className="text-xs text-gray-500 mt-1">
+                      1 credit = {tokenSettings?.creditsPerImageToken || 1} image tokens
+                    </div> */}
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div 
                         className="bg-amber-600 h-2.5 rounded-full" 
                         style={{ 
                           width: `${Math.min(
-                            (subscription.imagesGenerated / subscription.imageLimit) * 100, 
+                            ((subscription.imagesGenerated / Number(tokenSettings?.creditsPerImageToken || 1)) / subscription.imageLimit) * 100, 
                             100
                           )}%` 
                         }}
@@ -354,21 +367,21 @@ const SubscriptionPage = () => {
 
                   <div className="space-y-3 mb-6">
                     <div className="flex justify-between items-center p-2 rounded-lg bg-amber-50/50 text-sm">
-                      <span className="text-gray-600">Token Limit:</span>
+                      <span className="text-gray-600">CreditsToken Limit:</span>
                       <span className="font-medium text-amber-700">{pkg.tokenLimit.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center p-2 rounded-lg bg-amber-50/50 text-sm">
-                      <span className="text-gray-600">Image Limit:</span>
+                      <span className="text-gray-600">Credits Image Limit:</span>
                       <span className="font-medium text-amber-700">{pkg.imageLimit.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center p-2 rounded-lg bg-amber-50/50 text-sm">
-                      <span className="text-gray-600">AI Model:</span>
+                      <span className="text-gray-600">GPT Model:</span>
                       <span className="font-medium text-amber-700">{pkg.modelType}</span>
                     </div>
-                    <div className="flex justify-between items-center p-2 rounded-lg bg-amber-50/50 text-sm">
+                    {/* <div className="flex justify-between items-center p-2 rounded-lg bg-amber-50/50 text-sm">
                       <span className="text-gray-600">Image Model:</span>
                       <span className="font-medium text-amber-700">{pkg.imageModelType}</span>
-                    </div>
+                    </div> */}
                   </div>
 
                   <Button

@@ -2,9 +2,12 @@ import React, { useMemo, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { useGetAllUserAnalyticsQuery, UserAnalytics } from '@/api/analyticsApi';
 import { Card } from '@/components/ui/card';
-import { Loader2, BookOpen, PenTool, Users, BarChart3, Library, Clock, Search, Book, User, Shield, Calendar, X, ChevronDown, Check, AlertCircle, User2 } from 'lucide-react';
+import { Loader2, BookOpen, PenTool, Users, BarChart3, Library, Clock, Search, Book, User, Shield, Calendar, X, ChevronDown, Check, AlertCircle, User2, UserPlus, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, parseISO, isValid } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import CreateUserModal from '@/components/modals/CreateUserModal';
+import TokenSettingsModal from '@/components/admin/TokenSettingsModal';
 
 interface ProcessedAnalyticsData {
   totalBooks: number;
@@ -27,6 +30,8 @@ const AnalyticsPage = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
+  const [isTokenSettingsModalOpen, setIsTokenSettingsModalOpen] = useState(false);
 
   // Transform API data into user-friendly analytics
   const processedData = useMemo<ProcessedAnalyticsData | null>(() => {
@@ -137,15 +142,25 @@ const AnalyticsPage = () => {
                   Track user activity and book creation metrics
                 </p>
               </div>
-              <div className="bg-amber-100 px-4 py-2 rounded-lg flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-amber-600" />
-                <span className="text-sm font-medium text-amber-800">
-                  {new Date().toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                  })}
-                </span>
+              <div className="flex items-center gap-4">
+                <div className="bg-amber-100 px-4 py-2 rounded-lg flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-amber-600" />
+                  <span className="text-sm font-medium text-amber-800">
+                    {new Date().toLocaleDateString('en-US', { 
+                      month: 'long', 
+                      day: 'numeric', 
+                      year: 'numeric' 
+                    })}
+                  </span>
+                </div>
+               
+                <Button
+                  onClick={() => setIsCreateUserModalOpen(true)}
+                  className="bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Create User
+                </Button>
               </div>
             </div>
           </div>
@@ -684,6 +699,15 @@ const AnalyticsPage = () => {
           </AnimatePresence>
         </div>
       </motion.div>
+
+      <CreateUserModal 
+        isOpen={isCreateUserModalOpen}
+        onClose={() => setIsCreateUserModalOpen(false)}
+      />
+      <TokenSettingsModal
+        isOpen={isTokenSettingsModalOpen}
+        onClose={() => setIsTokenSettingsModalOpen(false)}
+      />
     </Layout>
   );
 };

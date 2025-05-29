@@ -49,7 +49,7 @@ export interface SubscriptionResponse {
 
 export interface CreatePackageRequest {
   name: string;
-  description: string;
+  description?: string;
   price: number;
   durationDays: number;
   tokenLimit: number;
@@ -62,17 +62,17 @@ export interface CreatePackageRequest {
 }
 
 export interface UpdatePackageRequest {
-  name: string;
-  description: string;
-  price: number;
-  durationDays: number;
-  tokenLimit: number;
-  imageLimit: number;
-  modelType: string;
-  imageModelType: string;
+  name?: string;
+  description?: string;
+  price?: number;
+  durationDays?: number;
+  tokenLimit?: number;
+  imageLimit?: number;
+  modelType?: string;
+  imageModelType?: string;
   imageModelURL?: string;
-  isActive: boolean;
-  features: Record<string, string>;
+  isActive?: boolean;
+  features?: Record<string, string>;
 }
 
 export interface FreeSubscriptionUpdateRequest {
