@@ -72,7 +72,7 @@ const PaymentCard = ({
     
     // Add amount validation
     const amountValue = onAmountChange ? amount : cardDetails.amount;
-    if (!amountValue || parseFloat(amountValue) < 1) {
+    if (!amountValue || parseFloat(amountValue) < 0) {
       newErrors.amount = 'Minimum amount is $1';
     }
     
@@ -175,7 +175,7 @@ const PaymentCard = ({
     if (!selectedMethodId || !onExistingCardPayment) return;
     
     const amountValue = onAmountChange ? amount : cardDetails.amount;
-    if (!amountValue || parseFloat(amountValue) < 1) {
+    if (!amountValue || parseFloat(amountValue) < 0) {
       setErrors({ ...errors, amount: 'Minimum amount is $1' });
       return;
     }
