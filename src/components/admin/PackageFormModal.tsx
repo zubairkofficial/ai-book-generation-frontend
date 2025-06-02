@@ -27,7 +27,7 @@ const IMAGE_MODEL_OPTIONS = [
 const packageSchema = z.object({
   name: z.string().min(3, { message: "Package name must be at least 3 characters" }),
   description: z.string().nullable(),
-  price: z.number().positive({ message: "Price must be positive" }),
+  price: z.number().nonnegative({ message: "Price must be positive" }),
   durationDays: z.number().int().positive({ message: "Duration must be a positive integer" }),
   tokenLimit: z.number().int().positive({ message: "Token limit must be a positive integer" }),
   imageLimit: z.number().int().positive({ message: "Image limit must be a positive integer" }),
