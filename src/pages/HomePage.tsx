@@ -18,14 +18,14 @@ import { useGetTokenSettingsQuery } from '@/api/tokenSettingsApi';
 
 // Add interfaces at the top of the file
 interface SubscriptionUsage {
-  package: {
-    id: number;
-    name: string;
-  };
   tokensUsed: number;
   tokenLimit: number;
   imagesGenerated: number;
   imageLimit: number;
+  package: {
+    id: number;
+    name: string;
+  };
   startDate: string;
   endDate: string;
   daysRemaining: number;
@@ -134,7 +134,7 @@ const HomePage = () => {
     if (!userData) return null;
     
     // Get the active subscription if any
-    const activeSubscription = currentSubscriptions?.find(sub => sub.package?.id);
+    const activeSubscription = currentSubscriptions?.[0] as SubscriptionUsage | undefined;
     
     return {
       id: 1,
@@ -149,11 +149,11 @@ const HomePage = () => {
       credits: activeSubscription ? {
         gptCredits: {
           used: Math.round(activeSubscription.tokensUsed / Number(tokenSettings?.creditsPerModelToken || 1)),
-          total: activeSubscription.tokenLimit,
+          total: Math.round(activeSubscription.tokenLimit / Number(tokenSettings?.creditsPerModelToken || 1))
         },
         imageCredits: {
           used: Math.round(activeSubscription.imagesGenerated / Number(tokenSettings?.creditsPerImageToken || 1)),
-          total: activeSubscription.imageLimit,
+          total: Math.round(activeSubscription.imageLimit / Number(tokenSettings?.creditsPerImageToken || 1))
         }
       } : null
     };

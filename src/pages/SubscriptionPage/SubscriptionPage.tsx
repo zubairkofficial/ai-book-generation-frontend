@@ -216,18 +216,16 @@ const SubscriptionPage = () => {
                   <h4 className="text-sm font-semibold text-gray-700">Credits GPT Usage</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Used: {Math.round(subscription.tokensUsed / Number(tokenSettings?.creditsPerModelToken || 1)).toLocaleString()}</span>
-                      <span>Limit: {subscription.tokenLimit.toLocaleString()}</span>
+                      <span>Used: {Math.round(subscription.tokensUsed / Number(tokenSettings?.creditsPerModelToken || 1))} Credits</span>
+                      <span>Limit: {Math.round(subscription.tokenLimit / Number(tokenSettings?.creditsPerModelToken || 1))} Credits</span>
                     </div>
-                    {/* <div className="text-xs text-gray-500 mt-1">
-                      1 credit = {tokenSettings?.creditsPerModelToken || 1} model tokens
-                    </div> */}
+                   
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div 
                         className="bg-amber-600 h-2.5 rounded-full" 
                         style={{ 
                           width: `${Math.min(
-                            ((subscription.tokensUsed / Number(tokenSettings?.creditsPerModelToken || 1)) / subscription.tokenLimit) * 100, 
+                            (subscription.tokensUsed / subscription.tokenLimit) * 100,
                             100
                           )}%` 
                         }}
@@ -240,18 +238,16 @@ const SubscriptionPage = () => {
                   <h4 className="text-sm font-semibold text-gray-700">Image Credits Usage</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Generated: {Math.round(subscription.imagesGenerated / Number(tokenSettings?.creditsPerImageToken || 1)).toLocaleString()}</span>
-                      <span>Limit: {subscription.imageLimit.toLocaleString()}</span>
+                      <span>Generated: {Math.round(subscription.imagesGenerated / Number(tokenSettings?.creditsPerImageToken || 1))} Credits</span>
+                      <span>Limit: {Math.round(subscription.imageLimit / Number(tokenSettings?.creditsPerImageToken || 1))} Credits</span>
                     </div>
-                    {/* <div className="text-xs text-gray-500 mt-1">
-                      1 credit = {tokenSettings?.creditsPerImageToken || 1} image tokens
-                    </div> */}
+                  
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div 
                         className="bg-amber-600 h-2.5 rounded-full" 
                         style={{ 
                           width: `${Math.min(
-                            ((subscription.imagesGenerated / Number(tokenSettings?.creditsPerImageToken || 1)) / subscription.imageLimit) * 100, 
+                            (subscription.imagesGenerated / subscription.imageLimit) * 100,
                             100
                           )}%` 
                         }}

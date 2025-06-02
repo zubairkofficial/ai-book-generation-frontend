@@ -8,6 +8,11 @@ interface SettingsResponse {
   chapterImagePrompt?: string;
   chapterImageModel?: string;
   chapterImageDomainUrl?: string;
+  bookIdeaMasterPrompt?: string;
+  bookCoverMasterPrompt?: string;
+  writingAssistantMasterPrompt?: string;
+  chapterSummaryMasterPrompt?: string;
+  presentationSlidesMasterPrompt?: string;
 }
 
 export interface UpdateSettingsRequest {
@@ -18,6 +23,11 @@ export interface UpdateSettingsRequest {
   chapterImagePrompt?: string|null;
   chapterImageModel?: string|null;
   chapterImageDomainUrl?: string|null;
+  bookIdeaMasterPrompt?: string|null;
+  bookCoverMasterPrompt?: string|null;
+  writingAssistantMasterPrompt?: string|null;
+  chapterSummaryMasterPrompt?: string|null;
+  presentationSlidesMasterPrompt?: string|null;
 }
 
 export const settingsApi = baseApi.injectEndpoints({
@@ -30,10 +40,10 @@ export const settingsApi = baseApi.injectEndpoints({
     }),
 
     updateSettings: builder.mutation<SettingsResponse, UpdateSettingsRequest>({
-      query: (payload) => ({
+      query: (body) => ({
         url: '/settings',
-        method: 'POST',
-        body: payload,
+        method: 'PUT',
+        body,
       }),
     }),
   }),

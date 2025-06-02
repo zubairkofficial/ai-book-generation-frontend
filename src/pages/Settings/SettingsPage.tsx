@@ -31,7 +31,7 @@ import { ModelPromptTab } from "./tabs/ModelPromptTab";
 import { Card } from "@/components/ui/card";
 import { useFetchSettingsQuery } from "@/api/settingsApi";
 import TokenSettingsModal from "@/components/admin/TokenSettingsModal";
-
+import { AiAssistantPromptTab } from './tabs/AiAssistantPromptTab';
 // Add validation schemas
 const passwordSchema = yup.object({
   oldPassword: yup
@@ -125,6 +125,8 @@ interface ApiKeysFormData {
 
 const SettingsPage = () => {
   const { data: userInfo, refetch: userRefetch } = useUserMeQuery();
+
+  const isAdmin = userInfo?.role === 'admin';
 
   // Only fetch API keys if user is admin
   const { data: apiKeyInfo,refetch:refetchApiKey } = useFetchApiKeysQuery(undefined, {
@@ -371,24 +373,24 @@ console.log("stripe_key",apiKeyInfo)
             <Tabs defaultValue="profile" className="w-full">
               {/* Enhanced Tab Navigation */}
               <div className="border-b border-gray-200 bg-gradient-to-b from-gray-50 to-transparent backdrop-blur-sm sticky top-0 z-10">
-                <TabsList className="flex w-full max-w-3xl mx-auto px-4">
+                <TabsList className="flex flex-wrap md:flex-nowrap w-full max-w-3xl mx-auto p-1 gap-1 bg-gray-100/50 rounded-lg">
                   <TabsTrigger
                     value="profile"
-                    className="flex-1 py-4 px-3 group transition-all duration-200"
+                    className="flex-1 py-2.5 px-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
                   >
                     <div className="flex items-center justify-center gap-2">
-                      <UserCircle className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
-                      <span className="hidden sm:inline">Profile</span>
+                      <UserCircle className="w-4 h-4 text-gray-500 group-data-[state=active]:text-amber-500" />
+                      <span>Profile</span>
                     </div>
                   </TabsTrigger>
 
                   <TabsTrigger
                     value="password"
-                    className="flex-1 py-4 px-3 group transition-all duration-200"
+                    className="flex-1 py-2.5 px-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
                   >
                     <div className="flex items-center justify-center gap-2">
-                      <Shield className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
-                      <span className="hidden sm:inline">Security</span>
+                      <Shield className="w-4 h-4 text-gray-500 group-data-[state=active]:text-amber-500" />
+                      <span>Security</span>
                     </div>
                   </TabsTrigger>
 
@@ -396,39 +398,51 @@ console.log("stripe_key",apiKeyInfo)
                     <>
                       <TabsTrigger
                         value="api-keys"
-                        className="flex-1 py-4 px-3 group transition-all duration-200"
+                        className="flex-1 py-2.5 px-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
                       >
                         <div className="flex items-center justify-center gap-2">
-                          <Key className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
-                          <span className="hidden sm:inline">API Keys</span>
+                          <Key className="w-4 h-4 text-gray-500 group-data-[state=active]:text-amber-500" />
+                          <span>API Keys</span>
                         </div>
                       </TabsTrigger>
                       <TabsTrigger
-                        value="model-prompt"
-                        className="flex-1 py-4 px-3 group transition-all duration-200"
+                        value="model-prompts"
+                        className="flex-1 py-2.5 px-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
                       >
                         <div className="flex items-center justify-center gap-2">
-                          <BrainIcon className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
-                          <span className="hidden sm:inline">AI Model</span>
+                          <BrainIcon className="w-4 h-4 text-gray-500 group-data-[state=active]:text-amber-500" />
+                          <span>AI Model</span>
                         </div>
                       </TabsTrigger>
                       <TabsTrigger
                         value="token-settings"
-                        className="flex-1 py-4 px-3 group transition-all duration-200"
+                        className="flex-1 py-2.5 px-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
                       >
                         <div className="flex items-center justify-center gap-2">
-                          <Coins className="w-5 h-5 text-gray-500 group-data-[state=active]:text-amber-500" />
-                          <span className="hidden sm:inline">Token Settings</span>
+                          <Coins className="w-4 h-4 text-gray-500 group-data-[state=active]:text-amber-500" />
+                          <span>Token Settings</span>
                         </div>
                       </TabsTrigger>
+                      {isAdmin && (
+                        <TabsTrigger
+                          value="ai-assistant-prompts"
+                          className="flex-1 py-2.5 px-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <BrainIcon className="w-4 h-4 text-gray-500 group-data-[state=active]:text-amber-500" />
+                            <span className="hidden md:inline">AI Assistant</span>
+                            <span className="md:hidden">Assistant</span>
+                          </div>
+                        </TabsTrigger>
+                      )}
                     </>
                   )}
                 </TabsList>
               </div>
 
               {/* Enhanced Tab Content */}
-              <div className="p-6 sm:p-8">
-                <TabsContent value="profile">
+              <div className="p-4 sm:p-6 md:p-8">
+                <TabsContent value="profile" className="mt-0">
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -439,11 +453,11 @@ console.log("stripe_key",apiKeyInfo)
                     <form onSubmit={handleSubmitProfile(handleProfileSave)}>
                       <div className="space-y-6">
                         {/* Profile Picture Section */}
-                        <div className="flex items-center gap-6 p-6 bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-xl">
+                        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-xl">
                           <div className="h-20 w-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-2xl font-semibold text-white shadow-lg">
                             {userInfo?.name?.charAt(0).toUpperCase() || "U"}
                           </div>
-                          <div>
+                          <div className="text-center sm:text-left">
                             <h3 className="text-lg font-semibold text-gray-900">
                               Profile Picture
                             </h3>
@@ -480,6 +494,50 @@ console.log("stripe_key",apiKeyInfo)
                               >
                                 <AlertCircle className="h-4 w-4" />
                                 {profileErrors.name.message}
+                              </motion.p>
+                            )}
+                          </div>
+
+                          {/* Email Input - Enhanced */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="email"
+                              className="text-sm font-medium text-gray-700"
+                            >
+                              Email Address
+                            </Label>
+                            <div className="relative group">
+                              <Input
+                                {...registerProfile("email")}
+                                id="email"
+                                type="email"
+                                disabled={true}
+                                className="pl-10 transition-all duration-200 group-hover:border-amber-300"
+                                placeholder="Enter your email address"
+                              />
+                              <svg
+                                className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                />
+                              </svg>
+                            </div>
+                            {profileErrors.email && (
+                              <motion.p
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-sm text-red-500 flex items-center gap-1 mt-1"
+                              >
+                                <AlertCircle className="h-4 w-4" />
+                                {profileErrors.email.message}
                               </motion.p>
                             )}
                           </div>
@@ -933,7 +991,7 @@ console.log("stripe_key",apiKeyInfo)
                       </div>
                     </TabsContent>
 
-                    <TabsContent value="model-prompt">
+                    <TabsContent value="model-prompts">
                       <ModelPromptTab />
                     </TabsContent>
 
@@ -952,6 +1010,12 @@ console.log("stripe_key",apiKeyInfo)
                         </div>
                       </div>
                     </TabsContent>
+
+                    {isAdmin && (
+                      <TabsContent value="ai-assistant-prompts">
+                        <AiAssistantPromptTab />
+                      </TabsContent>
+                    )}
                   </>
                 )}
               </div>
