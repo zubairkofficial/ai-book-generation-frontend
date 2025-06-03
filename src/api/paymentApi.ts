@@ -13,14 +13,15 @@ export interface PaymentPlan {
 
 // Payment request interface
 export interface CreatePaymentRequest {
-  cardNumber:string;
-    cardHolderName:string;
-    amount: number;
-    currency: string;
-    cvc?: string;
-    expiryMonth?: number;
-    expiryYear?: number;
-    saveCard:boolean
+  cardNumber: string;
+  cardHolderName: string;
+  amount: number;
+  currency?: string;
+  cvc?: string;
+  expiryMonth?: number;
+  expiryYear?: number;
+  saveCard: boolean;
+  isFree: boolean;
 }
 
 // Card interface
@@ -38,8 +39,8 @@ export interface SavedCard {
 // Payment with existing card request interface
 export interface ExistingCardPaymentRequest {
   amount: number;
-  saveCard:boolean;
-  // Add any other fields needed for the request
+  saveCard: boolean;
+  isFree: boolean;
 }
 
 export const paymentApi = baseApi.injectEndpoints({

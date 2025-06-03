@@ -9,9 +9,11 @@ export interface UserInterface {
     password: string;
     phoneNumber: string | null;
     isEmailVerified: boolean;
-    availableAmount:number;
+    availableAmount: number;
+    hasUsedFreeTrial: boolean;
     twoFactorSecret: string | null;
     role: string;
+    isNewUser: boolean;
   }
   
   export interface UpdateUserPayload {

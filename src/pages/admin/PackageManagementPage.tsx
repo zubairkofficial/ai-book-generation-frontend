@@ -4,6 +4,7 @@ import { Loader2, PlusCircle, Edit, Package, Shield, Sparkles, Zap, Check, X, St
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { 
   useGetSubscriptionPackagesQuery, 
   useCreateSubscriptionPackageMutation, 
@@ -14,7 +15,6 @@ import {
 import { useToast } from '@/context/ToastContext';
 import { ToastType } from '@/constant';
 import { PackageFormModal } from '@/components/admin/PackageFormModal';
-import { cn } from '@/lib/utils';
 
 // Constants
 const SEARCH_FIELDS = {
@@ -339,10 +339,21 @@ const PackageCard = ({ package: pkg, onEdit, getFeatureIcon }: PackageCardProps)
         <div>
           <h3 className="font-semibold text-xl text-amber-800 mb-1">{pkg.name}</h3>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-gray-900">
-              ${parseFloat(pkg.price).toFixed(2)}
-            </span>
-            <span className="text-sm text-gray-600">/ {pkg.durationDays} days</span>
+            {pkg.isFree ? (
+              <span className="text-2xl font-bold text-green-600 flex items-center gap-2">
+                FREE
+                <Badge className="bg-green-100 text-green-700 text-xs">
+                  Trial Package
+                </Badge>
+              </span>
+            ) : (
+              <>
+                <span className="text-2xl font-bold text-gray-900">
+                  ${parseFloat(pkg.price).toFixed(2)}
+                </span>
+                <span className="text-sm text-gray-600">/ {pkg.durationDays} days</span>
+              </>
+            )}
           </div>
         </div>
         <Button

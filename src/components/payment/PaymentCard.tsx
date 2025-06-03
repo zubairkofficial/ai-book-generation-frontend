@@ -13,7 +13,7 @@ import ConfirmDialog from '../ui/ConfirmDialog';
 interface PaymentCardProps {
   onSavedMethodSelect?: (methodId: string) => void;
   onAddNewCard?: (formData: any) => Promise<void>;
-  onExistingCardPayment?: (cardId: number, amount: number, saveCard: boolean) => Promise<void>;
+  onExistingCardPayment?: (cardId: number, amount: number, saveCard: boolean, isFree: boolean) => Promise<void>;
   selectedMethodId?: string;
   isLoading?: boolean;
   amount?: string;
@@ -41,7 +41,7 @@ const PaymentCard = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { addToast } = useToast();
-  const [showNewCardForm, setShowNewCardForm] = useState(false);
+  const [showNewCardForm, setShowNewCardForm] = useState(true);
   const { data: savedCards, isLoading: cardsLoading ,refetch:refetchPayment} = useGetSavedCardsQuery();
   const [deleteCard, { isLoading: isDeleting }] = useDeleteCardMutation();
   const [cardToDelete, setCardToDelete] = useState<number | null>(null);
@@ -125,17 +125,16 @@ const PaymentCard = ({
         const formData = {
           cardHolderName: cardDetails.cardName,
           amount: onAmountChange ? parseInt(amount) : parseInt(cardDetails.amount),
-          // currency: 'USD',
           cvc: cardDetails.cvc,
           expiryMonth: month,
           expiryYear: `20${year}`, // Convert to 4-digit year format
-          cardNumber:cardDetails.cardNumber,
-          saveCard:cardDetails.saveCard
-          // Don't include cardName and expiryDate as they're not expected by the API
+          cardNumber: cardDetails.cardNumber,
+          saveCard: cardDetails.saveCard,
+          isFree: false // Add isFree field
         };
-        console.log("formdata",formData)
+        console.log("formdata", formData);
         await onAddNewCard(formData);
-        await refetchPayment()
+        await refetchPayment();
        
       } catch (error:any) {
         addToast(error.message, ToastType.ERROR);
@@ -185,9 +184,10 @@ const PaymentCard = ({
       await onExistingCardPayment(
         parseInt(selectedMethodId),
         parseFloat(amountValue),
-        true
+        true,
+        false // Add isFree parameter
       );
-     } catch (error: any) {
+    } catch (error: any) {
       addToast(error.message || 'Payment failed', ToastType.ERROR);
     } finally {
       setProcessingPayment(false);
@@ -273,90 +273,7 @@ const PaymentCard = ({
           </div>
 
           {/* Saved Cards Section */}
-          {!cardsLoading && validSavedCards.length > 0 && (
-            <div className="mt-6">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="text-md font-medium text-gray-700">Saved Cards</h4>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowNewCardForm(!showNewCardForm)}
-                  className="text-amber-500 hover:text-amber-600"
-                >
-                  {showNewCardForm ? 'Use Saved Card' : 'Add New Card'}
-                </Button>
-              </div>
-              
-              {!showNewCardForm && (
-                <div className="space-y-3">
-                  {validSavedCards.map((card) => (
-                    <div
-                      key={card.id}
-                      onClick={() => handleSavedCardSelect(card.id.toString())}
-                      className={`p-3 border rounded-md cursor-pointer transition-all ${
-                        selectedMethodId === card.id.toString() 
-                          ? 'border-amber-400 bg-amber-50' 
-                          : 'border-gray-200 hover:border-amber-200'
-                      }`}
-                      
-                    >
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <CreditCard className="h-5 w-5 text-amber-500 mr-3" />
-                          <div>
-                            <p className="font-medium text-gray-800">
-                              •••• {card.cardNumber.split(' ').pop()}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Expires {card.expiryMonth}/{card.expiryYear}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center">
-                          {selectedMethodId === card.id.toString() && (
-                            <Check className="h-5 w-5 text-amber-500 mr-2" />
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => handleDeleteCardClick(e, Number(card.id))}
-                            disabled={isDeleting}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {/* Add Pay Now button when a card is selected */}
-                  {selectedMethodId && onExistingCardPayment && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-4"
-                    >
-                      <Button 
-                        className="w-full bg-amber-500 hover:bg-amber-600 text-white"
-                        onClick={handlePayWithSavedCard}
-                        disabled={processingPayment}
-                      >
-                        {processingPayment ? (
-                          <>
-                            <span className="animate-spin mr-2">⏳</span>
-                            Processing...
-                          </>
-                        ) : (
-                          'Pay Now'
-                        )}
-                      </Button>
-                    </motion.div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+         
 
           {/* New Card Form */}
           {(showNewCardForm || validSavedCards.length === 0) && (
@@ -452,7 +369,7 @@ const PaymentCard = ({
                 </div>
               </div>
               
-              <div className="flex items-center mt-4">
+              {/* <div className="flex items-center mt-4">
                 <input
                   type="checkbox"
                   id="saveCard"
@@ -464,7 +381,7 @@ const PaymentCard = ({
                 <label htmlFor="saveCard" className="ml-2 block text-sm text-gray-700">
                   Save this card for future payments
                 </label>
-              </div>
+              </div> */}
               
               <Button 
                 className="w-full bg-amber-500 hover:bg-amber-600 text-white mt-6"

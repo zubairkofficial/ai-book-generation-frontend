@@ -29,7 +29,12 @@ const PaymentPage = () => {
 
   const handleAddCard = async (formData: any) => {
     try {
-      await createPayment(formData).unwrap();
+      const paymentData = {
+        ...formData,
+        isFree: packageData?.isFree || false
+      };
+      
+      await createPayment(paymentData).unwrap();
       
       if (packageData) {
         await subscribeToPackage({
@@ -55,11 +60,12 @@ const PaymentPage = () => {
     try {
       const payload = {
         amount: paymentAmount,
-        saveCard
+        saveCard:true,
+        isFree: packageData?.isFree || false
       };
       
       await existingCardPayment({
-         cardId,
+        cardId,
         payload
       }).unwrap();
 

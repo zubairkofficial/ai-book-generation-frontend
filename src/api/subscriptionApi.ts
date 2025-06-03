@@ -10,12 +10,13 @@ export interface SubscriptionPackage {
   price: string;
   durationDays: number;
   tokenLimit: number;
-  totalTokens:number;
+  totalTokens: number;
   imageLimit: number;
   modelType: string;
   imageModelType: string;
   imageModelURL?: string;
   isActive: boolean;
+  isFree: boolean;
   features: Record<string, string>;
 }
 

@@ -34,6 +34,7 @@ const packageSchema = z.object({
   modelType: z.string().min(3, { message: "Model type must be specified" }),
   imageModelURL: z.string().min(1, { message: "Image model URL must be specified" }),
   isActive: z.boolean(),
+  isFree: z.boolean().default(false),
   features: z.record(z.string(), z.string()).optional(),
 });
 
@@ -73,6 +74,7 @@ export const PackageFormModal = ({
       modelType: '',
       imageModelURL: FLUX_DEV_URL,
       isActive: true,
+      isFree: false,
       features: {}
     }
   });
@@ -90,6 +92,7 @@ export const PackageFormModal = ({
       setValue("modelType", editingPackage.modelType);
       setValue("imageModelURL", FLUX_DEV_URL);
       setValue("isActive", editingPackage.isActive);
+      setValue("isFree", editingPackage.isFree);
 
       // Set features
       if (editingPackage.features && Object.keys(editingPackage.features).length > 0) {
@@ -115,6 +118,7 @@ export const PackageFormModal = ({
         modelType: '',
         imageModelURL: FLUX_DEV_URL,
         isActive: true,
+        isFree: false,
         features: {}
       });
       setFeatures([{ key: "feature1", value: "" }]);
@@ -320,6 +324,29 @@ export const PackageFormModal = ({
               <div>
                 <Label className="text-sm font-medium text-gray-700">Package Status</Label>
                 <p className="text-xs text-gray-500">Toggle to set package availability</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3 bg-amber-50/50 p-3 rounded-lg border border-amber-100">
+              <Controller
+                name="isFree"
+                control={control}
+                render={({ field }) => (
+                  <Switch 
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      if (checked) {
+                        setValue("price", 0);
+                      }
+                    }}
+                    className="data-[state=checked]:bg-amber-500"
+                  />
+                )}
+              />
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Free Package</Label>
+                <p className="text-xs text-gray-500">Toggle to make this a free package</p>
               </div>
             </div>
           </div>

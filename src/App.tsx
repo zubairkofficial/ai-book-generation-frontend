@@ -79,7 +79,7 @@ function AppRoutes() {
 
       // Set credentials in Redux store
       dispatch(setCredentials({ user: parsedUser, accessToken }));
-      
+      console.log("user",parsedUser.isNewUser)
       // Use navigate instead of window.location for better SPA experience
       navigate("/subscription", { replace: true });
       

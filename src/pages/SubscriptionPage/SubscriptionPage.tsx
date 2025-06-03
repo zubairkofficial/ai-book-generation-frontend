@@ -20,12 +20,13 @@ const SubscriptionPage = () => {
   const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
   const [selectedPackageIdForUnsubscribe, setSelectedPackageIdForUnsubscribe] = useState<number | null>(null);
   const [unsubscribeFromPackage, { isLoading: isUnsubscribing }] = useUnsubscribeFromPackageMutation();
-  const { refetch:refetchUser } = useUserMeQuery();
+  const { data:userInfo,refetch:refetchUser } = useUserMeQuery();
   const { data: packages, isLoading: packagesLoading, error,refetch:refetchPackages } = useGetSubscriptionPackagesQuery({includeInactive: false});
   const { data: currentSubscriptions, refetch: refetchSubscription } = useGetCurrentSubscriptionQuery();
   const [autoRenew, setAutoRenew] = useState(false);
   const navigate = useNavigate();
   const { data: tokenSettings } = useGetTokenSettingsQuery();
+  console.log("userInfo",userInfo?.isNewUser)
   // if (packagesLoading) {
   //   return (
   //     <Layout>
@@ -293,6 +294,15 @@ const SubscriptionPage = () => {
         {/* Subscription Usage Metrics */}
         {renderUsageMetrics()}
 
+        {userInfo?.isNewUser && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8">
+            <h3 className="text-lg font-semibold text-amber-800 mb-2">Welcome to Our Service! 🎉</h3>
+            <p className="text-amber-700">
+              As a new user, you can explore all our packages. Look for the "Free Trial" badge to start with our trial package and test our services before committing to a paid subscription.
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {packages?.filter(pkg => pkg.isActive || isCurrentPlan(pkg.id))
             .map((pkg, index) => (
@@ -332,14 +342,28 @@ const SubscriptionPage = () => {
                     'bg-gradient-to-br from-amber-50/50 to-amber-50/10'}`}>
                   <h3 className="text-xl font-bold text-amber-800 mb-1">
                     {pkg.name}
+                    {userInfo?.isNewUser && pkg.isFree && (
+                      <span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                        Free Trial
+                      </span>
+                    )}
                   </h3>
                   <p className="text-gray-600 mb-4 text-sm">
                     {pkg.description}
                   </p>
                   <div className="flex items-end gap-1 mb-1">
-                    <span className="text-3xl font-bold text-amber-700">
-                      ${parseFloat(pkg.price).toFixed(2)}
-                    </span>
+                    {userInfo?.isNewUser && pkg.isFree ? (
+                      <>
+                        <span className="text-3xl font-bold text-amber-700">$0.00</span>
+                        <span className="text-xl text-gray-500 line-through mb-1">
+                          ${parseFloat(pkg.price).toFixed(2)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-3xl font-bold text-amber-700">
+                        ${parseFloat(pkg.price).toFixed(2)}
+                      </span>
+                    )}
                     <span className="text-gray-500 mb-1">
                       /{pkg.durationDays} days
                     </span>
