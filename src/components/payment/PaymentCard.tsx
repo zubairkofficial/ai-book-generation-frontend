@@ -27,7 +27,7 @@ const PaymentCard = ({
   onExistingCardPayment,
   selectedMethodId,
   isLoading = false,
-  amount = '',
+  amount = '0.00',
   onAmountChange,
   disableAmountChange = false
 }: PaymentCardProps) => {
@@ -207,7 +207,7 @@ const PaymentCard = ({
           <div>
             <Label htmlFor="amount" className="text-sm font-medium text-gray-700 flex items-center">
               <Wallet className="w-4 h-4 mr-2 text-amber-500" />
-              Payment Amount (min. $50)
+              Payment Amount (min. $1)
             </Label>
             <div className="relative mt-1 group">
               <Input

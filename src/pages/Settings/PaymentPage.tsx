@@ -20,9 +20,9 @@ const PaymentPage = () => {
   const { addToast } = useToast();
   const [createPayment, { isLoading }] = useCreatePaymentMutation();
   const [existingCardPayment, { isLoading: isExistingCardLoading}] = usePayWithExistingCardMutation();
-  const { refetch: refetchUser } = useUserMeQuery();
+  const {data:userInfo, refetch: refetchUser } = useUserMeQuery();
   const [subscribeToPackage] = useSubscribeToPackageMutation();
-  
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount(e.target.value);
   };
@@ -118,7 +118,7 @@ const PaymentPage = () => {
                 <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-100">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium text-amber-800">Package Details</h3>
-                    <span className="text-2xl font-bold text-amber-600">${packageData.price}</span>
+                    <span className="text-2xl font-bold text-amber-600">${packageData.isFree && userInfo?.isNewUser ? '0.00' : packageData.price}</span>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
@@ -168,7 +168,7 @@ const PaymentPage = () => {
                 onExistingCardPayment={handleExistingCardPayment}
                 selectedMethodId={selectedCardId}
                 isLoading={isLoading || isExistingCardLoading}
-                amount={amount}
+                amount={packageData?.isFree && userInfo?.isNewUser ? '0.00' : amount}
                 onAmountChange={handleAmountChange}
                 disableAmountChange={!!packageData}
               />

@@ -26,7 +26,7 @@ const SubscriptionPage = () => {
   const [autoRenew, setAutoRenew] = useState(false);
   const navigate = useNavigate();
   const { data: tokenSettings } = useGetTokenSettingsQuery();
-  console.log("userInfo",userInfo?.isNewUser)
+
   // if (packagesLoading) {
   //   return (
   //     <Layout>
