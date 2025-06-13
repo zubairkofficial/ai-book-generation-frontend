@@ -104,7 +104,7 @@ export const subscriptionApi = baseApi.injectEndpoints({
       }),
     }),
     
-    getCurrentSubscription: builder.query<SubscriptionUsage, void>({
+    getCurrentSubscription: builder.query<SubscriptionUsage[], void>({
       query: () => ({
         url: '/subscription/my-subscription',
         method: 'GET',

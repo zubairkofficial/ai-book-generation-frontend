@@ -243,6 +243,8 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
                 className="chapter-content" 
                 dangerouslySetInnerHTML={{ __html: quillEditorContent }}
               /> */}
+               <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12  rounded-lg shadow-lg">
+               <div className=" mx-auto p-6 sm:p-12 ">
             <ReactMarkdown
               remarkPlugins={[remarkRehype, remarkGfm]}
               rehypePlugins={[rehypeRaw]}
@@ -251,6 +253,8 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
             >
               {chapter.chapterInfo}
             </ReactMarkdown>
+            </div>
+            </div>
           {/* )} */}
         </div>
       )}

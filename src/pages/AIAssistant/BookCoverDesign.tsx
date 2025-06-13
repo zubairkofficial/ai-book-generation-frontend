@@ -22,7 +22,9 @@ import { AiAssistantType,TargetAudience } from '@/types/enum';
 
 interface CoverDesignForm {
   bookTitle: string;
-  genre: string;
+  subtitle?: string;
+  authorName?: string;
+  genre?: string;
   targetAudience: string;
   coreIdea: string;
   numberOfImages: string;
@@ -30,7 +32,9 @@ interface CoverDesignForm {
 
 const validationSchema = yup.object({
   bookTitle: yup.string().required('Book title is required'),
-  genre: yup.string().required('Genre is required'),
+  subtitle: yup.string().optional(),
+  authorName: yup.string().optional(),
+  genre: yup.string().optional(),
   targetAudience: yup.string().required('Target audience is required'),
   coreIdea: yup.string().required('Core idea is required'),
   numberOfImages: yup.string().required('Number of images is required')
@@ -45,9 +49,10 @@ const BookCoverDesign = () => {
   const [generateCover] = useGetAiAssistantResponseMutation();
 
   const { register, setValue, handleSubmit, formState: { errors } } = useForm<CoverDesignForm>({
-    resolver: yupResolver(validationSchema),
-    defaultValues: {
+    resolver: yupResolver(validationSchema),    defaultValues: {
       bookTitle: '',
+      subtitle: '',
+      authorName: '',
       genre: '',
       targetAudience: '',
       coreIdea: '',
@@ -76,11 +81,12 @@ const BookCoverDesign = () => {
 
   const onSubmit = async (data: CoverDesignForm) => {
     try {
-      setIsGenerating(true);
-      const bookCoverInfo = {
+      setIsGenerating(true);      const bookCoverInfo = {
         type: AiAssistantType.BOOK_COVER_IMAGE,
         bookCoverInfo: {
           bookTitle: data.bookTitle,
+          subtitle: data.subtitle,
+          authorName: data.authorName,
           genre: data.genre,
           targetAudience: data.targetAudience,
           coreIdea: data.coreIdea,
@@ -155,8 +161,7 @@ const BookCoverDesign = () => {
                     <CardDescription>Define your cover design preferences</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                      <div className="space-y-2">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">                      <div className="space-y-2">
                         <Label>Book Title</Label>
                         <Input
                           {...register('bookTitle')}
@@ -166,6 +171,24 @@ const BookCoverDesign = () => {
                         {errors.bookTitle && (
                           <p className="text-sm text-red-500">{errors.bookTitle.message}</p>
                         )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Subtitle</Label>
+                        <Input
+                          {...register('subtitle')}
+                          placeholder="Enter book subtitle (optional)"
+                          className="border-amber-200 focus:ring-amber-500/20 focus:border-amber-500"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Author Name</Label>
+                        <Input
+                          {...register('authorName')}
+                          placeholder="Enter author name (optional)"
+                          className="border-amber-200 focus:ring-amber-500/20 focus:border-amber-500"
+                        />
                       </div>
 
                       <div className="space-y-2">
@@ -271,15 +294,9 @@ const BookCoverDesign = () => {
                     {generatedImages.length > 0 ? (
                       <div className="space-y-8">
                         {generatedImages.map((imageUrl, index) => (
-                          <div key={index} className="space-y-4">
-                            <div className="rounded-lg overflow-hidden shadow-lg">
-                              <img 
-                                src={imageUrl} 
-                                alt={`Generated book cover ${index + 1}`} 
-                                className="w-full h-auto"
-                              />
-                            </div>
-                            <div className="flex justify-end">
+                         
+                         <div key={index} className="space-y-4">
+                          <div className="flex justify-end">
                               <Button
                                 onClick={() => handleDownloadImage(imageUrl)}
                                 variant="outline"
@@ -289,6 +306,14 @@ const BookCoverDesign = () => {
                                 Download Cover {generatedImages.length > 1 ? index + 1 : ''}
                               </Button>
                             </div>
+                            <div className="rounded-lg overflow-hidden shadow-lg">
+                              <img 
+                                src={imageUrl} 
+                                alt={`Generated book cover ${index + 1}`} 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                           
                           </div>
                         ))}
                       </div>
@@ -309,4 +334,4 @@ const BookCoverDesign = () => {
   );
 };
 
-export default BookCoverDesign; 
+export default BookCoverDesign;

@@ -156,8 +156,9 @@ export const Content: React.FC<ContentProps> = ({
       )}
 
       {editMode ? (
-        <div className="quill-container editing bg-gradient-to-b from-blue-50/80 to-white/80 rounded-lg">
-          <QuillEditor
+       <div className="min-h-[800px]   ">
+       <div>
+        <QuillEditor
             title={section.charAt(0).toUpperCase() + section.slice(1)}
             content={formattedContent??""}
             editMode={true}
@@ -168,9 +169,10 @@ export const Content: React.FC<ContentProps> = ({
             placeholder={`Add ${section} here...`}
           />
         </div>
+        </div>
       ) : (
-        <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12  bg-gradient-to-b from-blue-50/80 to-white/80 rounded-lg shadow-lg">
-          <div className=" mx-auto bg-white/90 backdrop-blur-sm p-6 sm:p-12 rounded-lg shadow-lg">
+        <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12  rounded-lg shadow-lg">
+          <div className=" mx-auto p-6 sm:p-12 ">
             <h1 className="text-3xl sm:text-4xl text-center mb-6 sm:mb-8 text-gray-900">{section.charAt(0).toUpperCase() + section.slice(1)}</h1>
             
             <div className="quill-content-view">

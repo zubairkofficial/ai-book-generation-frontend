@@ -3,6 +3,7 @@ import { Book, Globe, User, BookOpen, Bookmark, PenTool, Save, X } from 'lucide-
 import { useUpdateBookCoverMutation } from '@/api/bookApi';
 import { useToast } from '@/context/ToastContext';
 import { ToastType } from '@/constant';
+import { Button } from '@/components/ui/button';
 
 interface CoverContentProps {
   bookData: any;
@@ -69,6 +70,20 @@ export const CoverContent: React.FC<CoverContentProps> = ({ bookData, editMode, 
         addToast("error on update book chapter", ToastType.ERROR);
       }
     }
+  };
+
+  const handleCancel = () => {
+    setEditValues({
+      bookTitle: bookData.bookTitle || '',
+      authorName: bookData.authorName || '',
+      publisher: bookData.publisher || 'AiBookPublisher',
+      language: bookData.language || 'English',
+      genre: bookData.genre || 'Fiction',
+      numberOfChapters: bookData.numberOfChapters || 'TBD',
+      ideaCore: bookData.ideaCore || 'A compelling narrative that explores themes of human connection and growth.',
+      authorBio: bookData.authorBio || `${bookData.authorName || 'The author'} is a talented writer with a unique perspective on storytelling.`
+    });
+    setEditMode(false);
   };
 
   const EditableField = ({ 
@@ -166,97 +181,128 @@ export const CoverContent: React.FC<CoverContentProps> = ({ bookData, editMode, 
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 md:px-8 flex flex-col items-center">
-      <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-tight mb-4 sm:mb-6 text-center break-words">
-        <EditableField fieldName="bookTitle" value={editValues.bookTitle} placeholder="Enter book title..." />
-      </h1>
-      
-      <div className="flex items-center justify-center mb-6 sm:mb-8">
-        <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
-        <p className="text-xl sm:text-2xl font-semibold text-gray-800 px-4 sm:px-6">
-          <EditableField fieldName="authorName" value={editValues.authorName} placeholder="Enter author name..." />
-        </p>
-        <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mb-8 text-left">
-        <div className="flex items-start space-x-3">
-          <div className="bg-amber-100 p-2 rounded-lg">
-            <Book className="w-5 h-5 text-amber-700" />
+    <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12 rounded-lg shadow-lg">
+      <div className="mx-auto p-6 sm:p-12">
+        {/* Edit Mode Controls */}
+        {editMode && (
+          <div className="flex justify-end gap-3 mb-6">
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              variant="default"
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={() => {
+                // Save all changes
+                Object.entries(editValues).forEach(([field, value]) => {
+                  if (value !== bookData[field]) {
+                    saveField(field, value);
+                  }
+                });
+              }}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Changes
+            </Button>
           </div>
-          <div>
-            <p className="text-sm text-gray-500 font-medium">Publisher</p>
-            <p className="text-base text-gray-800">
-              <EditableField fieldName="publisher" value={editValues.publisher} placeholder="Enter publisher..." />
-            </p>
+        )}
+
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-tight mb-4 sm:mb-6 text-center break-words">
+          <EditableField fieldName="bookTitle" value={editValues.bookTitle} placeholder="Enter book title..." />
+        </h1>
+        
+        <div className="flex items-center justify-center mb-6 sm:mb-8">
+          <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
+          <p className="text-xl sm:text-2xl font-semibold text-gray-800 px-4 sm:px-6">
+            <EditableField fieldName="authorName" value={editValues.authorName} placeholder="Enter author name..." />
+          </p>
+          <div className="h-px w-12 sm:w-16 bg-gray-300"></div>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mb-8 text-left">
+          <div className="flex items-start space-x-3">
+            <div className="bg-amber-100 p-2 rounded-lg">
+              <Book className="w-5 h-5 text-amber-700" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Publisher</p>
+              <p className="text-base text-gray-800">
+                <EditableField fieldName="publisher" value={editValues.publisher} placeholder="Enter publisher..." />
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <Globe className="w-5 h-5 text-blue-700" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Language</p>
+              <p className="text-base text-gray-800">
+                <EditableField fieldName="language" value={editValues.language} placeholder="Enter language..." />
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <div className="bg-purple-100 p-2 rounded-lg">
+              <Bookmark className="w-5 h-5 text-purple-700" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Genre</p>
+              <p className="text-base text-gray-800">
+                <EditableField fieldName="genre" value={editValues.genre} placeholder="Enter genre..." />
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <div className="bg-green-100 p-2 rounded-lg">
+              <BookOpen className="w-5 h-5 text-green-700" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Chapters</p>
+              <p className="text-base text-gray-800">
+                <EditableField fieldName="numberOfChapters" value={editValues.numberOfChapters} placeholder="Enter number of chapters..." />
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-start space-x-3">
-          <div className="bg-blue-100 p-2 rounded-lg">
-            <Globe className="w-5 h-5 text-blue-700" />
+        <div className="mt-8 w-full">
+          <div className="flex items-center mb-3">
+            <PenTool className="w-5 h-5 text-gray-600 mr-2" />
+            <h3 className="text-lg font-semibold text-gray-800">Core Concept</h3>
           </div>
-          <div>
-            <p className="text-sm text-gray-500 font-medium">Language</p>
-            <p className="text-base text-gray-800">
-              <EditableField fieldName="language" value={editValues.language} placeholder="Enter language..." />
-            </p>
-          </div>
+          <p className="text-base text-gray-700 leading-relaxed text-left">
+            <EditableField 
+              fieldName="ideaCore" 
+              value={editValues.ideaCore} 
+              isMultiline={true} 
+              placeholder="Enter the core concept of your book..."
+            />
+          </p>
         </div>
 
-        <div className="flex items-start space-x-3">
-          <div className="bg-purple-100 p-2 rounded-lg">
-            <Bookmark className="w-5 h-5 text-purple-700" />
+        <div className="mt-8 w-full">
+          <div className="flex items-center mb-3">
+            <User className="w-5 h-5 text-gray-600 mr-2" />
+            <h3 className="text-lg font-semibold text-gray-800">About the Author</h3>
           </div>
-          <div>
-            <p className="text-sm text-gray-500 font-medium">Genre</p>
-            <p className="text-base text-gray-800">
-              <EditableField fieldName="genre" value={editValues.genre} placeholder="Enter genre..." />
-            </p>
-          </div>
+          <p className="text-base text-gray-700 leading-relaxed text-left">
+            <EditableField 
+              fieldName="authorBio" 
+              value={editValues.authorBio} 
+              isMultiline={true}
+              placeholder="Enter information about the author..."
+            />
+          </p>
         </div>
-
-        <div className="flex items-start space-x-3">
-          <div className="bg-green-100 p-2 rounded-lg">
-            <BookOpen className="w-5 h-5 text-green-700" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 font-medium">Chapters</p>
-            <p className="text-base text-gray-800">
-              <EditableField fieldName="numberOfChapters" value={editValues.numberOfChapters} placeholder="Enter number of chapters..." />
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8 w-full">
-        <div className="flex items-center mb-3">
-          <PenTool className="w-5 h-5 text-gray-600 mr-2" />
-          <h3 className="text-lg font-semibold text-gray-800">Core Concept</h3>
-        </div>
-        <p className="text-base text-gray-700 leading-relaxed text-left">
-          <EditableField 
-            fieldName="ideaCore" 
-            value={editValues.ideaCore} 
-            isMultiline={true} 
-            placeholder="Enter the core concept of your book..."
-          />
-        </p>
-      </div>
-
-      <div className="mt-8 w-full">
-        <div className="flex items-center mb-3">
-          <User className="w-5 h-5 text-gray-600 mr-2" />
-          <h3 className="text-lg font-semibold text-gray-800">About the Author</h3>
-        </div>
-        <p className="text-base text-gray-700 leading-relaxed text-left">
-          <EditableField 
-            fieldName="authorBio" 
-            value={editValues.authorBio} 
-            isMultiline={true}
-            placeholder="Enter information about the author..."
-          />
-        </p>
       </div>
     </div>
   );

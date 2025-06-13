@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Loader2,  Image,
   BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft, ChevronRight, Check, Pencil,
-  Eye
+  Eye, X, Save
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFetchBookByIdQuery,   useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
@@ -62,6 +62,7 @@ const BookModel = () => {
   const isComplete=book?.data.type==="complete"
   const PAGES: PageContent[] = [
     { id: 'cover', icon: <BookOpen className="w-4 h-4" />, label: 'Cover' },
+    { id: 'coverContent', icon: <BookOpen className="w-4 h-4" />, label: 'CoverContent' },
     { id: 'dedication', icon: <Heart className="w-4 h-4" />, label: 'Dedication' },
     { id: 'introduction', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Introduction' },
     { id: 'preface', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Preface' },
@@ -419,8 +420,29 @@ const renderCurrentPageContent = (
   switch (currentPage) {
     case 'cover':
       return (
-        <div className="flex flex-col items-center justify-center min-h-[800px] text-center space-y-8 relative bg-white">
-          <div className="relative w-full max-w-2xl">
+        <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12 rounded-lg shadow-lg">
+          {/* Edit Mode Controls */}
+          {editMode && (
+            <div className="flex justify-end gap-3 mb-6">
+              <Button
+                variant="outline"
+                onClick={() => setEditMode(false)}
+                className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                variant="default"
+                className="bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
+              </Button>
+            </div>
+          )}
+
+          <div className="relative w-full max-w-2xl h-[42rem]">
             <ImageUpload
               currentImage={bookData.additionalData.coverImageUrl}
               onImageUpdate={(file) => onImageUpdate(file, 'cover')}
@@ -430,19 +452,22 @@ const renderCurrentPageContent = (
               imageType="cover"
             />
           </div>
-          <CoverContent
-            bookData={bookData}
-            editMode={editMode}
-            refetchBook={refetchBook}
-            setEditMode={setEditMode}
-          />
+         
           {/* Copyright Notice */}
-          <div className="text-sm text-gray-500 mt-4">
+          <div className="text-sm text-gray-500 mt-4 text-center">
             © {new Date().getFullYear()} {bookData.authorName}. All rights reserved.
           </div>
         </div>
       );
-
+case 'coverContent':
+      return (
+        <CoverContent
+          bookData={bookData}
+          editMode={editMode}
+          refetchBook={refetchBook}
+          setEditMode={setEditMode}
+        />
+      );
     case 'dedication':
       return (
         <Content
@@ -583,11 +608,11 @@ const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing, bookId, im
   };
 
   return (
-    <div className="relative group">
+    <div className="relative group h-full">
       <img
         src={`${BASE_URl}/uploads/${currentImage}?v=${imageVersion}`} // Add cache busting parameter
         alt={label}
-        className="w-full h-auto rounded-lg shadow-2xl"
+        className="w-full h-full rounded-lg shadow-2xl"
         onError={(e) => {
           e.currentTarget.src = 'https://placehold.co/400x600/f59e0b/ffffff?text=No+Cover';
         }}

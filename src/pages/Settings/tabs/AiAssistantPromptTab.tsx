@@ -59,6 +59,8 @@ const previewData: PreviewData = {
   },
   bookCover: {
     bookTitle: "The Cosmic Journey",
+    authorName: "John Smith",
+    subtitle: "A Tale of Space and Time",
     genre: "Science Fiction",
     targetAudience: "Young Adults",
     coreIdea: "Space exploration and discovery",
@@ -93,7 +95,7 @@ Please provide:
 3. Key plot points
 4. Target audience appeal`,
 
-  bookCover: `Design a cover for "${'{bookTitle}'}", a ${'{genre}'} book for ${'{targetAudience}'}.
+  bookCover: `Design a cover for "${'{bookTitle}'}"${'{subtitle}' ? ` - ${'{subtitle}'}` : ''}${'{authorName}' ? ` by ${'{authorName}'}` : ''}${'{genre}' ? `, a ${'{genre}'} book` : ''}${'{targetAudience}' ? ` for ${'{targetAudience}'}` : ''}.
 Core Concept: ${'{coreIdea}'}
 Style Guidelines: ${'{systemPrompt}'}
 
@@ -101,7 +103,8 @@ The cover should:
 1. Reflect the genre and theme
 2. Appeal to the target audience
 3. Be visually striking
-4. Convey the book's essence`,
+4. Convey the book's essence
+5. Include space for title${'{subtitle}' ? ', subtitle' : ''}${'{authorName}' ? ' and author name' : ''}`,
 
   writingAssistant: `As a writing coach for a ${'{genre}'} author:
 - Writing Goal: ${'{writingGoal}'}
@@ -142,6 +145,8 @@ const parameterButtons: ParameterButtons = {
   ],
   bookCover: [
     { label: 'Book Title', value: '${bookTitle}' },
+    { label: 'Author Name', value: '${authorName}' },
+    { label: 'Subtitle', value: '${subtitle}' },
     { label: 'Genre', value: '${genre}' },
     { label: 'Target Audience', value: '${targetAudience}' },
     { label: 'Core Idea', value: '${coreIdea}' },
@@ -169,6 +174,10 @@ const parameterButtons: ParameterButtons = {
 const validatePromptParameters = (type: PromptType, prompt: string, parameters: Parameter[]): string[] => {
   const missingParams: string[] = [];
   parameters.forEach(param => {
+    // Skip validation for optional parameters in bookCover type
+    if (type === 'bookCover' && ['authorName', 'subtitle', 'genre'].includes(param.label)) {
+      return;
+    }
     if (!prompt.includes(param.value)) {
       missingParams.push(param.label);
     }

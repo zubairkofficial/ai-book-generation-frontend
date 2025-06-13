@@ -19,6 +19,7 @@ import { useDispatch } from 'react-redux';
 import { logout } from '@/features/auth/authSlice';
 import { cn } from '@/lib/utils';
 import { useUserMeQuery } from '@/api/userApi';
+import { useGetCurrentSubscriptionQuery } from '@/api/subscriptionApi';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -28,7 +29,9 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const dispatch = useDispatch();
   const { data:user } = useUserMeQuery();
-
+   const { data: currentSubscriptions } = useGetCurrentSubscriptionQuery();
+   
+console.log("user,usr",currentSubscriptions?.length)
   const handleLogout = () => {
     dispatch(logout());
   };
@@ -60,6 +63,12 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       : []),
     { path: '/settings', icon: <Settings className="h-4 w-4" />, label: 'Settings' },
   ];
+
+  const isItemDisabled = (path: string) => {
+    if (user?.role !== 'user') return false;
+    if (!currentSubscriptions?.length && path !== '/subscription') return true;
+    return false;
+  };
 
   return (
     <>
@@ -100,32 +109,40 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
         {/* Streamlined Navigation */}
         <nav className="p-3 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={() => {
-                // Only close sidebar on mobile views
-                if (window.innerWidth < 768) {
-                  setIsOpen(false);
+          {navItems.map((item) => {
+            const disabled = isItemDisabled(item.path);
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={(e) => {
+                  if (disabled) {
+                    e.preventDefault();
+                    return;
+                  }
+                  // Only close sidebar on mobile views
+                  if (window.innerWidth < 768) {
+                    setIsOpen(false);
+                  }
+                }}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all duration-200",
+                    "hover:bg-amber-50/80 active:bg-amber-100",
+                    "font-medium text-sm text-gray-600 hover:text-amber-600",
+                    "group hover:shadow-sm",
+                    isActive && "bg-gradient-to-r from-amber-50 to-amber-100/50 text-amber-600 shadow-sm",
+                    disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+                  )
                 }
-              }}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all duration-200",
-                  "hover:bg-amber-50/80 active:bg-amber-100",
-                  "font-medium text-sm text-gray-600 hover:text-amber-600",
-                  "group hover:shadow-sm",
-                  isActive && "bg-gradient-to-r from-amber-50 to-amber-100/50 text-amber-600 shadow-sm"
-                )
-              }
-            >
-              <span className="group-hover:scale-110 transition-transform duration-200">
-                {item.icon}
-              </span>
-              <span className="truncate">{item.label}</span>
-            </NavLink>
-          ))}
+              >
+                <span className="group-hover:scale-110 transition-transform duration-200">
+                  {item.icon}
+                </span>
+                <span className="truncate">{item.label}</span>
+              </NavLink>
+            );
+          })}
         </nav>
 
         {/* Compact User Section */}
