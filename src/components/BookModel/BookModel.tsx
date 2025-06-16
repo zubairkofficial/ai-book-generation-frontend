@@ -420,27 +420,22 @@ const renderCurrentPageContent = (
   switch (currentPage) {
     case 'cover':
       return (
-        <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12 rounded-lg shadow-lg">
-          {/* Edit Mode Controls */}
-          {editMode && (
-            <div className="flex justify-end gap-3 mb-6">
-              <Button
+        <>
+         {editMode && (
+            <div className="flex justify-end gap-3 mb-6">              <Button
                 variant="outline"
                 onClick={() => setEditMode(false)}
-                className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                className="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 shadow-sm transition-all duration-200 hover:border-gray-400 font-medium"
               >
-                <X className="w-4 h-4 mr-2" />
+                <X className="w-4 h-4 mr-2 text-gray-600" />
                 Cancel
               </Button>
-              <Button
-                variant="default"
-                className="bg-amber-500 hover:bg-amber-600 text-white"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
-              </Button>
+            
             </div>
           )}
+        <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12 rounded-lg shadow-lg">
+          {/* Edit Mode Controls */}
+         
 
           <div className="relative w-full max-w-2xl h-[42rem]">
             <ImageUpload
@@ -458,6 +453,7 @@ const renderCurrentPageContent = (
             © {new Date().getFullYear()} {bookData.authorName}. All rights reserved.
           </div>
         </div>
+        </>
       );
 case 'coverContent':
       return (

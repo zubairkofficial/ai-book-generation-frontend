@@ -181,36 +181,24 @@ export const CoverContent: React.FC<CoverContentProps> = ({ bookData, editMode, 
   };
 
   return (
+    <>
+     {editMode && (
+          <div className="flex justify-end gap-3 mb-6">            <Button
+              variant="outline"
+              onClick={handleCancel}
+              className="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 shadow-sm transition-all duration-200 hover:border-gray-400 font-medium"
+            >
+              <X className="w-4 h-4 mr-2 text-gray-600" />
+              Cancel
+            </Button>
+           
+          </div>
+        )}
+    
     <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12 rounded-lg shadow-lg">
       <div className="mx-auto p-6 sm:p-12">
         {/* Edit Mode Controls */}
-        {editMode && (
-          <div className="flex justify-end gap-3 mb-6">
-            <Button
-              variant="outline"
-              onClick={handleCancel}
-              className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Cancel
-            </Button>
-            <Button
-              variant="default"
-              className="bg-amber-500 hover:bg-amber-600 text-white"
-              onClick={() => {
-                // Save all changes
-                Object.entries(editValues).forEach(([field, value]) => {
-                  if (value !== bookData[field]) {
-                    saveField(field, value);
-                  }
-                });
-              }}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </Button>
-          </div>
-        )}
+       
 
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-tight mb-4 sm:mb-6 text-center break-words">
           <EditableField fieldName="bookTitle" value={editValues.bookTitle} placeholder="Enter book title..." />
@@ -305,5 +293,6 @@ export const CoverContent: React.FC<CoverContentProps> = ({ bookData, editMode, 
         </div>
       </div>
     </div>
+    </>
   );
 }; 
