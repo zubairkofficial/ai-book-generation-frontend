@@ -284,13 +284,13 @@ const BookCoverDesign = () => {
               animate={{ opacity: 1, x: 0 }}
               className="lg:col-span-2"
             >
-              <Card className="bg-white/50 backdrop-blur-sm">
+              <Card className="bg-white/0 backdrop-blur-none shadow-none border-none">
                 <ScrollArea className="h-[41rem] pr-4">
                   <CardHeader>
                     <CardTitle>Generated Design</CardTitle>
                     <CardDescription>AI-generated cover design and suggestions</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="p-0 space-y-6">
                     {generatedImages.length > 0 ? (
                       <div className="space-y-8">
                         {generatedImages.map((imageUrl, index) => (
@@ -306,13 +306,13 @@ const BookCoverDesign = () => {
                                 Download Cover {generatedImages.length > 1 ? index + 1 : ''}
                               </Button>
                             </div>
-                            <div className="rounded-lg overflow-hidden shadow-lg">
+                            {/* <div className="flex justify-center items-center"> */}
                               <img 
                                 src={imageUrl} 
                                 alt={`Generated book cover ${index + 1}`} 
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                               />
-                            </div>
+                            {/* </div> */}
                            
                           </div>
                         ))}
