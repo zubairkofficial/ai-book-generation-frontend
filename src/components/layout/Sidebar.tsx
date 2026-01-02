@@ -28,10 +28,10 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const dispatch = useDispatch();
-  const { data:user } = useUserMeQuery();
-   const { data: currentSubscriptions } = useGetCurrentSubscriptionQuery();
-   
-console.log("user,usr",currentSubscriptions?.length)
+  const { data: user } = useUserMeQuery();
+  const { data: currentSubscriptions } = useGetCurrentSubscriptionQuery();
+
+  console.log("user,usr", currentSubscriptions?.length)
   const handleLogout = () => {
     dispatch(logout());
   };
@@ -40,26 +40,26 @@ console.log("user,usr",currentSubscriptions?.length)
     setIsOpen(!isOpen);
   };
 
-  const trimText = (trimmedText:string, number: number) => {
-   if(trimmedText.length > number)
-    return trimmedText.substring(0, number)+"...";
-  return trimmedText;
+  const trimText = (trimmedText: string, number: number) => {
+    if (trimmedText.length > number)
+      return trimmedText.substring(0, number) + "...";
+    return trimmedText;
   };
   const navItems = [
     { path: '/home', icon: <Home className="h-4 w-4" />, label: 'Home' },
-    { path: '/books', icon: <BookOpen className="h-4 w-4" />,  label: user?.role === 'admin' ? 'AI Books' : 'My Books' },
+    { path: '/books', icon: <BookOpen className="h-4 w-4" />, label: user?.role === 'admin' ? 'AI Books' : 'My Books' },
     { path: '/ai-assistant', icon: <Sparkles className="h-4 w-4" />, label: 'AI Assistant' },
-    ...(user?.role === 'user' ?[
-    // { path: '/payment', icon: <CreditCard className="h-4 w-4" />, label: 'Recharge' },
-    { path: '/subscription', icon: <Package className="h-4 w-4" />, label: 'Subscription Plans' },
- ]:[]),
+    ...(user?.role === 'user' ? [
+      // { path: '/payment', icon: <CreditCard className="h-4 w-4" />, label: 'Recharge' },
+      { path: '/subscription', icon: <Package className="h-4 w-4" />, label: 'Subscription Plans' },
+    ] : []),
     // Conditionally include admin links for admin users
-    ...(user?.role === 'admin' 
+    ...(user?.role === 'admin'
       ? [
-          { path: '/analytics', icon: <BarChart className="h-4 w-4" />, label: 'User Analytics' },
-          { path: '/admin/packages', icon: <Package className="h-4 w-4" />, label: 'Manage Packages' },
-          { path: '/free-subscriptions', icon: <GiftIcon className="h-4 w-4" />, label: 'Free Subscriptions' },
-        ] 
+        { path: '/analytics', icon: <BarChart className="h-4 w-4" />, label: 'User Analytics' },
+        { path: '/admin/packages', icon: <Package className="h-4 w-4" />, label: 'Manage Packages' },
+        { path: '/free-subscriptions', icon: <GiftIcon className="h-4 w-4" />, label: 'Free Subscriptions' },
+      ]
       : []),
     { path: '/settings', icon: <Settings className="h-4 w-4" />, label: 'Settings' },
   ];
@@ -159,7 +159,7 @@ console.log("user,usr",currentSubscriptions?.length)
                 <p className="text-xs text-gray-500 truncate">
                   {trimText(user?.email ?? "", 18)}
                 </p>
-               
+
               </div>
             </div>
           </div>

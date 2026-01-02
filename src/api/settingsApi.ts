@@ -13,21 +13,23 @@ interface SettingsResponse {
   writingAssistantMasterPrompt?: string;
   chapterSummaryMasterPrompt?: string;
   presentationSlidesMasterPrompt?: string;
+  emailVerificationEnabled?: boolean;
 }
 
 export interface UpdateSettingsRequest {
   id?: number;
-  coverImagePrompt?: string|null;
-  coverImageModel?: string|null;
-  coverImageDomainUrl?: string|null;
-  chapterImagePrompt?: string|null;
-  chapterImageModel?: string|null;
-  chapterImageDomainUrl?: string|null;
-  bookIdeaMasterPrompt?: string|null;
-  bookCoverMasterPrompt?: string|null;
-  writingAssistantMasterPrompt?: string|null;
-  chapterSummaryMasterPrompt?: string|null;
-  presentationSlidesMasterPrompt?: string|null;
+  coverImagePrompt?: string | null;
+  coverImageModel?: string | null;
+  coverImageDomainUrl?: string | null;
+  chapterImagePrompt?: string | null;
+  chapterImageModel?: string | null;
+  chapterImageDomainUrl?: string | null;
+  bookIdeaMasterPrompt?: string | null;
+  bookCoverMasterPrompt?: string | null;
+  writingAssistantMasterPrompt?: string | null;
+  chapterSummaryMasterPrompt?: string | null;
+  presentationSlidesMasterPrompt?: string | null;
+  emailVerificationEnabled?: boolean;
 }
 
 export const settingsApi = baseApi.injectEndpoints({

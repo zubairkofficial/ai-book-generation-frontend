@@ -13,10 +13,11 @@ interface SignInRequest {
 }
 
 export interface AuthResponse {
-  user: { id: string; email: string,name: string};
+  user: { id: string; email: string; name: string; role: string };
   token: string;
   message: string;
   accessToken: string;
+  shouldRedirect?: boolean;
 }
 
 interface ResetPasswordRequest {

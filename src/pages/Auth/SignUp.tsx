@@ -42,7 +42,7 @@ export default function SignUp() {
 
   const [signUp] = useSignUpMutation();
   const navigate = useNavigate();
- const { addToast } = useToast(); // Use custom toast hook
+  const { addToast } = useToast(); // Use custom toast hook
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,11 +59,18 @@ export default function SignUp() {
       setIsLoading(true);
 
       // Call the sign-up API
-     const response= await signUp({ email, password, name }).unwrap();
-     if(response){ 
-      addToast('Account created successfully! Please check your email for verification.',ToastType.SUCCESS);
-      navigate('/auth/verify-email', { state: { email } });
-}
+      const response = await signUp({ email, password, name }).unwrap();
+
+      if (response) {
+        if (response.shouldRedirect) {
+          addToast('Account created successfully! Please log in.', ToastType.SUCCESS);
+          // Navigate to AuthPage with login view state
+          navigate('/auth', { state: { view: 'login' } });
+        } else {
+          addToast('Account created successfully! Please check your email for verification.', ToastType.SUCCESS);
+          navigate('/auth/verify-email', { state: { email } });
+        }
+      }
     } catch (error: any) {
       if (error.name === 'ValidationError') {
         // Handle validation errors
@@ -76,10 +83,10 @@ export default function SignUp() {
         setErrors(validationErrors);
 
         // Display the first validation error using toast
-        addToast(validationErrors[Object.keys(validationErrors)[0]] || 'Something went wrong!',ToastType.ERROR);
+        addToast(validationErrors[Object.keys(validationErrors)[0]] || 'Something went wrong!', ToastType.ERROR);
       } else {
         // Handle API errors
-        addToast(error.data.message??error.data.message?.errors[0].constraints.matches,ToastType.ERROR);
+        addToast(error.data.message ?? error.data.message?.errors[0].constraints.matches, ToastType.ERROR);
       }
     } finally {
       setIsLoading(false);

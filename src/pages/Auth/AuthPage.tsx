@@ -1,14 +1,25 @@
 // pages/AuthPage.tsx
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { BookOpenCheck, BookOpen, Sparkles, Brain, Rocket, Globe } from 'lucide-react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SignIn from './SignIn';
 import SignUp from './SignUp';
 import '../../styles/globals.css';
+import { useEffect } from 'react';
+
 export default function AuthPage() {
+  const location = useLocation();
   const [isLogin, setIsLogin] = useState(true);
+
+  useEffect(() => {
+    if (location.state?.view === 'signup') {
+      setIsLogin(false);
+    } else if (location.state?.view === 'login') {
+      setIsLogin(true);
+    }
+  }, [location.state]);
 
   const features = [
     {
@@ -78,14 +89,14 @@ export default function AuthPage() {
             Create Amazing Books with AI
           </h1>
           <p className="text-xl text-gray-600 mb-12">
-            Unleash your creativity with our AI-powered book generation platform. 
+            Unleash your creativity with our AI-powered book generation platform.
             Turn your ideas into professionally crafted stories in minutes.
           </p>
 
           {/* Feature Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             {features.map((feature, index) => (
-              <div 
+              <div
                 key={index}
                 className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:transform hover:-translate-y-1 transition-all duration-300"
               >
@@ -96,7 +107,7 @@ export default function AuthPage() {
             ))}
           </div>
 
-         
+
         </div>
       </div>
 

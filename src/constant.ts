@@ -1,21 +1,21 @@
 //baseUrl
-// export const BASE_URl="http://localhost:3000/api/v1"
+export const BASE_URl = "http://localhost:3000/api/v1"
 //live url
-export const BASE_URl="https://app.aibooklegacy.com/backend/api/v1"
+//export const BASE_URl="https://app.aibooklegacy.com/backend/api/v1"
 export enum ToastType {
-    SUCCESS = 'success',
-    ERROR = 'error',
-    WARNING = 'warning',
-    INFO = 'info',
-  }
+  SUCCESS = 'success',
+  ERROR = 'error',
+  WARNING = 'warning',
+  INFO = 'info',
+}
 
-  export type Toast = {
-    id: string;
-    message: string;
-    type: ToastType; // Use the enum here
-  };
+export type Toast = {
+  id: string;
+  message: string;
+  type: ToastType; // Use the enum here
+};
 
-export const DEFAULT_Model="gpt-4o"
+export const DEFAULT_Model = "gpt-4o"
 
 export const FONT_OPTIONS = [
   { label: 'Times New Roman', value: 'Times New Roman' },

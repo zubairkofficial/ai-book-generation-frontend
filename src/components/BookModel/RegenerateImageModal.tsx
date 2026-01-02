@@ -12,12 +12,14 @@ interface RegenerateImageModalProps {
   onClose: () => void;
   bookId: number;
   imageType: 'cover' | 'backCover';
+  onSuccess?: () => void;
 }
 
-export const RegenerateImageModal = ({ isOpen, onClose, bookId, imageType }: RegenerateImageModalProps) => {
+export const RegenerateImageModal = ({ isOpen, onClose, bookId, imageType, onSuccess }: RegenerateImageModalProps) => {
   const [additionalContent, setAdditionalContent] = useState('');
   const [regenerateImage, { isLoading }] = useRegenerateImageMutation();
-const {addToast}=useToast()
+  const { addToast } = useToast();
+
   // Add validation and debug logging
   console.log("RegenerateImageModal props:", { isOpen, bookId, imageType });
 
@@ -41,8 +43,10 @@ const {addToast}=useToast()
       }).unwrap();
 
       setAdditionalContent('');
+      addToast('Image regenerated successfully', 'success');
+      if (onSuccess) onSuccess();
       onClose();
-    } catch (error:any) {
+    } catch (error: any) {
       if (error instanceof Error) {
         addToast(error.message, ToastType.ERROR);
       } else {
@@ -58,7 +62,7 @@ const {addToast}=useToast()
         <DialogHeader>
           <DialogTitle>Regenerate {imageType === 'cover' ? 'Cover' : 'Back Cover'} Image</DialogTitle>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
             <label htmlFor="additionalContent" className="text-sm font-medium leading-none">
@@ -78,8 +82,8 @@ const {addToast}=useToast()
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={isLoading || !additionalContent.trim()}
           >
             {isLoading ? (

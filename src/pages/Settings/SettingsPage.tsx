@@ -1,5 +1,5 @@
 // pages/SettingsPage.tsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUserMeQuery, useUpdateUserMutation } from "@/api/userApi";
 import { UpdateUserPayload } from "@/interfaces/user.interface";
 import { useToast } from "@/context/ToastContext"; // Import custom toast hook
-import { DEFAULT_Model, ToastType } from "@/constant";
+import { ToastType } from "@/constant";
 import {
   useFetchApiKeysQuery,
   useUpdateApiKeysMutation,
@@ -26,12 +26,14 @@ import {
   AlertCircle,
   Loader2,
   Coins,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { ModelPromptTab } from "./tabs/ModelPromptTab";
 import { Card } from "@/components/ui/card";
 import { useFetchSettingsQuery } from "@/api/settingsApi";
 import TokenSettingsModal from "@/components/admin/TokenSettingsModal";
 import { AiAssistantPromptTab } from './tabs/AiAssistantPromptTab';
+import { GeneralSettingsTab } from './tabs/GeneralSettingsTab';
 // Add validation schemas
 const passwordSchema = yup.object({
   oldPassword: yup
@@ -129,10 +131,10 @@ const SettingsPage = () => {
   const isAdmin = userInfo?.role === 'admin';
 
   // Only fetch API keys if user is admin
-  const { data: apiKeyInfo,refetch:refetchApiKey } = useFetchApiKeysQuery(undefined, {
+  const { data: apiKeyInfo, refetch: refetchApiKey } = useFetchApiKeysQuery(undefined, {
     skip: userInfo?.role !== "admin",
   });
-console.log("stripe_key",apiKeyInfo)
+  console.log("stripe_key", apiKeyInfo)
   const [updateUser, { isLoading }] = useUpdateUserMutation();
   const { addToast } = useToast(); // Use custom toast hook
   const [updateApiKeys, { isLoading: isUpdatingKeys }] =
@@ -205,7 +207,7 @@ console.log("stripe_key",apiKeyInfo)
   useEffect(() => {
     if (apiKeyInfo) {
       resetApiKeys({
-        id: apiKeyInfo.id,
+        id: String(apiKeyInfo.id),
         openaiKey: "",
         stripeApiKey: "",
         falKey: "",
@@ -218,7 +220,7 @@ console.log("stripe_key",apiKeyInfo)
   useEffect(() => {
     if (apiKeyInfo && settingsData) {
       resetApiKeys({
-        id: apiKeyInfo.id,
+        id: String(apiKeyInfo.id),
         openaiKey: "",
         stripeApiKey: "",
         falKey: "",
@@ -314,11 +316,11 @@ console.log("stripe_key",apiKeyInfo)
 
   // Update API keys handler with better error handling
   const handleApiKeysSave = async (data: ApiKeysFormData) => {
-   console.log("data",data)
+    console.log("data", data)
     try {
       // Update API keys
       const apiKeysPayload = {
-        id: Number(apiKeyInfo?.id) || Number(data.id), 
+        id: Number(apiKeyInfo?.id) || Number(data.id),
         ...(data.llmModel && { model: data.llmModel }),
         ...(data.openaiKey && { openai_key: data.openaiKey }),
         ...(data.falKey && { fal_ai: data.falKey }),
@@ -326,14 +328,15 @@ console.log("stripe_key",apiKeyInfo)
       };
 
       // Make both API calls if needed
-      if (data.openaiKey || data.falKey || data.llmModel||data.stripeApiKey) {
+      if (data.openaiKey || data.falKey || data.llmModel || data.stripeApiKey) {
         await updateApiKeys(apiKeysPayload).unwrap();
         refetchApiKey()
       }
-      
-      
+
+
+
       resetApiKeys({
-        id: apiKeyInfo?.id,
+        id: apiKeyInfo?.id ? String(apiKeyInfo.id) : "",
         openaiKey: "",
         stripeApiKey: "",
         falKey: "",
@@ -341,7 +344,7 @@ console.log("stripe_key",apiKeyInfo)
       });
       addToast("API keys updated successfully!", ToastType.SUCCESS);
     } catch (error: any) {
-      addToast(`Failed to update API keys: ${error.message}`, ToastType.ERROR);
+      addToast(`Failed to update API keys: ${error?.data?.message || 'Something went wrong'}`, ToastType.ERROR);
     }
   };
 
@@ -396,6 +399,15 @@ console.log("stripe_key",apiKeyInfo)
 
                   {userInfo?.role === "admin" && (
                     <>
+                      <TabsTrigger
+                        value="general"
+                        className="flex-1 py-2.5 px-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <SettingsIcon className="w-4 h-4 text-gray-500 group-data-[state=active]:text-amber-500" />
+                          <span>General</span>
+                        </div>
+                      </TabsTrigger>
                       <TabsTrigger
                         value="api-keys"
                         className="flex-1 py-2.5 px-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
@@ -586,11 +598,10 @@ console.log("stripe_key",apiKeyInfo)
                             <Input
                               {...registerPassword("oldPassword")}
                               type="password"
-                              className={`w-full ${
-                                passwordErrors.oldPassword
-                                  ? "border-red-500"
-                                  : ""
-                              }`}
+                              className={`w-full ${passwordErrors.oldPassword
+                                ? "border-red-500"
+                                : ""
+                                }`}
                             />
                             {passwordErrors.oldPassword && (
                               <p className="text-sm text-red-500">
@@ -604,11 +615,10 @@ console.log("stripe_key",apiKeyInfo)
                             <Input
                               {...registerPassword("newPassword")}
                               type="password"
-                              className={`w-full ${
-                                passwordErrors.newPassword
-                                  ? "border-red-500"
-                                  : ""
-                              }`}
+                              className={`w-full ${passwordErrors.newPassword
+                                ? "border-red-500"
+                                : ""
+                                }`}
                             />
                             {passwordErrors.newPassword && (
                               <p className="text-sm text-red-500">
@@ -624,11 +634,10 @@ console.log("stripe_key",apiKeyInfo)
                             <Input
                               {...registerPassword("confirmPassword")}
                               type="password"
-                              className={`w-full ${
-                                passwordErrors.confirmPassword
-                                  ? "border-red-500"
-                                  : ""
-                              }`}
+                              className={`w-full ${passwordErrors.confirmPassword
+                                ? "border-red-500"
+                                : ""
+                                }`}
                             />
                             {passwordErrors.confirmPassword && (
                               <p className="text-sm text-red-500">
@@ -679,6 +688,9 @@ console.log("stripe_key",apiKeyInfo)
 
                 {userInfo?.role === "admin" && (
                   <>
+                    <TabsContent value="general">
+                      <GeneralSettingsTab />
+                    </TabsContent>
                     <TabsContent value="api-keys">
                       <div className="animate-in fade-in-50 duration-500">
                         <div className="max-w-2xl mx-auto space-y-6">
@@ -705,9 +717,9 @@ console.log("stripe_key",apiKeyInfo)
                                   <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
                                     {apiKeyInfo.openai_key
                                       ? `${apiKeyInfo.openai_key.substring(
-                                          0,
-                                          4
-                                        )}...${apiKeyInfo.openai_key.slice(-4)}`
+                                        0,
+                                        4
+                                      )}...${apiKeyInfo.openai_key.slice(-4)}`
                                       : "Not set"}
                                   </code>
                                 </div>
@@ -719,9 +731,9 @@ console.log("stripe_key",apiKeyInfo)
                                   <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
                                     {apiKeyInfo.fal_ai
                                       ? `${apiKeyInfo.fal_ai.substring(
-                                          0,
-                                          4
-                                        )}...${apiKeyInfo.fal_ai.slice(-4)}`
+                                        0,
+                                        4
+                                      )}...${apiKeyInfo.fal_ai.slice(-4)}`
                                       : "Not set"}
                                   </code>
                                 </div>
@@ -738,11 +750,11 @@ console.log("stripe_key",apiKeyInfo)
                                     Stripe API Key:
                                   </span>
                                   <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                                  {apiKeyInfo.stripe_key
+                                    {apiKeyInfo.stripe_key
                                       ? `${apiKeyInfo.stripe_key.substring(
-                                          0,
-                                          4
-                                        )}...${apiKeyInfo.stripe_key.slice(-4)}`
+                                        0,
+                                        4
+                                      )}...${apiKeyInfo.stripe_key.slice(-4)}`
                                       : "Not set"}
                                   </code>
                                 </div>
@@ -769,41 +781,40 @@ console.log("stripe_key",apiKeyInfo)
                                     type="password"
                                     id="openaiKey"
                                     placeholder="sk-..."
-                                    className={`w-full pr-10 ${
-                                      !openaiKeyValidation.isValid ||
+                                    className={`w-full pr-10 ${!openaiKeyValidation.isValid ||
                                       apiKeyErrors.openaiKey
-                                        ? "border-red-500"
-                                        : ""
-                                    }`}
+                                      ? "border-red-500"
+                                      : ""
+                                      }`}
                                   />
                                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                                     {(!openaiKeyValidation.isValid ||
                                       apiKeyErrors.openaiKey) && (
-                                      <svg
-                                        className="h-5 w-5 text-red-500"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                      </svg>
-                                    )}
+                                        <svg
+                                          className="h-5 w-5 text-red-500"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                          />
+                                        </svg>
+                                      )}
                                   </div>
                                 </div>
 
                                 {/* Error Message */}
                                 {(!openaiKeyValidation.isValid ||
                                   apiKeyErrors.openaiKey) && (
-                                  <p className="text-sm text-red-500">
-                                    {openaiKeyValidation.error ||
-                                      apiKeyErrors.openaiKey?.message}
-                                  </p>
-                                )}
+                                    <p className="text-sm text-red-500">
+                                      {openaiKeyValidation.error ||
+                                        apiKeyErrors.openaiKey?.message}
+                                    </p>
+                                  )}
 
                                 {/* Help Text */}
                                 <p className="text-xs text-gray-500">
@@ -820,9 +831,8 @@ console.log("stripe_key",apiKeyInfo)
                                     type="password"
                                     id="falKey"
                                     placeholder="fal_..."
-                                    className={`w-full pr-20 ${
-                                      apiKeyErrors.falKey ? "border-red-500" : ""
-                                    }`}
+                                    className={`w-full pr-20 ${apiKeyErrors.falKey ? "border-red-500" : ""
+                                      }`}
                                   />
                                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                                     {apiKeyErrors.falKey && (
@@ -863,11 +873,10 @@ console.log("stripe_key",apiKeyInfo)
                                     type="password"
                                     id="stripeApiKey"
                                     placeholder="sk_test_..."
-                                    className={`w-full pr-10 ${
-                                      !stripeKeyValidation.isValid || apiKeyErrors.stripeApiKey
-                                        ? "border-red-500"
-                                        : ""
-                                    }`}
+                                    className={`w-full pr-10 ${!stripeKeyValidation.isValid || apiKeyErrors.stripeApiKey
+                                      ? "border-red-500"
+                                      : ""
+                                      }`}
                                   />
                                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                                     {(!stripeKeyValidation.isValid || apiKeyErrors.stripeApiKey) && (
@@ -903,21 +912,20 @@ console.log("stripe_key",apiKeyInfo)
                                 <Label htmlFor="llmModel">LLM Model</Label>
                                 <select
                                   {...registerApiKeys("llmModel")}
-                                  className={`w-full rounded-md border ${
-                                    apiKeyErrors.llmModel
-                                      ? "border-red-500"
-                                      : "border-gray-300"
-                                  }`}
+                                  className={`w-full rounded-md border ${apiKeyErrors.llmModel
+                                    ? "border-red-500"
+                                    : "border-gray-300"
+                                    }`}
                                 >
                                   <option value="">Select a model</option>
                                   <option value="gpt-4-turbo-preview">
                                     GPT-4 Turbo Preview
                                   </option>
-                                  
+
                                   <option value="gpt-4o">
                                     GPT-4 Omni (Latest)
                                   </option>
-                                 
+
                                   <option value="gpt-4">GPT-4 (Original)</option>
                                   <option value="gpt-3.5-turbo-0125">
                                     GPT-3.5 Turbo (2024-01-25)
@@ -1006,7 +1014,7 @@ console.log("stripe_key",apiKeyInfo)
                               Configure how tokens are converted between credits and model/image tokens
                             </p>
                           </div>
-                          <TokenSettingsModal isOpen={true} onClose={() => {}} isEmbedded={true} />
+                          <TokenSettingsModal isOpen={true} onClose={() => { }} isEmbedded={true} />
                         </div>
                       </div>
                     </TabsContent>

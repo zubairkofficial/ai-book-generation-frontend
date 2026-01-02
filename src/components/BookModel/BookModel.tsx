@@ -1,12 +1,12 @@
-import { Dispatch,  SetStateAction,  useEffect,  useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { 
-  Loader2,  Image,
-  BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft, ChevronRight, Check, Pencil,
-  Eye, X, Save
+import {
+  Loader2, Image,
+  BookOpen, List, Heart, BookmarkIcon, Users, ArrowLeft, ChevronRight, Pencil,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useFetchBookByIdQuery,   useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
+import { useFetchBookByIdQuery, useUpdateImageMutation, useUpdateBookGeneratedMutation } from '@/api/bookApi';
 import { BASE_URl } from '@/constant';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { RegenerateImageModal } from './RegenerateImageModal';
@@ -41,11 +41,11 @@ interface TextStyle {
 const BookModel = () => {
   const [searchParams] = useSearchParams();
   const bookId = Number(searchParams.get('id') || 0);
-  
+
   // State
   const [currentPage, setCurrentPage] = useState<string>('cover');
   const [editMode, setEditMode] = useState(false);
-  const [textStyle, setTextStyle] = useState<TextStyle>({
+  const [textStyle] = useState<TextStyle>({
     bold: false,
     italic: false,
     align: 'left',
@@ -56,10 +56,10 @@ const BookModel = () => {
     letterSpacing: 'normal'
   });
   const { addToast } = useToast();
-  
+
   // API Hooks
   const { data: book, isLoading, refetch: refetchBook } = useFetchBookByIdQuery(bookId, { skip: !bookId });
-  const isComplete=book?.data.type==="complete"
+  const isComplete = book?.data.type === "complete"
   const PAGES: PageContent[] = [
     { id: 'cover', icon: <BookOpen className="w-4 h-4" />, label: 'Cover' },
     { id: 'coverContent', icon: <BookOpen className="w-4 h-4" />, label: 'CoverContent' },
@@ -72,14 +72,14 @@ const BookModel = () => {
       { id: 'index', icon: <List className="w-4 h-4" />, label: 'Index' },
       { id: 'references', icon: <BookmarkIcon className="w-4 h-4" />, label: 'References' },
     ] : []),
-     ];
+  ];
 
   const [updateImage] = useUpdateImageMutation();
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
 
   // Add navigate function
   const navigate = useNavigate();
-useEffect(()=>{refetchBook()},[])
+  useEffect(() => { refetchBook() }, [])
   // Handle image update
   const handleImageUpdate = async (file: File, type: 'cover' | 'backCover') => {
     if (!bookId) return;
@@ -90,10 +90,10 @@ useEffect(()=>{refetchBook()},[])
         imageType: type,
         image: file
       }).unwrap();
-     await refetchBook()
-     addToast("Image updated successfully", "success");
+      await refetchBook()
+      addToast("Image updated successfully", "success");
 
-    } catch (error:any) {
+    } catch (error: any) {
       addToast("Failed to update image", "error");
     }
   };
@@ -101,8 +101,8 @@ useEffect(()=>{refetchBook()},[])
   // Handle content update
   const handleContentUpdate = async (content: string, pageType?: string) => {
     if (!bookId || !book?.data) return;
-    
-    
+
+
     try {
       switch (pageType) {
         case 'glossary':
@@ -111,43 +111,43 @@ useEffect(()=>{refetchBook()},[])
             glossary: content
           }).unwrap();
           break;
-          
+
         case 'index':
           await updateBookGenerated({
             bookGenerationId: book.data.id,
             index: content
           }).unwrap();
           break;
-          
+
         case 'references':
           await updateBookGenerated({
             bookGenerationId: book.data.id,
             references: content
           }).unwrap();
           break;
-          
+
         case 'toc':
           await updateBookGenerated({
             bookGenerationId: book.data.id,
             tableOfContents: content
           }).unwrap();
           break;
-          
+
         case 'dedication':
           await updateBookGenerated({
             bookGenerationId: book.data.id,
             dedication: content
           }).unwrap();
           break;
-          
+
         // Add other cases as needed
       }
-      
+
       setEditMode(false);
       await refetchBook();
-      
+
     } catch (error) {
-      addToast(`Failed to update ${pageType || 'content'}`, "error");
+      addToast(`Failed to update ${pageType || 'content'} `, "error");
     }
   };
 
@@ -155,33 +155,33 @@ useEffect(()=>{refetchBook()},[])
   const navStyles = {
     desktop: `
       hidden md:flex md:flex-col
-      fixed left-4 top-1/2 transform -translate-y-1/2 
-      bg-white/95 backdrop-blur-sm rounded-xl 
+      fixed left-4 top-1/2 transform -translate-y-1/2
+      bg-white/95 backdrop-blur-sm rounded-xl
       shadow-lg border border-gray-100
       p-3 space-y-1.5 transition-all duration-300
       hover:shadow-xl
-    `,
+  `,
     mobile: `
-      md:hidden fixed bottom-0 left-0 right-0 
+      md:hidden fixed bottom-0 left-0 right-0
       bg-white/95 backdrop-blur-sm
       shadow-[0_-4px_10px_rgba(0,0,0,0.05)]
       border-t border-gray-100
       px-2 py-1.5 z-50
-    `,
+  `,
     button: {
       base: `
         w-full transition-all duration-200
         hover:bg-amber-50 hover:text-amber-700
         focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1
         rounded-lg
-      `,
+  `,
       active: `
         bg-amber-100 text-amber-900
         shadow-inner
-      `,
+  `,
       inactive: `
         text-gray-600
-      `
+  `
     }
   };
 
@@ -190,8 +190,8 @@ useEffect(()=>{refetchBook()},[])
     <>
       {/* Desktop Navigation */}
       <div className={navStyles.desktop}>
-       
-        
+
+
         {PAGES.map((page) => {
           // Special handling for edit button
           if (page.id === 'edit') {
@@ -221,14 +221,14 @@ useEffect(()=>{refetchBook()},[])
                 ${navStyles.button.base}
                 ${currentPage === page.id ? navStyles.button.active : navStyles.button.inactive}
                 group text-left justify-start w-full
-              `}
+  `}
               title={page.label}
             >
               <div className="flex items-center gap-3 px-2 py-1 w-full">
                 <div className={`
                   ${currentPage === page.id ? 'text-amber-700' : 'text-gray-500'}
                   group-hover:text-amber-600 transition-colors flex-shrink-0
-                `}>
+  `}>
                   {page.icon}
                 </div>
                 <span className={`
@@ -236,15 +236,15 @@ useEffect(()=>{refetchBook()},[])
                   text-left
                   ${currentPage === page.id ? 'opacity-100' : 'opacity-60'}
                   group-hover:opacity-100
-                `}>
+  `}>
                   {page.label}
                 </span>
               </div>
             </Button>
           );
         })}
-        
-        
+
+
       </div>
 
       {/* Mobile Navigation */}
@@ -278,13 +278,13 @@ useEffect(()=>{refetchBook()},[])
                 className={`
                   px-3 py-2 rounded-lg transition-all
                   ${currentPage === page.id ? 'bg-amber-100 text-amber-900' : 'text-gray-600'}
-                `}
+`}
                 title={page.label}
               >
                 <div className="flex flex-col items-center gap-1">
                   <div className={`
                     ${currentPage === page.id ? 'text-amber-700' : 'text-gray-500'}
-                  `}>
+`}>
                     {page.icon}
                   </div>
                   <span className="text-[10px] font-medium">
@@ -295,13 +295,13 @@ useEffect(()=>{refetchBook()},[])
             );
           })}
         </div>
-        
+
         {/* Mobile Progress Indicator */}
         <div className="absolute -top-1 left-0 right-0 h-1 bg-gray-100">
-          <div 
+          <div
             className="h-full bg-amber-500 rounded-full transition-all duration-300"
-            style={{ 
-              width: `${((PAGES.findIndex(p => p.id === currentPage) + 1) / PAGES.length) * 100}%` 
+            style={{
+              width: `${((PAGES.findIndex(p => p.id === currentPage) + 1) / PAGES.length) * 100}%`
             }}
           />
         </div>
@@ -309,7 +309,7 @@ useEffect(()=>{refetchBook()},[])
     </>
   );
 
- 
+
 
   if (isLoading) {
     return (
@@ -334,9 +334,9 @@ useEffect(()=>{refetchBook()},[])
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            
+
             <div className="h-4 w-px bg-gray-200 mx-1"></div>
-            
+
             <nav className="flex items-center text-sm">
               <span className="text-gray-500">Books</span>
               <ChevronRight className="h-3 w-3 mx-1 text-gray-400" />
@@ -345,10 +345,10 @@ useEffect(()=>{refetchBook()},[])
               <span className="text-amber-600 font-medium">{PAGES.find(p => p.id === currentPage)?.label || "Preview"}</span>
             </nav>
           </div>
-          
+
           {/* Right section: Edit mode toggle with status indicator */}
           <div className="flex items-center">
-         
+
             <div className="hidden sm:flex items-center mx-3">
               <div className={`w-2 h-2 rounded-full mr-2 ${editMode ? "bg-amber-500" : "bg-gray-300"}`}></div>
               <span className="text-sm font-medium text-gray-600">
@@ -356,17 +356,17 @@ useEffect(()=>{refetchBook()},[])
               </span>
             </div>
             {!editMode ? (
-            <Button
-              variant={editMode ? "default" : "outline"}
-              size="sm"
-              onClick={() => setEditMode(!editMode)}
-              className={`flex items-center gap-1 ${editMode ? "bg-amber-500 hover:bg-amber-600 text-white" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}
-            >
-                  <Pencil className="h-3.5 w-3.5" />
-                  <span className="font-medium">Edit</span>
-                
-            </Button>
-              ):""}
+              <Button
+                variant={editMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setEditMode(!editMode)}
+                className={`flex items-center gap-1 ${editMode ? "bg-amber-500 hover:bg-amber-600 text-white" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="font-medium">Edit</span>
+
+              </Button>
+            ) : ""}
           </div>
         </div>
       </header>
@@ -390,10 +390,10 @@ useEffect(()=>{refetchBook()},[])
             }}
           >
             {renderCurrentPageContent(
-              currentPage, 
-              book.data, 
+              currentPage,
+              book.data,
               editMode,
-              setEditMode, 
+              setEditMode,
               handleContentUpdate,
               setCurrentPage,
               handleImageUpdate,
@@ -408,54 +408,55 @@ useEffect(()=>{refetchBook()},[])
 
 // Helper function to render current page content
 const renderCurrentPageContent = (
-  currentPage: string, 
-  bookData: any, 
+  currentPage: string,
+  bookData: any,
   editMode: boolean,
   setEditMode: Dispatch<SetStateAction<boolean>>,
   onUpdate: (content: string, pageType?: string) => void,
   onPageChange: (page: string) => void,
   onImageUpdate: (file: File, type: 'cover' | 'backCover') => void,
-  refetchBook: unknown
+  refetchBook: any
 ): JSX.Element => {
   switch (currentPage) {
     case 'cover':
       return (
         <>
-         {editMode && (
+          {editMode && (
             <div className="flex justify-end gap-3 mb-6">              <Button
-                variant="outline"
-                onClick={() => setEditMode(false)}
-                className="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 shadow-sm transition-all duration-200 hover:border-gray-400 font-medium"
-              >
-                <X className="w-4 h-4 mr-2 text-gray-600" />
-                Cancel
-              </Button>
-            
+              variant="outline"
+              onClick={() => setEditMode(false)}
+              className="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 shadow-sm transition-all duration-200 hover:border-gray-400 font-medium"
+            >
+              <X className="w-4 h-4 mr-2 text-gray-600" />
+              Cancel
+            </Button>
+
             </div>
           )}
-        <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12 rounded-lg shadow-lg">
-          {/* Edit Mode Controls */}
-         
+          <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12 rounded-lg shadow-lg">
+            {/* Edit Mode Controls */}
 
-          <div className="relative w-full max-w-2xl h-[42rem]">
-            <ImageUpload
-              currentImage={bookData.additionalData.coverImageUrl}
-              onImageUpdate={(file) => onImageUpdate(file, 'cover')}
-              label={bookData.bookTitle}
-              isEditing={editMode}
-              bookId={bookData.id}
-              imageType="cover"
-            />
+
+            <div className="relative w-full max-w-2xl h-[42rem]">
+              <ImageUpload
+                currentImage={bookData.additionalData.coverImageUrl}
+                onImageUpdate={(file) => onImageUpdate(file, 'cover')}
+                label={bookData.bookTitle}
+                isEditing={editMode}
+                bookId={bookData.id}
+                imageType="cover"
+                onBookRefresh={refetchBook}
+              />
+            </div>
+
+            {/* Copyright Notice */}
+            <div className="text-sm text-gray-500 mt-4 text-center">
+              © {new Date().getFullYear()} {bookData.authorName}. All rights reserved.
+            </div>
           </div>
-         
-          {/* Copyright Notice */}
-          <div className="text-sm text-gray-500 mt-4 text-center">
-            © {new Date().getFullYear()} {bookData.authorName}. All rights reserved.
-          </div>
-        </div>
         </>
       );
-case 'coverContent':
+    case 'coverContent':
       return (
         <CoverContent
           bookData={bookData}
@@ -475,17 +476,17 @@ case 'coverContent':
         />
       );
 
-   
+
     case 'introduction':
-        return (
-          <Content
-            section={BookSection.INTRODUCTION}
-            bookData={bookData}
-            editMode={editMode}
-            refetchBook={refetchBook}
-            setEditMode={setEditMode}
-          />
-        );
+      return (
+        <Content
+          section={BookSection.INTRODUCTION}
+          bookData={bookData}
+          editMode={editMode}
+          refetchBook={refetchBook}
+          setEditMode={setEditMode}
+        />
+      );
     case 'preface':
       return (
         <Content
@@ -499,31 +500,31 @@ case 'coverContent':
 
     case 'toc':
       return (
-        <TableOfContentsContent 
-          bookData={bookData} 
+        <TableOfContentsContent
+          bookData={bookData}
           editMode={editMode}
           onUpdate={(content) => onUpdate(content, 'toc')}
           onChapterSelect={(chapterNo) => onPageChange(`chapter-${chapterNo}`)}
-        
+
         />
       );
 
     case 'glossary':
       return (
-        <Content 
-        section={BookSection.GLOSSARY}  
-        bookData={bookData} 
+        <Content
+          section={BookSection.GLOSSARY}
+          bookData={bookData}
           editMode={editMode}
           setEditMode={setEditMode}
           refetchBook={refetchBook}
-          />
+        />
       );
 
     case 'index':
       return (
-        <Content 
-        section={BookSection.INDEX}  
-        bookData={bookData} 
+        <Content
+          section={BookSection.INDEX}
+          bookData={bookData}
           editMode={editMode}
           refetchBook={refetchBook}
           setEditMode={setEditMode}
@@ -532,16 +533,16 @@ case 'coverContent':
 
     case 'references':
       return (
-        <Content 
-        section={BookSection.REFERENCES}  
-        bookData={bookData} 
-        editMode={editMode}
-        refetchBook={refetchBook}
-        setEditMode={setEditMode}
+        <Content
+          section={BookSection.REFERENCES}
+          bookData={bookData}
+          editMode={editMode}
+          refetchBook={refetchBook}
+          setEditMode={setEditMode}
         />
       );
 
-   
+
     default:
       if (currentPage.startsWith('chapter-')) {
         const chapterNum = parseInt(currentPage.split('-')[1]);
@@ -553,7 +554,7 @@ case 'coverContent':
           const markdown = turndown.turndown(chapter.chapterInfo).replace(/ \#/gm, '\n\n#').replace("\\#", '\n\n#');
           chapter.chapterInfo = markdown;
         }
-        
+
         return chapter ? (
           <ChapterContent
             chapter={chapter}
@@ -584,16 +585,18 @@ interface ImageUploadProps {
   isEditing: boolean;
   bookId: number;
   imageType: 'cover' | 'backCover';
+  onBookRefresh: () => void;
 }
 
 // Updated ImageUpload component
-const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing, bookId, imageType }: ImageUploadProps) => {
+const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing, bookId, imageType, onBookRefresh }: ImageUploadProps) => {
   const [isRegenerateModalOpen, setIsRegenerateModalOpen] = useState(false);
   const [imageVersion, setImageVersion] = useState(Date.now()); // Add this for cache busting
 
   // Helper function to refresh the image
   const refreshImage = () => {
     setImageVersion(Date.now());
+    onBookRefresh(); // Trigger parent refresh
   };
 
   // Handle successful image update
@@ -647,10 +650,12 @@ const ImageUpload = ({ currentImage, onImageUpdate, label, isEditing, bookId, im
         isOpen={isRegenerateModalOpen}
         onClose={() => {
           setIsRegenerateModalOpen(false);
-          refreshImage(); // Refresh image after modal closes
         }}
         bookId={bookId}
         imageType={imageType}
+        onSuccess={() => {
+          refreshImage(); // Refresh image on success
+        }}
       />
     </div>
   );

@@ -12,6 +12,7 @@ export interface UpdateApiKeysRequest {
   model?: string;
   openai_key?: string;
   fal_ai?: string;
+  stripe_key?: string;
   id: number;
 }
 
