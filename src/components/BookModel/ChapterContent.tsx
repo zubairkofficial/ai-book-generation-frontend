@@ -9,11 +9,12 @@ import { markdownComponents } from '@/utils/markdownUtils';
 import { AlignLeft, BookMarked, Loader2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QuillEditor } from './QuillEditor';
-import { useUpdateChapterMutation } from '@/api/bookApi';
+import { useUpdateChapterMutation, useRegenerateChapterImageMutation, useUpdateChapterImageMutation } from '@/api/bookApi';
 import DOMPurify from 'dompurify';
 import { useToast } from '@/context/ToastContext';
-import {unified} from 'unified'
+import { unified } from 'unified'
 import TurnDownService from 'turndown'
+import { ChapterImage } from './ChapterImage';
 const turndown = new TurnDownService();
 interface ChapterContentProps {
   chapter: {
@@ -45,6 +46,8 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
 }) => {
   const { addToast } = useToast();
   const [updateChapter, { isLoading: isSaving }] = useUpdateChapterMutation();
+  const [regenerateChapterImage] = useRegenerateChapterImageMutation();
+  const [updateChapterImage] = useUpdateChapterImageMutation();
   const [saveError, setSaveError] = useState('');
   const [formattedContent, setFormattedContent] = useState(chapter.chapterInfo);
   const [localContent, setLocalContent] = useState(chapter.chapterInfo);
@@ -56,7 +59,7 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
     (async () => {
       const file = await unified()
         .use(remarkParse)
-        .use(remarkRehype, {allowDangerousHtml: true})
+        .use(remarkRehype, { allowDangerousHtml: true })
         .use(rehypeRaw)
         .use(rehypeStringify)
         .process(chapter.chapterInfo);
@@ -66,7 +69,7 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
   }, []);
 
   console.log("chapter Info", chapter.chapterInfo);
-  
+
   const hasPrevious = chapter.chapterNo > 1;
   const hasNext = chapter.chapterNo < totalChapters;
 
@@ -85,31 +88,31 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
       // Create temporary element to work with the HTML
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = DOMPurify.sanitize(content);
-      
+
       // Find all headings to properly structure them
       const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
       headings.forEach(heading => {
         // Add appropriate classes to headings
         heading.classList.add('chapter-heading');
-        
+
         // Make main chapter title stand out
         if (heading.textContent?.includes(`Chapter ${chapter.chapterNo}`)) {
           heading.classList.add('chapter-title');
         }
-        
+
         // Add spacing after headings
         const nextElement = heading.nextElementSibling;
         if (nextElement) {
           nextElement.classList.add('mt-4');
         }
       });
-      
+
       // Find paragraphs that need formatting
       const paragraphs = tempDiv.querySelectorAll('p');
       paragraphs.forEach(p => {
         p.classList.add('chapter-paragraph');
       });
-      
+
       setFormattedContent(tempDiv.innerHTML);
     } else {
       setFormattedContent(content);
@@ -136,14 +139,14 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
     const hasChanged = content !== originalContent;
     setHasLocalChanges(hasChanged);
   };
-  
+
   // Save changes to the server
   const saveChanges = async () => {
     if (!hasLocalChanges) return;
-    
+
     try {
       setSaveError('');
-      
+
       // Update chapter content
       await updateChapter({
         bookGenerationId,
@@ -152,32 +155,92 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
       }).unwrap();
       const file = await unified()
         .use(remarkParse)
-        .use(remarkRehype, {allowDangerousHtml: true})
+        .use(remarkRehype, { allowDangerousHtml: true })
         .use(rehypeRaw)
         .use(rehypeStringify)
         .process(localContent);
       console.log("HTML content", file.toString())
       setQuillEditorContent(file.toString());
-      
+
       // Update parent state
       onUpdate(localContent, chapter.chapterNo.toString());
-      
+
       // Reset state
       setOriginalContent(localContent);
       setHasLocalChanges(false);
       processContent(localContent);
-      
+
       addToast("Chapter saved successfully", "success");
     } catch (error) {
       setSaveError('Failed to save chapter. Please try again.');
       addToast("Failed to save chapter", "error");
     }
   };
-  
+
   // Discard changes
   const handleCancelChanges = () => {
     setLocalContent(originalContent);
     setHasLocalChanges(false);
+  };
+
+  const handleRegenerateImage = async (originalImageUrl: string, newPrompt?: string) => {
+    try {
+      addToast("Regenerating image...", "info");
+      const result = await regenerateChapterImage({
+        bookGenerationId,
+        chapterNo: chapter.chapterNo,
+        originalImageUrl,
+        newPrompt
+      }).unwrap();
+
+      // Update local content with new image URL
+      // We need to replace the specific image Markdown syntax
+      // Logic: find `![alt](originalUrl)` or just `(originalUrl)` and replace
+      // Ideally we replace usages in `localContent`
+      if (result.imageUrl) {
+        setLocalContent(prev => prev.replace(originalImageUrl, result.imageUrl));
+        setFormattedContent(prev => prev.replace(originalImageUrl, result.imageUrl)); // Also update formatted if needed, though usually re-render handles it
+        const file = await unified()
+          .use(remarkParse)
+          .use(remarkRehype, { allowDangerousHtml: true })
+          .use(rehypeRaw)
+          .use(rehypeStringify)
+          .process(localContent.replace(originalImageUrl, result.imageUrl));
+        setQuillEditorContent(file.toString());
+
+        addToast("Image regenerated successfully", "success");
+      }
+    } catch (error) {
+      console.error(error);
+      addToast("Failed to regenerate image", "error");
+    }
+  };
+
+  const handleUploadImage = async (originalImageUrl: string, file: File) => {
+    try {
+      addToast("Uploading image...", "info");
+      const result = await updateChapterImage({
+        bookGenerationId,
+        chapterNo: chapter.chapterNo,
+        originalImageUrl,
+        image: file
+      }).unwrap();
+
+      if (result.imageUrl) {
+        setLocalContent(prev => prev.replace(originalImageUrl, result.imageUrl));
+        const file = await unified()
+          .use(remarkParse)
+          .use(remarkRehype, { allowDangerousHtml: true })
+          .use(rehypeRaw)
+          .use(rehypeStringify)
+          .process(localContent.replace(originalImageUrl, result.imageUrl));
+        setQuillEditorContent(file.toString());
+        addToast("Image uploaded successfully", "success");
+      }
+    } catch (error) {
+      console.error(error);
+      addToast("Failed to upload image", "error");
+    }
   };
 
   return (
@@ -198,16 +261,15 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
                 <span className="hidden sm:inline">Cancel</span>
               </Button>
             )}
-            
+
             <Button
               variant="default"
               size="sm"
               onClick={saveChanges}
-              className={`flex items-center gap-1 ${
-                !hasLocalChanges 
-                  ? "bg-gray-300 hover:bg-gray-300 cursor-not-allowed" 
-                  : "bg-amber-500 hover:bg-amber-600 text-white"
-              }`}
+              className={`flex items-center gap-1 ${!hasLocalChanges
+                ? "bg-gray-300 hover:bg-gray-300 cursor-not-allowed"
+                : "bg-amber-500 hover:bg-amber-600 text-white"
+                }`}
               disabled={!hasLocalChanges || isSaving}
             >
               {isSaving ? (
@@ -237,29 +299,40 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
         />
       ) : (
         <div className="prose max-w-none">
-            {/* {chapter.chapterInfo.trim().startsWith('<') ? (            // 
+          {/* {chapter.chapterInfo.trim().startsWith('<') ? (            // 
           // ) : ( */}
-{/* <div 
+          {/* <div 
                 className="chapter-content" 
                 dangerouslySetInnerHTML={{ __html: quillEditorContent }}
               /> */}
-               <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12  rounded-lg shadow-lg">
-               <div className=" mx-auto p-6 sm:p-12 ">
-            <ReactMarkdown
-              remarkPlugins={[remarkRehype, remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
-              remarkRehypeOptions={{ allowDangerousHtml: true }}
-              components={markdownComponents}
-            >
-              {chapter.chapterInfo}
-            </ReactMarkdown>
+          <div className="min-h-[800px] px-4 sm:px-8 py-6 sm:py-12  rounded-lg shadow-lg">
+            <div className=" mx-auto p-6 sm:p-12 ">
+              <ReactMarkdown
+                remarkPlugins={[remarkRehype, remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  ...markdownComponents,
+                  img: ({ node, ...props }) => (
+                    <ChapterImage
+                      src={props.src || ""}
+                      alt={props.alt || "Chapter Image"}
+                      onRegenerate={(prompt) => handleRegenerateImage(props.src || "", prompt)}
+                      onUpload={(file) => handleUploadImage(props.src || "", file)}
+                    />
+                  ),
+                }}
+                remarkRehypeOptions={{ allowDangerousHtml: true }}
+
+              >
+                {localContent}
+              </ReactMarkdown>
             </div>
-            </div>
+          </div>
           {/* )} */}
         </div>
       )}
 
-     
+
     </div>
   );
 }; 

@@ -169,19 +169,19 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
       if (selectedText) {
         const range = selection?.getRangeAt(0);
         let element = range?.commonAncestorContainer as Element;
-        
+
         // If the selected node is a text node, get its parent
         if (element.nodeType === Node.TEXT_NODE) {
           element = element.parentElement as Element;
         }
-        
+
         // Find the closest parent with data-paragraph-index
         const paragraphElement = element.closest('[data-paragraph-index]');
         if (paragraphElement) {
           const index = parseInt(paragraphElement.getAttribute('data-paragraph-index') || '-1');
           if (index !== -1) {
-            setSelectedContent({ 
-              text: selectedText, 
+            setSelectedContent({
+              text: selectedText,
               index: index
             });
             setShowEditPanel(true);
@@ -261,7 +261,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
       setChapterImages([]);
 
       // Create a variable to track accumulated content
-      let accumulatedContent = ""; 
+      let accumulatedContent = "";
 
       const payload = {
         minWords: +input.minLength,
@@ -278,7 +278,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
       const eventSource = new EventSource(
         `${BASE_URl}/book-chapter/chapter-stream?token=${token}`
       );
-      
+
       // Handle streaming messages
       eventSource.onmessage = (event) => {
         try {
@@ -315,10 +315,10 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
 
       // Send chapter generation request
       const res: any = await createBookChapter(payload).unwrap();
-      
+
       // Make sure to close the EventSource
       eventSource.close();
-      
+
       if (res.statusCode == 200) {
         setConfig((prev) => ({
           ...prev,
@@ -330,7 +330,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
 
       setIsGenerating(false);
 
-    } catch (error:any) {
+    } catch (error: any) {
       console.error('Error generating chapter:', error);
       addToast(error?.data?.message?.message ?? "Error generating chapter", ToastType.ERROR);
       setIsGenerating(false);
@@ -339,14 +339,9 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
 
   // Function to get current chapter title
   const getCurrentChapterTitle = () => {
-    const chapters = tableOfContents.split(/\n+/); // Split by one or more newlines
+    const chapters = parseTableOfContents();
     if (currentChapterNo <= chapters.length) {
-      const chapter = chapters[currentChapterNo - 1];
-      return chapter
-        .replace(/^Chapter \d+:\s*/, "") // Remove "Chapter X: "
-        .replace(/^"(.+)"$/, "$1") // Remove surrounding quotes if present
-        .replace(/\s+$/, "") // Remove trailing whitespace and newlines
-        .trim();
+      return chapters[currentChapterNo - 1];
     }
     return "";
   };
@@ -355,6 +350,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
   const parseTableOfContents = () => {
     return tableOfContents
       .split(/\n+/) // Split by one or more newlines
+      .filter((line: string) => /^Chapter \d+:/.test(line.trim())) // ONLY lines starting with Chapter X:
       .map((chapter: string) => {
         return chapter
           .replace(/^Chapter \d+:\s*/, "") // Remove "Chapter X: "
@@ -368,7 +364,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
   // Update the progress calculation
   const calculateProgress = () => {
     const totalChapters = parseTableOfContents().length;
-    return ((currentChapterNo - 1) / totalChapters) * 100;
+    return totalChapters > 0 ? ((currentChapterNo - 1) / totalChapters) * 100 : 0;
   };
 
   // Update where chapter count is displayed
@@ -402,15 +398,15 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
   // Function to format chapter content with proper error handling
   const formatChapterContent = (content: string) => {
     if (!content) return null;
-    
+
     // Split content into paragraphs
     const paragraphs = content.split(/\n\n+/);
-    
+
     return (
       <div className="prose prose-amber max-w-none">
         {paragraphs.map((paragraph, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             data-paragraph-index={index}
             className="mb-4 paragraph-selectable hover:bg-amber-50 p-1 rounded transition-colors"
           >
@@ -465,7 +461,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
         })
         .filter(Boolean);
     } catch (error) {
-      
+
       return <p className="text-gray-700">{text}</p>;
     }
   };
@@ -492,7 +488,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
       setIsGenerating(true);
       setShowInsertOption(true);
 
-    
+
       const payload = {
         minWords: +config.minLength,
         maxWords: +config.maxLength,
@@ -606,7 +602,7 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
       } else {
         addToast("error on update book chapter", ToastType.ERROR);
       }
-     } finally {
+    } finally {
       setIsGenerating(false);
     }
   };
@@ -1067,16 +1063,18 @@ const ChapterConfiguration: React.FC<ChapterConfigurationProps> = ({
                     </p>
                   </div>
 
-                  {/* <div>
-                      <Label htmlFor="imagePrompt">Image Description</Label>
+                  {Number(config.noOfImages) > 0 && (
+                    <div>
+                      <Label htmlFor="imagePrompt">Image Style/Guidance (Optional)</Label>
                       <Textarea
                         id="imagePrompt"
                         value={config.imagePrompt}
                         onChange={(e) => handleChange('imagePrompt', e.target.value)}
                         className="mt-1"
-                        placeholder="Describe the image you want to generate..."
+                        placeholder="Describe the style (e.g., 'Cyberpunk', 'Watercolor') or specific elements you want in the images..."
                       />
-                    </div> */}
+                    </div>
+                  )}
 
                   <div>
                     <Label htmlFor="additionalInfo">Additional Details</Label>

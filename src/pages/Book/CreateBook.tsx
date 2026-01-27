@@ -1,4 +1,4 @@
-import React, {useState } from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,9 +107,9 @@ interface ApiErrorResponse {
 
 const CreateBook = () => {
   const [generateBook, { isLoading }] = useGenerateBookMutation();
-  const location=useLocation()
-  console.log("location",location.state)
- 
+  const location = useLocation()
+  console.log("location", location.state)
+
   const [formData, setFormData] = useState({
     bookTitle: "",
     authorName: "",
@@ -172,7 +172,7 @@ const CreateBook = () => {
   });
   const [currentStep, setCurrentStep] = useState(1);
   const { addToast } = useToast(); // Use custom toast hook
-  
+
 
   const steps = {
     1: {
@@ -187,13 +187,13 @@ const CreateBook = () => {
     }
   };
 
- 
+
   const fieldDescriptions: Record<string, string> = {
     // Basic Information
     bookTitle: "The main title of your book",
     authorName: "The name of the author",
     authorBio: "A short biography of the author (optional)",
-    
+
     // Book Details
     bookInformation: "The core idea or concept of book or thoughts",
     genre: "Choose the category that best fits your book",
@@ -207,7 +207,7 @@ const CreateBook = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    
+
     // Special handling for number fields
     if (name === "numberOfChapters") {
       // Always keep as string in state to match type definition
@@ -215,7 +215,7 @@ const CreateBook = () => {
         ...prevData,
         [name]: value, // Keep as string in the state
       }));
-      
+
       // For validation, convert to number to check range
       if (value === "") {
         // Handle empty value
@@ -225,7 +225,7 @@ const CreateBook = () => {
         }));
       } else {
         const numValue = parseInt(value, 10);
-        
+
         // Clear error if value is valid
         if (!isNaN(numValue) && numValue >= 1 && numValue <= 50) {
           setErrors((prevErrors) => {
@@ -238,8 +238,8 @@ const CreateBook = () => {
             ...prev,
             [name]: isNaN(numValue)
               ? "Must be a valid number"
-              : numValue < 1 
-                ? "Must be at least 1" 
+              : numValue < 1
+                ? "Must be at least 1"
                 : "Maximum 50 chapters allowed"
           }));
         }
@@ -249,7 +249,7 @@ const CreateBook = () => {
         ...prevData,
         [name]: value,
       }));
-      
+
       // Clear the error for the specific field being updated
       setErrors((prevErrors) => {
         const { [name]: removedError, ...restErrors } = prevErrors;
@@ -266,11 +266,11 @@ const CreateBook = () => {
       .replace(/([A-Z])/g, " $1")
       .replace(/^./, (str) => str.toUpperCase());
   };
-  
+
 
   const validateStep = async (step: number): Promise<boolean> => {
     const currentStepData = steps[step as keyof typeof steps];
-    const fieldsToValidate = currentStepData.fields.reduce((acc: any, field: any) => {
+    const fieldsToValidate = (currentStepData.fields as any[]).reduce((acc: any, field: any) => {
       if (Array.isArray(field)) {
         field.forEach(f => {
           acc[f] = formData[f as keyof typeof formData];
@@ -283,7 +283,7 @@ const CreateBook = () => {
 
     try {
       const stepSchema = yup.object().shape(
-        currentStepData.fields.reduce((acc: any, field: any) => {
+        (currentStepData.fields as any[]).reduce((acc: any, field: any) => {
           if (Array.isArray(field)) {
             field.forEach(f => {
               acc[f] = bookSchema.fields[f];
@@ -317,7 +317,7 @@ const CreateBook = () => {
     if (isValid) {
       setCurrentStep(currentStep + 1);
     } else {
-      addToast("Please fill in all required fields correctly",ToastType.ERROR);
+      addToast("Please fill in all required fields correctly", ToastType.ERROR);
     }
   };
 
@@ -334,16 +334,21 @@ const CreateBook = () => {
   const [tableOfContents, setTableOfContents] = useState<string>("");
   const [showChapterConfig, setShowChapterConfig] = useState(false);
   const [previousContent, setPreviousContent] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerateBook = async () => {
+    if (isGenerating || isLoading) return; // Prevent double submission
+
+    setIsGenerating(true);
     try {
       // Validate the current form data
       const isValid = await Promise.all(
         Object.keys(steps).map((step) => validateStep(parseInt(step)))
       ).then((results) => results.every(Boolean));
-      console.log("isValid",isValid,Object.keys(steps))
+      console.log("isValid", isValid, Object.keys(steps))
       if (!isValid) {
         addToast("Please check all fields and try again", ToastType.ERROR);
+        setIsGenerating(false);
         return;
       }
 
@@ -363,20 +368,21 @@ const CreateBook = () => {
       }
     } catch (error: any) {
       console.error("Error:", error);
-      
+      setIsGenerating(false); // Only reset on error. Success leads to new UI state.
+
       // Handle API error response
       if (error.data) {
         const apiError = error.data as ApiErrorResponse;
-        
+
         // Handle validation errors
         if (apiError.message.errors) {
           const newErrors: { [key: string]: string } = {};
-          
+
           apiError.message.errors.forEach((err) => {
             const errorMessage = Object.values(err.constraints)[0];
             newErrors[err.property] = errorMessage;
           });
-          
+
           setErrors(newErrors);
           addToast("Please fix the validation errors", ToastType.ERROR);
         } else {
@@ -387,16 +393,34 @@ const CreateBook = () => {
         addToast("An unexpected error occurred", ToastType.ERROR);
       }
     }
+    // Note: We don't indiscriminately set isGenerating(false) here because if successful, 
+    // we want the button to remain disabled while possibly transitioning UI. 
+    // But since we show a modal or change state, it matters less.
+    // For safety against stuck state if component doesn't unmount:
+    // setIsGenerating(false); 
+    // Actually, let's keep it safe.
   };
+
+  // Helper to ensure state reset if needed
+  React.useEffect(() => {
+    if (!isLoading && isGenerating) {
+      // If query finished but we are still generating, it means we handled success/error.
+      // But we handle explicit sets above. 
+      // Let's just reset isGenerating when isLoading becomes false to be safe (sync attempt)
+      setIsGenerating(false);
+    }
+  }, [isLoading]);
 
   const handleCloseTableOfContents = () => {
     setShowTableOfContents(false);
+    setIsGenerating(false);
   };
 
   const handleProceedToChapterConfig = () => {
     setShowTableOfContents(false);
     setShowChapterConfig(true);
   };
+
 
 
 
@@ -421,10 +445,10 @@ const CreateBook = () => {
 
     // Handle genre, language, and target audience dropdowns with consistent styling
     if (key === 'genre' || key === 'language' || key === 'targetAudience') {
-      const options = key === 'genre' 
-        ? BookGenre 
-        : key === 'language' 
-          ? BookLanguage 
+      const options = key === 'genre'
+        ? BookGenre
+        : key === 'language'
+          ? BookLanguage
           : TargetAudience;
       const placeholder = `Select a ${formatLabel(key)}`;
 
@@ -436,7 +460,7 @@ const CreateBook = () => {
           </Label>
           <Select
             value={formData[key]}
-            onValueChange={(value) => 
+            onValueChange={(value) =>
               handleChange({ target: { name: key, value } } as any)
             }
           >
@@ -569,7 +593,7 @@ const CreateBook = () => {
     </div>
   );
 
- 
+
 
   const renderApiErrors = () => {
     if (Object.keys(errors).length === 0) return null;
@@ -654,7 +678,7 @@ const CreateBook = () => {
               type="button"
               onClick={handleNext}
               className="px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md hover:shadow-lg transition-all duration-200 group"
-                        >
+            >
               Next
               <ArrowRight className="w-4 h-4 ml-2 group-hover:transform group-hover:translate-x-1 transition-transform" />
             </Button>
@@ -662,10 +686,10 @@ const CreateBook = () => {
             <Button
               type="button"
               onClick={handleGenerateBook}
-              disabled={isLoading}
+              disabled={isGenerating || isLoading}
               className="px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
-              {isLoading ? (
+              {isGenerating || isLoading ? (
                 <div className="flex items-center">
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Generating...
@@ -690,7 +714,7 @@ const CreateBook = () => {
           const stepNum = parseInt(step);
           const isActive = stepNum === currentStep;
           const isCompleted = stepNum < currentStep;
-          
+
           return (
             <div
               key={step}
@@ -702,10 +726,10 @@ const CreateBook = () => {
               <div
                 className={cn(
                   "w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center mb-2 transition-all duration-300",
-                  isActive 
-                    ? "bg-amber-100 border-2 border-amber-500 shadow-md" 
-                    : isCompleted 
-                      ? "bg-amber-500 text-white" 
+                  isActive
+                    ? "bg-amber-100 border-2 border-amber-500 shadow-md"
+                    : isCompleted
+                      ? "bg-amber-500 text-white"
                       : "bg-gray-100"
                 )}
               >
@@ -741,7 +765,7 @@ const CreateBook = () => {
     return (
       <Layout>
         <ChapterConfiguration
-          previousContent={location?.state?.previousContent??previousContent}
+          previousContent={location?.state?.previousContent ?? previousContent}
         />
       </Layout>
     );
@@ -779,7 +803,7 @@ const CreateBook = () => {
               </form>
             </div>
           </Card>
-          
+
           {/* Subtle decoration elements */}
           <div className="absolute top-40 left-10 w-64 h-64 bg-amber-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
           <div className="absolute top-80 right-10 w-72 h-72 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>

@@ -71,7 +71,7 @@ export const PackageFormModal = ({
       durationDays: undefined,
       tokenLimit: undefined,
       imageLimit: undefined,
-      modelType: '',
+      modelType: 'gpt-4o',
       imageModelURL: FLUX_DEV_URL,
       isActive: true,
       isFree: false,
@@ -192,12 +192,12 @@ export const PackageFormModal = ({
             )}
           </DialogTitle>
           <p className="text-amber-100 mt-1 text-sm">
-            {editingPackage 
-              ? "Modify the package details below" 
+            {editingPackage
+              ? "Modify the package details below"
               : "Fill in the details to create a new subscription package"}
           </p>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 px-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -209,12 +209,12 @@ export const PackageFormModal = ({
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-red-500"/>
+                  <span className="w-1 h-1 rounded-full bg-red-500" />
                   {errors.name.message}
                 </p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Price</Label>
               <div className="relative">
@@ -229,12 +229,12 @@ export const PackageFormModal = ({
               </div>
               {errors.price && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-red-500"/>
+                  <span className="w-1 h-1 rounded-full bg-red-500" />
                   {errors.price.message}
                 </p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Duration (days)</Label>
               <Input
@@ -245,12 +245,12 @@ export const PackageFormModal = ({
               />
               {errors.durationDays && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-red-500"/>
+                  <span className="w-1 h-1 rounded-full bg-red-500" />
                   {errors.durationDays.message}
                 </p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">GPT Credits</Label>
               <Input
@@ -261,12 +261,12 @@ export const PackageFormModal = ({
               />
               {errors.tokenLimit && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-red-500"/>
+                  <span className="w-1 h-1 rounded-full bg-red-500" />
                   {errors.tokenLimit.message}
                 </p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Image Credits</Label>
               <Input
@@ -277,22 +277,21 @@ export const PackageFormModal = ({
               />
               {errors.imageLimit && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-red-500"/>
+                  <span className="w-1 h-1 rounded-full bg-red-500" />
                   {errors.imageLimit.message}
                 </p>
               )}
             </div>
-            
-            <div className="space-y-2">
+
+            {/* <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">GPT Model</Label>
               <select
                 {...register("modelType")}
                 onChange={(e) => handleAIModelTypeChange(e.target.value)}
-                className={`w-full h-10 px-3 rounded-md border bg-white ${
-                  errors.modelType 
-                    ? "border-red-300 ring-1 ring-red-200" 
+                className={`w-full h-10 px-3 rounded-md border bg-white ${errors.modelType
+                    ? "border-red-300 ring-1 ring-red-200"
                     : "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-200"
-                } transition-all duration-200`}
+                  } transition-all duration-200`}
               >
                 <option value="">Select AI Model</option>
                 {AI_MODEL_OPTIONS.map((model) => (
@@ -303,18 +302,18 @@ export const PackageFormModal = ({
               </select>
               {errors.modelType && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-red-500"/>
+                  <span className="w-1 h-1 rounded-full bg-red-500" />
                   {errors.modelType.message}
                 </p>
               )}
-            </div>
-            
+            </div> */}
+
             <div className="flex items-center space-x-3 bg-amber-50/50 p-3 rounded-lg border border-amber-100">
               <Controller
                 name="isActive"
                 control={control}
                 render={({ field }) => (
-                  <Switch 
+                  <Switch
                     checked={field.value}
                     onCheckedChange={field.onChange}
                     className="data-[state=checked]:bg-amber-500"
@@ -332,7 +331,7 @@ export const PackageFormModal = ({
                 name="isFree"
                 control={control}
                 render={({ field }) => (
-                  <Switch 
+                  <Switch
                     checked={field.value}
                     onCheckedChange={(checked) => {
                       field.onChange(checked);
@@ -350,36 +349,35 @@ export const PackageFormModal = ({
               </div>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">Description</Label>
             <Textarea
               {...register("description")}
               placeholder="Describe what this package offers..."
-              className={`min-h-[100px] ${
-                errors.description 
-                  ? "border-red-300 ring-red-200" 
-                  : "focus:border-amber-500 focus:ring-amber-200"
-              } transition-all duration-200`}
+              className={`min-h-[100px] ${errors.description
+                ? "border-red-300 ring-red-200"
+                : "focus:border-amber-500 focus:ring-amber-200"
+                } transition-all duration-200`}
             />
             {errors.description && (
               <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                <span className="w-1 h-1 rounded-full bg-red-500"/>
+                <span className="w-1 h-1 rounded-full bg-red-500" />
                 {errors.description.message}
               </p>
             )}
           </div>
-          
+
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div>
                 <Label className="text-sm font-medium text-gray-700">Package Features</Label>
                 <p className="text-xs text-gray-500">Add key features of this package</p>
               </div>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={addFeature}
                 className="text-amber-600 border-amber-200 hover:bg-amber-50 transition-colors duration-200"
               >
@@ -387,7 +385,7 @@ export const PackageFormModal = ({
                 Add Feature
               </Button>
             </div>
-            
+
             <div className="space-y-3">
               {features.map((feature, index) => (
                 <div key={index} className="flex items-center space-x-2">
@@ -411,17 +409,17 @@ export const PackageFormModal = ({
               ))}
             </div>
           </div>
-          
+
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={onClose}
               className="border-gray-200 hover:bg-gray-50 transition-colors duration-200"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               type="submit"
               className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 transition-all duration-200 min-w-[100px]"
               disabled={isLoading}

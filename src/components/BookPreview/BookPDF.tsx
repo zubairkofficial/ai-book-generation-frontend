@@ -116,27 +116,27 @@ interface BookPDFProps {
 // Improve markdown processing to handle HTML content as well
 const processMarkdown = (content: string,) => {
   if (!content) return [];
-  
+
   // Handle HTML content conversion if needed
   if (content.startsWith('<')) {
     const turndown = new TurnDownService();
     content = turndown.turndown(content).replace(/ \#/gm, '\n\n#').replace("\\#", '\n\n#');
   }
-  
+
   // Split content by paragraphs
   const paragraphs = content.split('\n\n').filter(p => p.trim());
-  
+
   return paragraphs.map((paragraph, index) => {
     // Check if paragraph contains image markdown
     const imageMatch = paragraph.match(/!\[(.*?)\]\((.*?)\)/);
     if (imageMatch) {
       const imageUrl = imageMatch[2];
       const imageAlt = imageMatch[1];
-      
-      const formattedUrl = imageUrl.startsWith('http') 
-        ? imageUrl 
+
+      const formattedUrl = imageUrl.startsWith('http')
+        ? imageUrl
         : `${BASE_URl}/uploads/${imageUrl}`;
-      
+
       return (
         <View key={index} style={{ marginVertical: 15, alignItems: 'center' }}>
           <Image src={formattedUrl} style={styles.image} />
@@ -144,7 +144,7 @@ const processMarkdown = (content: string,) => {
         </View>
       );
     }
-    
+
     // Process headings
     if (paragraph.startsWith('# ')) {
       return (
@@ -153,7 +153,7 @@ const processMarkdown = (content: string,) => {
         </Text>
       );
     }
-    
+
     if (paragraph.startsWith('## ')) {
       return (
         <Text key={index} style={[{ ...styles.sectionTitle, fontSize: 16 }]}>
@@ -161,7 +161,7 @@ const processMarkdown = (content: string,) => {
         </Text>
       );
     }
-    
+
     // Regular paragraph
     return (
       <Text key={index} style={[styles.paragraph]}>
@@ -172,16 +172,16 @@ const processMarkdown = (content: string,) => {
 };
 
 const BookPDF: React.FC<BookPDFProps> = ({ book }) => {
-  console.log("book-",book)
+  console.log("book-", book)
   // Check if the book content is primarily in Arabic/Urdu
 
   // Get cover image URL
   const coverImageUrl = book.additionalData?.coverImageUrl
     ? (book.additionalData.coverImageUrl.startsWith('http')
-        ? book.additionalData.coverImageUrl
-        : `${BASE_URl}/uploads/${book.additionalData.coverImageUrl}`)
+      ? book.additionalData.coverImageUrl
+      : `${BASE_URl}/uploads/${book.additionalData.coverImageUrl}`)
     : null;
-console.log("coverImageUrl",coverImageUrl)
+  console.log("coverImageUrl", coverImageUrl)
   return (
     <Document>
       {/* Cover Page */}
@@ -190,19 +190,35 @@ console.log("coverImageUrl",coverImageUrl)
           {coverImageUrl && (
             <Image src={coverImageUrl} style={styles.coverImage} />
           )}
-          <Text style={[styles.bookTitle]}>
-            {book.bookTitle}
-          </Text>
-          <Text style={[styles.authorName]}>
-            By {book.authorName || 'Unknown Author'}
-          </Text>
-          
-          {/* Copyright Notice */}
-          <Text style={[styles.copyright]}>
-            © {new Date().getFullYear()} {book.authorName}. All rights reserved.
-          </Text>
+
+          <View style={{ width: '100%', alignItems: 'center', paddingHorizontal: 40 }}>
+            <Text style={[
+              styles.bookTitle,
+              {
+                fontSize: (book.bookTitle || '').length > 60 ? 18 : ((book.bookTitle || '').length > 30 ? 22 : 28),
+                color: '#b25800'
+              }
+            ]}>
+              {book.bookTitle}
+            </Text>
+
+            {book.genre && (
+              <Text style={{ fontSize: 14, color: '#666', marginBottom: 20, fontStyle: 'italic' }}>
+                {book.genre}
+              </Text>
+            )}
+
+            <Text style={[styles.authorName, { marginTop: 10 }]}>
+              By {book.authorName || 'Unknown Author'}
+            </Text>
+
+            {/* Copyright Notice */}
+            <Text style={[styles.copyright, { marginTop: 40 }]}>
+              © {new Date().getFullYear()} {book.authorName}. All rights reserved.
+            </Text>
+          </View>
         </View>
-        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+        {/* Do not render page number on cover page */}
       </Page>
 
       {/* Dedication Page */}
@@ -239,16 +255,31 @@ console.log("coverImageUrl",coverImageUrl)
       <Page size="A4" style={styles.page}>
         <Text style={styles.header}>{book.bookTitle}</Text>
         <Text style={[styles.sectionTitle]}>Table of Contents</Text>
-        
+
         {book.bookChapter?.map((chapter: any, index: number) => (
           <View key={index} style={styles.tocItemContainer}>
-            <Text style={[styles.tocItem]}>
+            <Text style={[styles.tocItem, { flex: 1 }]} {...({ numberOfLines: 2 } as any)}>
               {chapter.chapterNo}. {chapter.chapterName}
             </Text>
-            <Text style={styles.tocPageNum}></Text>
+            <Text style={[styles.tocPageNum, { marginLeft: 10 }]}></Text>
           </View>
         ))}
-        
+
+        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+      </Page>
+
+      {/* Index */}
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.header}>{book.bookTitle}</Text>
+        <Text style={[styles.sectionTitle]}>Index</Text>
+        {book.bookChapter?.map((chapter: any, index: number) => (
+          <View key={index} style={{ marginBottom: 15 }}>
+            <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>Chapter {chapter.chapterNo}: {chapter.chapterName}</Text>
+            <View>
+              {processMarkdown(chapter.chapterSummary || 'Summary not available.')}
+            </View>
+          </View>
+        ))}
         <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
       </Page>
 
@@ -262,41 +293,23 @@ console.log("coverImageUrl",coverImageUrl)
             .replace(/ \#/gm, '\n\n#')
             .replace("\\#", '\n\n#');
         }
-        
+
         return (
           <Page key={index} size="A4" style={styles.page}>
             <Text style={styles.header}>{book.bookTitle}</Text>
-            
-            
-            
-           
-            
+
+
+
+
+
             {processMarkdown(chapterContent)}
-            
+
             <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
           </Page>
         );
       })}
 
-      {/* Glossary */}
-      {book.glossary && (
-        <Page size="A4" style={styles.page}>
-          <Text style={styles.header}>{book.bookTitle}</Text>
-          <Text style={[styles.sectionTitle]}>Glossary</Text>
-          {processMarkdown(book.glossary)}
-          <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
-        </Page>
-      )}
 
-      {/* Index */}
-      {book.index && (
-        <Page size="A4" style={styles.page}>
-          <Text style={styles.header}>{book.bookTitle}</Text>
-          <Text style={[styles.sectionTitle]}>Index</Text>
-          {processMarkdown(book.index)}
-          <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
-        </Page>
-      )}
 
       {/* References */}
       {book.references && (

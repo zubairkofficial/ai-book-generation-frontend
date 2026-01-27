@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGetSubscriptionPackagesQuery, useGetCurrentSubscriptionQuery, useSubscribeToPackageMutation, useUnsubscribeFromPackageMutation } from '@/api/subscriptionApi';
 import { Button } from '@/components/ui/button';
-import { Check,  Loader2, Sparkles, Clock, Zap, Shield } from 'lucide-react';
+import { Check, Loader2, Sparkles, Clock, Zap, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Layout from '@/components/layout/Layout';
 import { useToast } from '@/context/ToastContext';
@@ -20,8 +20,8 @@ const SubscriptionPage = () => {
   const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
   const [selectedPackageIdForUnsubscribe, setSelectedPackageIdForUnsubscribe] = useState<number | null>(null);
   const [unsubscribeFromPackage, { isLoading: isUnsubscribing }] = useUnsubscribeFromPackageMutation();
-  const { data:userInfo,refetch:refetchUser } = useUserMeQuery();
-  const { data: packages, isLoading: packagesLoading, error,refetch:refetchPackages } = useGetSubscriptionPackagesQuery({includeInactive: false});
+  const { data: userInfo, refetch: refetchUser } = useUserMeQuery();
+  const { data: packages, isLoading: packagesLoading, error, refetch: refetchPackages } = useGetSubscriptionPackagesQuery({ includeInactive: false });
   const { data: currentSubscriptions, refetch: refetchSubscription } = useGetCurrentSubscriptionQuery();
   const [autoRenew, setAutoRenew] = useState(false);
   const navigate = useNavigate();
@@ -51,14 +51,14 @@ const SubscriptionPage = () => {
   //   );
   // }
   useEffect(() => {
-   refreshSubscriptionData()
-  
-  },[])
+    refreshSubscriptionData()
+
+  }, [])
 
 
-  const refreshSubscriptionData = async() => {
+  const refreshSubscriptionData = async () => {
     await refetchPackages()
-    await  refetchSubscription()
+    await refetchSubscription()
   };
 
   // Check if user has any active subscription
@@ -75,41 +75,41 @@ const SubscriptionPage = () => {
   // Updated handler to show confirmation dialog first
   const handleSubscribeClick = (packageId: number) => {
     const selectedPackage = packages?.find(pkg => pkg.id === packageId);
-    navigate('/payment', { 
-      state: { 
-        packageData: selectedPackage 
-      } 
+    navigate('/payment', {
+      state: {
+        packageData: selectedPackage
+      }
     });
   };
 
   // Actual subscription handler when confirmed
   const handleSubscribe = async () => {
     if (!selectedPackageId) return;
-    
+
     try {
       const payload = {
         packageId: selectedPackageId,
         cancelExisting: false,
         autoRenew: autoRenew,
       };
-      
+
       const response = await subscribeToPackage(payload).unwrap();
-      
+
       // Refetch current subscription data to update UI
       await refetchSubscription();
-      
+
       // Close dialog after successful subscription
       setShowConfirmDialog(false);
-      
+
       addToast(
         `You have successfully subscribed to ${response.package.name}`,
         ToastType.SUCCESS
       );
-     await refetchUser();
-    } catch (error:any) {
+      await refetchUser();
+    } catch (error: any) {
       console.error('Subscription failed:', error);
       addToast(error?.data?.message?.message,
-             ToastType.ERROR
+        ToastType.ERROR
       );
     }
   };
@@ -123,38 +123,38 @@ const SubscriptionPage = () => {
   // Updated unsubscribe handler
   const handleUnsubscribe = async () => {
     if (!selectedPackageIdForUnsubscribe) return;
-    
+
     try {
       await unsubscribeFromPackage(selectedPackageIdForUnsubscribe).unwrap();
-      
+
       // Refetch current subscription data to update UI
       await refetchSubscription();
-      
+
       // Close dialog after successful unsubscription
       setShowUnsubscribeDialog(false);
-      
+
       addToast(
         "You have successfully unsubscribed",
         ToastType.SUCCESS
       );
       await refetchUser();
-    } catch (error:any) {
+    } catch (error: any) {
       console.error('Unsubscription failed:', error);
       addToast(error?.data?.message?.message,
-             ToastType.ERROR
+        ToastType.ERROR
       );
     }
   };
 
   // Get a feature icon based on the feature text
   const getFeatureIcon = (feature: string) => {
-    if (feature.toLowerCase().includes('premium') || feature.toLowerCase().includes('advanced')) 
+    if (feature.toLowerCase().includes('premium') || feature.toLowerCase().includes('advanced'))
       return <Sparkles className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />;
-    if (feature.toLowerCase().includes('priority') || feature.toLowerCase().includes('fast')) 
+    if (feature.toLowerCase().includes('priority') || feature.toLowerCase().includes('fast'))
       return <Zap className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />;
-    if (feature.toLowerCase().includes('support')) 
+    if (feature.toLowerCase().includes('support'))
       return <Shield className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />;
-    if (feature.toLowerCase().includes('report') || feature.toLowerCase().includes('analytics')) 
+    if (feature.toLowerCase().includes('report') || feature.toLowerCase().includes('analytics'))
       return <Clock className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />;
     return <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />;
   };
@@ -174,14 +174,14 @@ const SubscriptionPage = () => {
     if (!currentSubscriptions || !Array.isArray(currentSubscriptions) || currentSubscriptions.length === 0) return null;
 
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="bg-white border border-amber-100 rounded-xl p-6 shadow-lg mb-10"
       >
         <h2 className="text-xl font-bold text-amber-800 mb-4">Your Active Subscriptions</h2>
-        
+
         <div className="space-y-8">
           {currentSubscriptions?.map((subscription, index) => (
             <div key={index} className="border-t pt-4 border-amber-100 first:border-0 first:pt-0">
@@ -191,18 +191,16 @@ const SubscriptionPage = () => {
                     {subscription.package?.name || "Free Subscription"}
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Expires: {new Date(subscription.endDate).toLocaleDateString()} 
+                    Expires: {new Date(subscription.endDate).toLocaleDateString()}
                     ({subscription.daysRemaining} days remaining)
                   </p>
                 </div>
                 <div className="mt-2 md:mt-0 flex items-center gap-2">
-                  <span className="inline-flex bg-amber-100 text-amber-800 text-sm px-3 py-1 rounded-full font-medium">
-                    {subscription.package?.modelType || "Basic"}
-                  </span>
+
                   {subscription.package && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="border-red-300 text-red-600 hover:bg-red-50"
                       onClick={() => handleUnsubscribeClick(subscription.package?.id)}
                     >
@@ -211,7 +209,7 @@ const SubscriptionPage = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold text-gray-700">Credits GPT Usage</h4>
@@ -220,21 +218,21 @@ const SubscriptionPage = () => {
                       <span>Used: {Math.round(subscription.tokensUsed / Number(tokenSettings?.creditsPerModelToken || 1))} Credits</span>
                       <span>Limit: {Math.round(subscription.tokenLimit / Number(tokenSettings?.creditsPerModelToken || 1))} Credits</span>
                     </div>
-                   
+
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                        className="bg-amber-600 h-2.5 rounded-full" 
-                        style={{ 
+                      <div
+                        className="bg-amber-600 h-2.5 rounded-full"
+                        style={{
                           width: `${Math.min(
                             (subscription.tokensUsed / subscription.tokenLimit) * 100,
                             100
-                          )}%` 
+                          )}%`
                         }}
                       ></div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold text-gray-700">Image Credits Usage</h4>
                   <div className="space-y-2">
@@ -242,15 +240,15 @@ const SubscriptionPage = () => {
                       <span>Generated: {Math.round(subscription.imagesGenerated / Number(tokenSettings?.creditsPerImageToken || 1))} Credits</span>
                       <span>Limit: {Math.round(subscription.imageLimit / Number(tokenSettings?.creditsPerImageToken || 1))} Credits</span>
                     </div>
-                  
+
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                        className="bg-amber-600 h-2.5 rounded-full" 
-                        style={{ 
+                      <div
+                        className="bg-amber-600 h-2.5 rounded-full"
+                        style={{
                           width: `${Math.min(
                             (subscription.imagesGenerated / subscription.imageLimit) * 100,
                             100
-                          )}%` 
+                          )}%`
                         }}
                       ></div>
                     </div>
@@ -264,30 +262,30 @@ const SubscriptionPage = () => {
     );
   };
 
-  
+
 
   return (
     <Layout>
       <div className="container max-w-7xl mx-auto py-10 px-4 sm:px-6">
         <div className="text-start mb-12">
-        <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 p-6 rounded-xl shadow-sm">
-           
-          <motion.h1 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent mb-2"
-          >
-            Choose Your Subscription Plan
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-sm text-gray-600 max-w-2xl "
-          >
-            Unlock powerful AI features and enhanced capabilities with our subscription packages.
-          </motion.p>
+          <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 p-6 rounded-xl shadow-sm">
+
+            <motion.h1
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent mb-2"
+            >
+              Choose Your Subscription Plan
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-sm text-gray-600 max-w-2xl "
+            >
+              Unlock powerful AI features and enhanced capabilities with our subscription packages.
+            </motion.p>
           </div>
         </div>
 
@@ -326,7 +324,7 @@ const SubscriptionPage = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Current plan badge */}
                 {isCurrentPlan(pkg.id) && (
                   <div className="absolute top-0 left-0 mx-4 my-1">
@@ -337,8 +335,8 @@ const SubscriptionPage = () => {
                 )}
 
                 <div className={`p-6 border-b 
-                  ${pkg.id === recommendedPackageId ? 
-                    'bg-gradient-to-br from-amber-50 to-amber-100' : 
+                  ${pkg.id === recommendedPackageId ?
+                    'bg-gradient-to-br from-amber-50 to-amber-100' :
                     'bg-gradient-to-br from-amber-50/50 to-amber-50/10'}`}>
                   <h3 className="text-xl font-bold text-amber-800 mb-1">
                     {pkg.name}
@@ -394,10 +392,7 @@ const SubscriptionPage = () => {
                       <span className="text-gray-600">Credits Image Limit:</span>
                       <span className="font-medium text-amber-700">{pkg.imageLimit.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between items-center p-2 rounded-lg bg-amber-50/50 text-sm">
-                      <span className="text-gray-600">GPT Model:</span>
-                      <span className="font-medium text-amber-700">{pkg.modelType}</span>
-                    </div>
+
                     {/* <div className="flex justify-between items-center p-2 rounded-lg bg-amber-50/50 text-sm">
                       <span className="text-gray-600">Image Model:</span>
                       <span className="font-medium text-amber-700">{pkg.imageModelType}</span>
@@ -406,10 +401,10 @@ const SubscriptionPage = () => {
 
                   <Button
                     className={`w-full group relative overflow-hidden shadow-md hover:shadow-lg transition-all duration-200 
-                      ${isCurrentPlan(pkg.id) 
-                        ? 'bg-green-500 hover:bg-green-600' 
-                        
-                          : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700'}`}
+                      ${isCurrentPlan(pkg.id)
+                        ? 'bg-green-500 hover:bg-green-600'
+
+                        : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700'}`}
                     disabled={isCurrentPlan(pkg.id) || isSubscribing || (hasActiveSubscription() && !isCurrentPlan(pkg.id))}
                     onClick={() => handleSubscribeClick(pkg.id)}
                   >
@@ -425,7 +420,7 @@ const SubscriptionPage = () => {
                       </div>
                     ) : hasActiveSubscription() && !isCurrentPlan(pkg.id) ? (
                       <div className="flex items-center justify-center">
-                         Subscribed Now
+                        Subscribed Now
                       </div>
                     ) : (
                       <>
@@ -463,15 +458,13 @@ const SubscriptionPage = () => {
                 </div>
                 <button
                   type="button"
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    autoRenew ? 'bg-amber-500' : 'bg-gray-200'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${autoRenew ? 'bg-amber-500' : 'bg-gray-200'
+                    }`}
                   onClick={() => setAutoRenew(!autoRenew)}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      autoRenew ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoRenew ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>

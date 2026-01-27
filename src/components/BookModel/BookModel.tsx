@@ -68,7 +68,7 @@ const BookModel = () => {
     { id: 'preface', icon: <BookmarkIcon className="w-4 h-4" />, label: 'Preface' },
     { id: 'toc', icon: <List className="w-4 h-4" />, label: 'Contents' },
     ...(isComplete ? [
-      { id: 'glossary', icon: <Users className="w-4 h-4" />, label: 'Glossary' },
+      // { id: 'glossary', icon: <Users className="w-4 h-4" />, label: 'Glossary' },
       { id: 'index', icon: <List className="w-4 h-4" />, label: 'Index' },
       { id: 'references', icon: <BookmarkIcon className="w-4 h-4" />, label: 'References' },
     ] : []),
@@ -105,12 +105,7 @@ const BookModel = () => {
 
     try {
       switch (pageType) {
-        case 'glossary':
-          await updateBookGenerated({
-            bookGenerationId: book.data.id,
-            glossary: content
-          }).unwrap();
-          break;
+
 
         case 'index':
           await updateBookGenerated({
@@ -509,16 +504,7 @@ const renderCurrentPageContent = (
         />
       );
 
-    case 'glossary':
-      return (
-        <Content
-          section={BookSection.GLOSSARY}
-          bookData={bookData}
-          editMode={editMode}
-          setEditMode={setEditMode}
-          refetchBook={refetchBook}
-        />
-      );
+
 
     case 'index':
       return (

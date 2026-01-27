@@ -36,18 +36,18 @@ interface GenerateBookRequest {
   additionalContent?: string;
 }
 interface CreateBookGenerateRequest {
- 
+
   minWords: number;
   maxWords: number;
-  chapterNo:number;
-  bookGenerationId:number,
-  additionalInfo?:string,
+  chapterNo: number;
+  bookGenerationId: number,
+  additionalInfo?: string,
 }
 export interface UpdateBookGenerateRequest {
   chapterNo: number;
   bookGenerationId: number;
   updateContent: string;
-  
+
 }
 
 interface GenerateBookResponse {
@@ -153,17 +153,21 @@ interface RegenerateChapterRequest {
 
 // Add this interface
 interface UpdateChapterImageRequest {
-  bookId: number;
-  chapterId: number;
+  bookGenerationId: number;
+  chapterNo: number;
+  originalImageUrl: string;
   image: File;
 }
 
 // Add this interface
 interface RegenerateChapterImageRequest {
-  bookId: number;
-  chapterId: number;
-  prompt: string;
+  bookGenerationId: number;
+  chapterNo: number;
+  originalImageUrl: string;
+  newPrompt?: string;
 }
+
+
 
 // Add these interfaces
 interface ChapterSummaryRequest {
@@ -240,7 +244,7 @@ export const bookApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
-    
+
     createChapter: builder.mutation<GenerateBookResponse, CreateBookGenerateRequest>({
       query: (payload) => ({
         url: '/book-chapter/chapter/create',
@@ -258,7 +262,7 @@ export const bookApi = baseApi.injectEndpoints({
     }),
 
     // Endpoint to search books
-    searchBook: builder.query<FetchBooksResponse, { userId: number; searchParams:SearchRequest }>({
+    searchBook: builder.query<FetchBooksResponse, { userId: number; searchParams: SearchRequest }>({
       query: ({ userId, searchParams }) => ({
         url: `/book-generation/search-by-id`,
         method: 'GET',
@@ -355,13 +359,14 @@ export const bookApi = baseApi.injectEndpoints({
     updateChapterImage: builder.mutation<any, UpdateChapterImageRequest>({
       query: (payload) => {
         const formData = new FormData();
-        formData.append('bookId', payload.bookId.toString());
-        formData.append('chapterId', payload.chapterId.toString());
-        formData.append('image', payload.image);
+        formData.append('bookGenerationId', payload.bookGenerationId.toString());
+        formData.append('chapterNo', payload.chapterNo.toString());
+        formData.append('originalImageUrl', payload.originalImageUrl);
+        formData.append('file', payload.image);
 
         return {
-          url: '/book-chapter/update-image',
-          method: 'PUT',
+          url: '/book-chapter/image/upload',
+          method: 'POST',
           body: formData,
         };
       },
@@ -370,7 +375,7 @@ export const bookApi = baseApi.injectEndpoints({
     // Add this to your endpoints in the builder
     regenerateChapterImage: builder.mutation<any, RegenerateChapterImageRequest>({
       query: (payload) => ({
-        url: '/book-chapter/regenerate-image',
+        url: '/book-chapter/image/regenerate',
         method: 'POST',
         body: payload,
       }),
@@ -428,12 +433,12 @@ export const bookApi = baseApi.injectEndpoints({
       }),
     }),
     // Add to your existing endpoints in bookApi
-getBookHtmlContent: builder.query<any, number>({
-  query: (bookId) => ({
-    url: `/book-generation/${bookId}/html-content/generate`,
-    method: 'GET',
-  }),
-}),
+    getBookHtmlContent: builder.query<any, number>({
+      query: (bookId) => ({
+        url: `/book-generation/${bookId}/html-content/generate`,
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
