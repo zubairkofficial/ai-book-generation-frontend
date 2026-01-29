@@ -192,7 +192,7 @@ const CreateBook = () => {
     // Basic Information
     bookTitle: "The main title of your book",
     authorName: "The name of the author",
-    authorBio: "A short biography of the author (optional)",
+    authorBio: "",
 
     // Book Details
     bookInformation: "The core idea or concept of book or thoughts",

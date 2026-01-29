@@ -67,10 +67,10 @@ export const PackageFormModal = ({
     defaultValues: {
       name: '',
       description: '',
-      price: undefined,
-      durationDays: undefined,
-      tokenLimit: undefined,
-      imageLimit: undefined,
+      price: 0,
+      durationDays: 30,
+      tokenLimit: 100,
+      imageLimit: 10,
       modelType: 'gpt-4o',
       imageModelURL: FLUX_DEV_URL,
       isActive: true,
@@ -111,11 +111,11 @@ export const PackageFormModal = ({
       reset({
         name: '',
         description: '',
-        price: undefined,
-        durationDays: undefined,
-        tokenLimit: undefined,
-        imageLimit: undefined,
-        modelType: '',
+        price: 0,
+        durationDays: 30,
+        tokenLimit: 100,
+        imageLimit: 10,
+        modelType: 'gpt-4o',
         imageModelURL: FLUX_DEV_URL,
         isActive: true,
         isFree: false,
@@ -283,14 +283,14 @@ export const PackageFormModal = ({
               )}
             </div>
 
-            {/* <div className="space-y-2">
+            <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">GPT Model</Label>
               <select
                 {...register("modelType")}
                 onChange={(e) => handleAIModelTypeChange(e.target.value)}
                 className={`w-full h-10 px-3 rounded-md border bg-white ${errors.modelType
-                    ? "border-red-300 ring-1 ring-red-200"
-                    : "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-200"
+                  ? "border-red-300 ring-1 ring-red-200"
+                  : "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-200"
                   } transition-all duration-200`}
               >
                 <option value="">Select AI Model</option>
@@ -306,7 +306,7 @@ export const PackageFormModal = ({
                   {errors.modelType.message}
                 </p>
               )}
-            </div> */}
+            </div>
 
             <div className="flex items-center space-x-3 bg-amber-50/50 p-3 rounded-lg border border-amber-100">
               <Controller

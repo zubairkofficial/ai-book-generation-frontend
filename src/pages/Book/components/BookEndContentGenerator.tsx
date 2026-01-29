@@ -48,7 +48,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
 
   // Streaming content
   const [streamingContent, setStreamingContent] = useState("");
-  
+
   // Editing states
   const [isEditing, setIsEditing] = useState(false);
   const [editableContent, setEditableContent] = useState("");
@@ -60,7 +60,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
     index: false,
   });
 
-  console.log("generated",generated,referencesContent,indexContent)
+  console.log("generated", generated, referencesContent, indexContent)
 
   // Add these new states for paragraph selection and regeneration
   const [selectedContent, setSelectedContent] = useState<{ text: string; index: number } | null>(null);
@@ -72,11 +72,11 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
   const [editMode, setEditMode] = useState<'ai' | 'human'>('ai');
   const [humanEditContent, setHumanEditContent] = useState('');
 
-  console.log("streamingContent",streamingContent)
+  console.log("streamingContent", streamingContent)
   // API hooks
   const [generateBookEndContent] = useGenerateBookEndContentMutation();
   const [updateBookGenerated] = useUpdateBookGeneratedMutation();
-  const {data: getBookById, isLoading, refetch: refetchBook} = useFetchBookByIdQuery(bookId, { skip: !bookId });
+  const { data: getBookById, isLoading, refetch: refetchBook } = useFetchBookByIdQuery(bookId, { skip: !bookId });
 
   // Derive if all sections are complete
   const allSectionsComplete = generated.glossary && generated.references && generated.index;
@@ -87,8 +87,8 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
     return (completedSections / 3) * 100;
   };
 
-  useEffect(()=>{refetchBook()},[activeTab])
-  console.log("getBookById",!!getBookById?.data)
+  useEffect(() => { refetchBook() }, [activeTab])
+  console.log("getBookById", !!getBookById?.data)
   // Load content from API on component mount
   useEffect(() => {
     const loadContent = async () => {
@@ -97,7 +97,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
         if (getBookById.data) {
           if (getBookById.data.glossary) {
             setGlossaryContent(getBookById.data.glossary);
-            setGenerated(prev => ({ ...prev, glossary:!!getBookById?.data?.glossary }));
+            setGenerated(prev => ({ ...prev, glossary: !!getBookById?.data?.glossary }));
           }
           if (getBookById.data.references) {
             setReferencesContent(getBookById.data.references);
@@ -121,24 +121,24 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
         await refetchBook()
         if (getBookById.statusCode === 200 && getBookById.data) {
           const { glossary, references, index } = getBookById.data;
-          
+
           if (glossary) {
             setGlossaryContent(glossary);
             setGenerated(prev => ({ ...prev, glossary: true }));
           }
-          
+
           if (references) { // Note: API field has a typo
             setReferencesContent(references);
             setGenerated(prev => ({ ...prev, references: true }));
           }
-          
+
           if (index) {
             setIndexContent(index);
             setGenerated(prev => ({ ...prev, index: true }));
           }
         }
-      } catch (error:any) {
-        addToast(error?.data.message.message??error.message,ToastType.ERROR)
+      } catch (error: any) {
+        addToast(error?.data.message.message ?? error.message, ToastType.ERROR)
         console.error("Error loading content:", error);
       } finally {
         setIsInitialLoading(false);
@@ -146,7 +146,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
     };
 
     loadContent();
-  }, [bookId,  getBookById?.data, !!getBookById?.data]);
+  }, [bookId, getBookById?.data, !!getBookById?.data]);
 
   // Get current content based on active tab
   const getCurrentContent = () => {
@@ -162,7 +162,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
     }
   };
 
-  
+
   // Add this useEffect to handle text selection
   useEffect(() => {
     const handleSelection = () => {
@@ -172,19 +172,19 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
       if (selectedText) {
         const range = selection?.getRangeAt(0);
         let element = range?.commonAncestorContainer as Element;
-        
+
         // If the selected node is a text node, get its parent
         if (element.nodeType === Node.TEXT_NODE) {
           element = element.parentElement as Element;
         }
-        
+
         // Find the closest parent with data-paragraph-index
         const paragraphElement = element.closest('[data-paragraph-index]');
         if (paragraphElement) {
           const index = parseInt(paragraphElement.getAttribute('data-paragraph-index') || '-1');
           if (index !== -1) {
-            setSelectedContent({ 
-              text: selectedText, 
+            setSelectedContent({
+              text: selectedText,
               index: index
             });
             setShowEditPanel(true);
@@ -200,15 +200,15 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
   // Format content for display
   const formatContent = (content: string) => {
     if (!content) return null;
-    
+
     // Split content into paragraphs
     const paragraphs = content.split(/\n\n+/);
-    
+
     return (
       <div className="prose prose-amber max-w-none">
         {paragraphs.map((paragraph, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             data-paragraph-index={index}
             className="mb-4 paragraph-selectable hover:bg-amber-50 p-1 rounded transition-colors"
           >
@@ -233,13 +233,13 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
         contentType: activeTab,
         additionalInfo,
       };
-      
-    
+
+
       // Set up event source for streaming
       const eventSource = new EventSource(`${BASE_URl}/book-generation/book-end-stream/bgr?token=${token}`);
-      
+
       let fullContent = "";
-      
+
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
@@ -253,12 +253,12 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
           setStreamingContent(fullContent);
         }
       };
-      
+
       eventSource.onerror = (error) => {
         console.error("Stream error:", error);
         eventSource.close();
         setIsGenerating(false);
-        
+
         // Save the accumulated content
         if (fullContent) {
           // Update the appropriate content state
@@ -272,10 +272,10 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
             setIndexContent(fullContent);
             setGenerated(prev => ({ ...prev, index: true }));
           }
-          
+
           // Save to API
           saveGeneratedContent(fullContent);
-          
+
           // Force update and check if all sections are now complete
           refetchBook().then(() => {
             // Re-check if all sections are complete after saving
@@ -294,46 +294,46 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
           });
         }
       };
-        // Initialize generation
-      const response= await generateBookEndContent(payload).unwrap();
-   if(response){
-     setIsGenerating(false);
-      addToast("Content generated successfully", ToastType.SUCCESS);
-      
-      // Force update if this was the last section to be generated
-      if (
-        (activeTab === "glossary" && generated.references && generated.index) ||
-        (activeTab === "references" && generated.glossary && generated.index) ||
-        (activeTab === "index" && generated.glossary && generated.references)
-      ) {
-        // All sections are now complete - force state update
-        setGenerated({
-          glossary: true,
-          references: true,
-          index: true
-        });
+      // Initialize generation
+      const response = await generateBookEndContent(payload).unwrap();
+      if (response) {
+        setIsGenerating(false);
+        addToast("Content generated successfully", ToastType.SUCCESS);
+
+        // Force update if this was the last section to be generated
+        if (
+          (activeTab === "glossary" && generated.references && generated.index) ||
+          (activeTab === "references" && generated.glossary && generated.index) ||
+          (activeTab === "index" && generated.glossary && generated.references)
+        ) {
+          // All sections are now complete - force state update
+          setGenerated({
+            glossary: true,
+            references: true,
+            index: true
+          });
+        }
+
+        // Safety timeout
+        if (eventSource.readyState !== EventSource.CLOSED) {
+          eventSource.close();
+        }
       }
-      
-      // Safety timeout
-      if (eventSource.readyState !== EventSource.CLOSED) {
-        eventSource.close();
-      }
-     } 
     } catch (error: any) {
-     console.error("Error generating content:", error);
+      console.error("Error generating content:", error);
       addToast(error?.data.message.message || "Failed to generate content", ToastType.ERROR);
       setIsGenerating(false);
     }
   };
 
-  
+
   // Save generated content to API
   const saveGeneratedContent = async (content: string) => {
     try {
       const updateData: any = {
         bookGenerationId: bookId,
       };
-      
+
       // Set the correct field based on active tab
       if (activeTab === "glossary") {
         updateData.glossary = content;
@@ -342,21 +342,21 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
       } else if (activeTab === "index") {
         updateData.index = content;
       }
-      
+
       const response = await updateBookGenerated(updateData).unwrap();
-      
+
       if (response.statusCode === 200) {
         addToast(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} successfully generated!`, ToastType.SUCCESS);
-        
+
         // Update the generated state immediately
         setGenerated(prev => {
           const updated = { ...prev, [activeTab]: true };
-          
+
           // If this was the last section we needed, force refetch to ensure Complete button shows
           if (updated.glossary && updated.references && updated.index) {
             refetchBook();
           }
-          
+
           return updated;
         });
       }
@@ -394,10 +394,10 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
   // Handle saving edits
   const handleSaveEdit = async () => {
     if (!editableContent) return;
-    
+
     try {
       setIsGenerating(true);
-      
+
       // Update the appropriate content state
       if (activeTab === "glossary") {
         setGlossaryContent(editableContent);
@@ -409,12 +409,12 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
         setIndexContent(editableContent);
         setGenerated(prev => ({ ...prev, references: true }));
       }
-      
+
       // Save to API
       await saveGeneratedContent(editableContent);
       setIsEditing(false);
       setIsGenerating(false);
-      
+
     } catch (error) {
       console.error("Error saving edit:", error);
       addToast("Failed to save edit", ToastType.ERROR);
@@ -438,9 +438,9 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
       setRegeneratedContent('');
       setIsGenerating(true);
       setShowInsertOption(true);
-      
+
       const actualIndex = selectedContent?.index || index;
-      
+
       // Create payload for API
       const payload = {
         bookId,
@@ -449,12 +449,12 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
         // paragraphIndex: actualIndex,
         currentContent: selectedContent?.text
       };
-      
+
       // Set up event source for streaming
       const eventSource = new EventSource(`${BASE_URl}/book-generation/book-end-stream/bgr?token=${token}`);
-      
+
       let fullContent = "";
-      
+
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
@@ -468,23 +468,23 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
           setRegeneratedContent(fullContent);
         }
       };
-      
+
       eventSource.onerror = (error) => {
         console.error("Stream error:", error);
         eventSource.close();
         setIsGenerating(false);
       };
-      
+
       // Initialize generation with a payload that includes the paragraph index
       await generateBookEndContent(payload).unwrap();
-      
-   
-        if (eventSource.readyState !== EventSource.CLOSED) {
-          eventSource.close();
-          setIsGenerating(false);
-        }
-      
-      
+
+
+      if (eventSource.readyState !== EventSource.CLOSED) {
+        eventSource.close();
+        setIsGenerating(false);
+      }
+
+
     } catch (error: any) {
       console.error("Error regenerating paragraph:", error);
       addToast(error.message || "Failed to regenerate content", ToastType.ERROR);
@@ -496,21 +496,21 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
   const handleInsertContent = async () => {
     try {
       setIsInserting(true);
-      
+
       let contentToInsert = '';
-      
+
       if (editMode === 'human') {
         contentToInsert = humanEditContent;
       } else {
         contentToInsert = regeneratedContent;
       }
-      
+
       if (!contentToInsert) {
         addToast("No content to insert", ToastType.ERROR);
         setIsInserting(false);
         return;
       }
-      
+
       // Get current content based on active tab
       let currentContent = '';
       if (activeTab === "glossary") {
@@ -520,15 +520,15 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
       } else if (activeTab === "index") {
         currentContent = indexContent;
       }
-      
+
       // If no saved content but we have streaming content, use that
       if (!currentContent && streamingContent) {
         currentContent = streamingContent;
       }
-      
+
       // Split content into paragraphs
       const paragraphs = currentContent ? currentContent.split(/\n\n+/) : [];
-      
+
       // Replace only the selected paragraph with new content
       if (selectedContent && selectedContent.index < paragraphs.length) {
         paragraphs[selectedContent.index] = contentToInsert;
@@ -536,10 +536,10 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
         // If somehow the index is invalid, append to the end
         paragraphs.push(contentToInsert);
       }
-      
+
       // Join back together and update
       const updatedContent = paragraphs.join('\n\n');
-      
+
       // Update the appropriate content state
       if (activeTab === "glossary") {
         setGlossaryContent(updatedContent);
@@ -551,7 +551,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
         setIndexContent(updatedContent);
         setGenerated(prev => ({ ...prev, index: true }));
       }
-      
+
       // If we were working with streaming content that wasn't saved yet,
       // make sure it's preserved in the appropriate state
       if (!getCurrentContent() && streamingContent) {
@@ -563,10 +563,10 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
           setIndexContent(updatedContent);
         }
       }
-      
+
       // Save to API
       await saveGeneratedContent(updatedContent);
-      
+
       // Reset states
       setShowEditPanel(false);
       setShowInsertOption(false);
@@ -574,7 +574,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
       setHumanEditContent('');
       setEditInstruction('');
       setSelectedContent(null);
-      
+
       addToast("Content updated successfully", ToastType.SUCCESS);
     } catch (error: any) {
       console.error("Error inserting content:", error);
@@ -591,7 +591,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
       </div>
     );
   }
-  const handleBookEndContent=(tab: string)=>{
+  const handleBookEndContent = (tab: string) => {
     setActiveTab(tab as ContentType)
     setStreamingContent("")
   }
@@ -605,7 +605,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
-      
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Finishing Your Book
@@ -644,22 +644,22 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
 
               <div className="flex gap-4 my-3">
                 <div className="flex items-center gap-2">
-                  <input 
-                    type="radio" 
-                    id="ai-edit" 
-                    name="edit-mode" 
-                    checked={editMode === 'ai'} 
-                    onChange={() => setEditMode('ai')} 
+                  <input
+                    type="radio"
+                    id="ai-edit"
+                    name="edit-mode"
+                    checked={editMode === 'ai'}
+                    onChange={() => setEditMode('ai')}
                   />
                   <Label htmlFor="ai-edit" className="cursor-pointer">AI</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input 
-                    type="radio" 
-                    id="human-edit" 
-                    name="edit-mode" 
-                    checked={editMode === 'human'} 
-                    onChange={() => setEditMode('human')} 
+                  <input
+                    type="radio"
+                    id="human-edit"
+                    name="edit-mode"
+                    checked={editMode === 'human'}
+                    onChange={() => setEditMode('human')}
                   />
                   <Label htmlFor="human-edit" className="cursor-pointer">Human</Label>
                 </div>
@@ -668,7 +668,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
               {editMode === 'human' ? (
                 <div>
                   <Label>Human Edit</Label>
-                  <Textarea 
+                  <Textarea
                     value={humanEditContent || selectedContent?.text || ''}
                     onChange={(e) => setHumanEditContent(e.target.value)}
                     className="mt-1 min-h-[150px]"
@@ -823,7 +823,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
                 </div>
 
               </div>
-              
+
               <div>
                 <Label htmlFor="additionalInfo">Additional Details</Label>
                 <Textarea
@@ -891,7 +891,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
               <h2 className="text-xl font-semibold capitalize">{activeTab}</h2>
             </div>
             <div className="flex gap-2">
-              
+
               {generated[activeTab] && !isEditing && (
                 <Button
                   variant="outline"
@@ -926,7 +926,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
                     )}
                   />
                 </div>
-                
+
                 <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-2 mt-4">
                   <div className="flex justify-end items-center gap-3 max-w-2xl mx-auto">
                     <Button
@@ -991,7 +991,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
               </p>
             )}
           </div>
-          
+
           {/* Navigation buttons at bottom */}
           {!isEditing && (
             <div className="flex justify-between items-center mt-6">
@@ -1004,7 +1004,7 @@ const BookEndContentGenerator: React.FC<BookEndContentGeneratorProps> = ({
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Previous
               </Button>
-              
+
               <Button
                 variant="outline"
                 onClick={handleNextSection}

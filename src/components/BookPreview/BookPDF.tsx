@@ -221,6 +221,25 @@ const BookPDF: React.FC<BookPDFProps> = ({ book }) => {
         {/* Do not render page number on cover page */}
       </Page>
 
+
+
+      {/* Table of Contents */}
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.header}>{book.bookTitle}</Text>
+        <Text style={[styles.sectionTitle]}>Table of Contents</Text>
+
+        {book.bookChapter?.map((chapter: any, index: number) => (
+          <View key={index} style={styles.tocItemContainer}>
+            <Text style={[styles.tocItem, { flex: 1 }]} {...({ numberOfLines: 2 } as any)}>
+              {chapter.chapterNo}. {chapter.chapterName}
+            </Text>
+            <Text style={[styles.tocPageNum, { marginLeft: 10 }]}></Text>
+          </View>
+        ))}
+
+        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+      </Page>
+
       {/* Dedication Page */}
       {book.additionalData?.dedication && (
         <Page size="A4" style={styles.page}>
@@ -230,6 +249,8 @@ const BookPDF: React.FC<BookPDFProps> = ({ book }) => {
           <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
         </Page>
       )}
+
+
 
       {/* Preface Page */}
       {book.additionalData?.preface && (
@@ -250,38 +271,6 @@ const BookPDF: React.FC<BookPDFProps> = ({ book }) => {
           <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
         </Page>
       )}
-
-      {/* Table of Contents */}
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>{book.bookTitle}</Text>
-        <Text style={[styles.sectionTitle]}>Table of Contents</Text>
-
-        {book.bookChapter?.map((chapter: any, index: number) => (
-          <View key={index} style={styles.tocItemContainer}>
-            <Text style={[styles.tocItem, { flex: 1 }]} {...({ numberOfLines: 2 } as any)}>
-              {chapter.chapterNo}. {chapter.chapterName}
-            </Text>
-            <Text style={[styles.tocPageNum, { marginLeft: 10 }]}></Text>
-          </View>
-        ))}
-
-        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
-      </Page>
-
-      {/* Index */}
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>{book.bookTitle}</Text>
-        <Text style={[styles.sectionTitle]}>Index</Text>
-        {book.bookChapter?.map((chapter: any, index: number) => (
-          <View key={index} style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>Chapter {chapter.chapterNo}: {chapter.chapterName}</Text>
-            <View>
-              {processMarkdown(chapter.chapterSummary || 'Summary not available.')}
-            </View>
-          </View>
-        ))}
-        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
-      </Page>
 
       {/* Chapters */}
       {book.bookChapter?.map((chapter: any, index: number) => {
@@ -320,6 +309,21 @@ const BookPDF: React.FC<BookPDFProps> = ({ book }) => {
           <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
         </Page>
       )}
+
+      {/* Index */}
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.header}>{book.bookTitle}</Text>
+        <Text style={[styles.sectionTitle]}>Index</Text>
+        {book.bookChapter?.map((chapter: any, index: number) => (
+          <View key={index} style={{ marginBottom: 15 }}>
+            <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 5 }}>Chapter {chapter.chapterNo}: {chapter.chapterName}</Text>
+            <View>
+              {processMarkdown(chapter.chapterSummary || 'Summary not available.')}
+            </View>
+          </View>
+        ))}
+        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+      </Page>
     </Document>
   );
 };
