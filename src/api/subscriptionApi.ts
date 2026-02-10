@@ -35,7 +35,7 @@ export interface SubscribeRequest {
   packageId: number;
   cancelExisting: boolean;
   autoRenew: boolean;
-  // Add any other fields needed for subscription
+  paymentMethod?: 'credit' | 'card';
 }
 
 export interface SubscriptionResponse {
@@ -103,36 +103,38 @@ export const subscriptionApi = baseApi.injectEndpoints({
         params,
       }),
     }),
-    
+
     getCurrentSubscription: builder.query<SubscriptionUsage[], void>({
       query: () => ({
         url: '/subscription/my-subscription',
         method: 'GET',
       }),
+      providesTags: ['Subscription'],
     }),
-    
+
     subscribeToPackage: builder.mutation<SubscriptionResponse, SubscribeRequest>({
       query: (payload) => ({
-        url: '/subscription/subscribe',
+        url: '/subscription/purchase',
         method: 'POST',
         body: payload,
       }),
+      invalidatesTags: ['User', 'Subscription'],
     }),
-    
+
     cancelSubscription: builder.mutation<{ success: boolean }, number>({
       query: (subscriptionId) => ({
         url: `/subscription/${subscriptionId}/cancel`,
         method: 'POST',
       }),
     }),
-    
+
     deleteSubscriptionPackage: builder.mutation<{ success: boolean }, number>({
       query: (packageId) => ({
         url: `/subscription/packages/${packageId}`,
         method: 'DELETE',
       }),
     }),
-    
+
     updateSubscriptionPackage: builder.mutation<SubscriptionPackage, { id: number; payload: UpdatePackageRequest }>({
       query: ({ id, payload }) => ({
         url: `/subscription/packages/${id}`,

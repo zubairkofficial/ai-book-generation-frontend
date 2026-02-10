@@ -62,7 +62,10 @@ export default function SignUp() {
       const response = await signUp({ email, password, name }).unwrap();
 
       if (response) {
-        if (response.shouldRedirect) {
+        if (response.shouldRedirectToPayment) {
+          addToast('Account created! Please complete payment.', ToastType.SUCCESS);
+          navigate('/auth/payment', { state: { userId: response.user?.id || (response as any).userId } });
+        } else if (response.shouldRedirect) {
           addToast('Account created successfully! Please log in.', ToastType.SUCCESS);
           // Navigate to AuthPage with login view state
           navigate('/auth', { state: { view: 'login' } });

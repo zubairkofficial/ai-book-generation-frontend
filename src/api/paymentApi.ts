@@ -33,7 +33,7 @@ export interface SavedCard {
   expiryYear: number;
   brand?: string;
   isDefault?: boolean;
-  status:string;
+  status: string;
 }
 
 // Payment with existing card request interface
@@ -48,25 +48,27 @@ export const paymentApi = baseApi.injectEndpoints({
     // Create a payment
     createPayment: builder.mutation<any, CreatePaymentRequest>({
       query: (payload) => ({
-        url: '/payments/token',
+        url: '/card-payments/process',
         method: 'POST',
         body: payload,
       }),
+      invalidatesTags: ['User', 'Subscription'],
     }),
 
     // Make payment with existing card
     payWithExistingCard: builder.mutation<any, { cardId: number; payload: ExistingCardPaymentRequest }>({
       query: ({ cardId, payload }) => ({
-        url: `/payments/exist-card/${cardId}`,
+        url: `/card-payments/exist-card/${cardId}`,
         method: 'POST',
         body: payload,
       }),
+      invalidatesTags: ['User', 'Subscription'],
     }),
 
     // New endpoint to get saved cards
     getSavedCards: builder.query<SavedCard[], void>({
       query: () => ({
-        url: '/payments/card',
+        url: '/card-payments/card',
         method: 'GET',
       }),
     }),
@@ -74,7 +76,7 @@ export const paymentApi = baseApi.injectEndpoints({
     // Delete a saved card
     deleteCard: builder.mutation<{ success: boolean }, number>({
       query: (cardId) => ({
-        url: `/payments/card/${cardId}`,
+        url: `/card-payments/card/${cardId}`,
         method: 'DELETE',
       }),
     }),

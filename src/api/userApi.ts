@@ -1,7 +1,7 @@
 import { UserInterface } from './../interfaces/user.interface.d';
 // api/userApi.ts
 import { baseApi } from './baseApi';
-import {  UpdateUserPayload } from '../interfaces/user.interface';
+import { UpdateUserPayload } from '../interfaces/user.interface';
 
 export const userMeApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -10,6 +10,7 @@ export const userMeApi = baseApi.injectEndpoints({
         url: '/users/me',
         method: 'GET',
       }),
+      providesTags: ['User'],
     }),
     updateUser: builder.mutation<UserInterface, UpdateUserPayload>({
       query: (payload) => ({
@@ -17,6 +18,7 @@ export const userMeApi = baseApi.injectEndpoints({
         method: 'PATCH',
         body: payload,
       }),
+      invalidatesTags: ['User'],
     }),
     getUserStats: builder.query<{
       user: UserInterface;
@@ -30,6 +32,7 @@ export const userMeApi = baseApi.injectEndpoints({
         url: '/users/me/stats',
         method: 'GET',
       }),
+      providesTags: ['User'],
     }),
     getFreeSubscriptionUsers: builder.query<any[], void>({
       query: () => ({

@@ -1,4 +1,5 @@
 import { baseApi } from './baseApi'; // Correct import
+import { User } from '@/features/auth/authSlice';
 
 interface SignUpRequest {
   email: string;
@@ -13,11 +14,10 @@ interface SignInRequest {
 }
 
 export interface AuthResponse {
-  user: { id: string; email: string; name: string; role: string };
-  token: string;
-  message: string;
+  user: { id: string; email: string; name: string; role: string; status: string; paymentStatus: string; };
   accessToken: string;
-  shouldRedirect?: boolean;
+  message: string;
+  shouldRedirectToPayment?: boolean;
 }
 
 interface ResetPasswordRequest {
@@ -69,6 +69,20 @@ interface GenerateBookRequest {
 
 interface GenerateBookResponse {
   bookContent: string;
+}
+
+interface InitialPaymentRequest {
+  userId: number;
+  cardData: {
+    cardNumber: string;
+    expiryMonth: string;
+    expiryYear: string;
+    cvc: string;
+    amount: number;
+    cardHolderName: string;
+    saveCard: boolean;
+    isFree?: boolean;
+  };
 }
 
 export const authApi = baseApi.injectEndpoints({
@@ -183,6 +197,18 @@ export const authApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+
+    completeInitialPayment: builder.mutation<{ message: string; status: string; accessToken: string; user: User }, InitialPaymentRequest>({
+      query: (body) => ({
+        url: '/auth/complete-initial-payment',
+        method: 'POST',
+        body,
+      }),
+    }),
+    getMe: builder.query<User, void>({
+      query: () => '/users/me',
+      providesTags: ['User'],
+    }),
   }),
 });
 
@@ -201,4 +227,6 @@ export const {
   useVerifyOTPMutation,
   useGenerateBookMutation,
   useResendVerificationMutation,
+  useCompleteInitialPaymentMutation,
+  useGetMeQuery,
 } = authApi;

@@ -11,8 +11,11 @@ export interface UserAnalytics {
   user_password?: string;
   user_phoneNumber: string | null;
   user_isEmailVerified: boolean;
+  user_isBlocked: boolean; // Added isBlocked
   user_twoFactorSecret: string | null;
   user_role: 'admin' | 'user';
+  user_status: string;
+  user_paymentStatus: string;
   bookCount: string;
 }
 
@@ -25,13 +28,14 @@ export interface AnalyticsResponse {
 
 export const analyticsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getAllUserAnalytics: builder.query<AnalyticsResponse, void>({
+    getAllUserAnalytics: builder.query<UserAnalytics[], void>({
       query: () => ({
         url: '/analytics/admin',
         method: 'GET',
       }),
       // Refresh every 5 minutes
       keepUnusedDataFor: 300,
+      providesTags: ['Users'],
     }),
   }),
 });

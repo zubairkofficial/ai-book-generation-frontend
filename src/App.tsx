@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import LandingPage from "./pages/LandingPage/LandingPage";
 import { ThemeProvider } from "next-themes";
 import { ToastContainer } from "react-toastify";
@@ -16,8 +16,12 @@ import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
 import PasswordResetPage from "./pages/Auth/PasswordResetPage";
 import VerifyEmailPage from "./pages/Auth/VerifyEmailPage";
 import VerifyOTP from "./pages/Auth/VerifyOTP";
+import InitialPayment from "./pages/Auth/InitialPayment";
+import ApprovalPending from "./pages/Auth/ApprovalPending";
 import BookTable from "./pages/Book/AllBookTable";
 import CreateBook from "./pages/Book/CreateBook";
+import UserManagementPage from "./pages/admin/UserManagementPage";
+import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
 import HomePage from "./pages/HomePage";
 import SettingsPage from "./pages/Settings/SettingsPage";
 import { RootState } from "./store/store";
@@ -79,10 +83,18 @@ function AppRoutes() {
 
       // Set credentials in Redux store
       dispatch(setCredentials({ user: parsedUser, accessToken }));
-      console.log("user",parsedUser.isNewUser)
-      // Use navigate instead of window.location for better SPA experience
-      navigate("/subscription", { replace: true });
-      
+
+      // Determine redirect based on user status
+      if (parsedUser.status === 'PENDING_PAYMENT') {
+        navigate("/auth/payment", { replace: true, state: { userId: parsedUser.id } });
+      } else if (parsedUser.status === 'PENDING_APPROVAL') {
+        navigate("/auth/approval-pending", { replace: true });
+      } else if (parsedUser.status === 'REJECTED') {
+        navigate("/auth/approval-pending", { replace: true });
+      } else {
+        navigate("/subscription", { replace: true });
+      }
+
     } catch (error) {
       console.error('Authentication failed:', error);
       // Handle error appropriately - you might want to show a toast or error message
@@ -140,6 +152,12 @@ function AppRoutes() {
         {/* Verify OTP Page */}
         <Route path="/verify-otp" element={<VerifyOTP />} />
 
+        {/* Initial Payment Page */}
+        <Route path="/auth/payment" element={<InitialPayment />} />
+
+        {/* Approval Pending Page */}
+        <Route path="/auth/approval-pending" element={<ApprovalPending />} />
+
         {/* Verify Email Page */}
         <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
 
@@ -163,6 +181,8 @@ function AppRoutes() {
           <Route path="/presentation-slides" element={<PresentationSlidesPage />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
           {user?.role === "admin" && <Route path="/admin/packages" element={<PackageManagementPage />} />}
+          {user?.role === "admin" && <Route path="/admin/users" element={<UserManagementPage />} />}
+          {user?.role === "admin" && <Route path="/admin/settings" element={<SystemSettingsPage />} />}
           {user?.role === "admin" && <Route path="/free-subscriptions" element={<FreeSubscriptionsPage />} />}
         </Route>
 

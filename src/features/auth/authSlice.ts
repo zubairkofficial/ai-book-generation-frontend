@@ -1,8 +1,18 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 // Define the shape of the authentication state
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  status: string;
+  paymentStatus: string;
+  availableAmount?: number;
+}
+
 export interface AuthState {
-  user: { id: string; email: string,name:string,role:string } | null;
+  user: User | null;
   token: string | null;
   accessToken: string | null;
   isAuthenticated: boolean;
@@ -35,9 +45,9 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials: (state, action: PayloadAction<{ user: { id: string; email: string,name:string,role:string }; accessToken: string }>) => {
+    setCredentials: (state, action: PayloadAction<{ user: User; accessToken: string }>) => {
       state.user = action.payload.user;
-       state.token = action.payload.accessToken;
+      state.token = action.payload.accessToken;
       state.isAuthenticated = true;
       saveAuthStateToLocalStorage(state);
     },
@@ -53,9 +63,18 @@ const authSlice = createSlice({
       state.token = storedAuthState.token;
       state.isAuthenticated = storedAuthState.isAuthenticated;
     },
+    setUserStatus: (state, action: PayloadAction<{ status: string; paymentStatus?: string }>) => {
+      if (state.user) {
+        state.user.status = action.payload.status;
+        if (action.payload.paymentStatus) {
+          state.user.paymentStatus = action.payload.paymentStatus;
+        }
+        saveAuthStateToLocalStorage(state);
+      }
+    },
   },
 });
 
 // Export the actions and reducer
-export const { setCredentials, logout, initializeAuth } = authSlice.actions;
+export const { setCredentials, logout, initializeAuth, setUserStatus } = authSlice.actions;
 export default authSlice.reducer;

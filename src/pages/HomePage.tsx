@@ -1,6 +1,28 @@
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { BookOpenCheck,  Edit, Activity, User, Users, BookOpen, BarChart3, Library, PenTool, Star, Check } from 'lucide-react';
+import {
+  Users,
+  BookOpen,
+  TrendingUp,
+  CheckCircle,
+  Clock,
+  Shield,
+  User,
+  Coins,
+  ArrowRight,
+  Calendar,
+  Settings,
+  AlertCircle,
+  BookOpenCheck,
+  Edit,
+  Activity,
+  BarChart3,
+  Library,
+  PenTool,
+  Star,
+  Check,
+  Book
+} from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts';
 import { useGetAllStatsQuery } from '@/api/statsApi';
 import { useUserMeQuery, useGetUserStatsQuery } from '@/api/userApi';
@@ -9,7 +31,6 @@ import { Badge } from '@/components/ui/badge';
 import { useEffect, useMemo } from 'react';
 import { useGetAllUserAnalyticsQuery } from '@/api/analyticsApi';
 import { motion } from 'framer-motion';
-import { Clock, Shield, Book } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGetRecentActivityQuery } from '@/api/bookApi';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -77,20 +98,21 @@ interface WelcomeCard extends BaseCard {
   verificationStatus: boolean;
   isWelcomeCard: true;
   credits: Credits | null;
+  balance: number;
 }
 
 type StatCard = AdminCard | UserCard;
 
 const HomePage = () => {
-  const {data:statsData,refetch:refetchStats}:any = useGetAllStatsQuery();
-  const { data:userData,refetch:refetchUser } = useUserMeQuery();
+  const { data: statsData, refetch: refetchStats }: any = useGetAllStatsQuery();
+  const { data: userData, refetch: refetchUser } = useUserMeQuery();
   const { data: userStatsData, refetch: refetchUserStats } = useGetUserStatsQuery();
   const { data: analyticsData } = useGetAllUserAnalyticsQuery();
-  const { data: recentActivityData, isLoading: isLoadingActivity,refetch:refetchRecentActivity } = useGetRecentActivityQuery();
+  const { data: recentActivityData, isLoading: isLoadingActivity, refetch: refetchRecentActivity } = useGetRecentActivityQuery();
   const { data: currentSubscriptions } = useGetCurrentSubscriptionQuery();
   const { data: tokenSettings } = useGetTokenSettingsQuery();
   const navigate = useNavigate();
-  
+
   // Format date safely
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
@@ -104,19 +126,19 @@ const HomePage = () => {
   // Add processed analytics data calculation
   const processedAnalytics = useMemo(() => {
     if (!analyticsData || !Array.isArray(analyticsData)) return null;
-    
-    const totalBooks = analyticsData.reduce((sum, user) => 
+
+    const totalBooks = analyticsData.reduce((sum, user) =>
       sum + parseInt(user.bookCount || '0', 10), 0);
-    
-    const activeUsers = analyticsData.filter(user => 
+
+    const activeUsers = analyticsData.filter(user =>
       parseInt(user.bookCount || '0', 10) > 0).length;
-    
+
     return {
       totalBooks,
       totalUsers: analyticsData.length,
       activeUsers,
-      avgBooksPerUser: analyticsData.length > 0 
-        ? (totalBooks / analyticsData.length).toFixed(1) 
+      avgBooksPerUser: analyticsData.length > 0
+        ? (totalBooks / analyticsData.length).toFixed(1)
         : '0'
     };
   }, [analyticsData]);
@@ -124,7 +146,7 @@ const HomePage = () => {
   // Add Most Active User calculation
   const mostActiveUser = useMemo(() => {
     if (!analyticsData || !Array.isArray(analyticsData)) return null;
-    return [...analyticsData].sort((a, b) => 
+    return [...analyticsData].sort((a, b) =>
       parseInt(b.bookCount || '0', 10) - parseInt(a.bookCount || '0', 10)
     )[0];
   }, [analyticsData]);
@@ -132,10 +154,10 @@ const HomePage = () => {
   // User-specific stats cards - Separated into welcome card and stat cards
   const getUserWelcomeCard = () => {
     if (!userData) return null;
-    
+
     // Get the active subscription if any
     const activeSubscription = currentSubscriptions?.[0] as SubscriptionUsage | undefined;
-    
+
     return {
       id: 1,
       metric: 'Welcome to AI Book Legacy',
@@ -146,6 +168,7 @@ const HomePage = () => {
       verificationStatus: userData?.isEmailVerified ?? false,
       icon: <User className="h-6 w-6 text-amber-500" />,
       isWelcomeCard: true,
+      balance: userData?.availableAmount ?? 0,
       credits: activeSubscription ? {
         gptCredits: {
           used: Math.round(activeSubscription.tokensUsed / Number(tokenSettings?.creditsPerModelToken || 1)),
@@ -158,10 +181,10 @@ const HomePage = () => {
       } : null
     };
   };
-  
+
   const getUserStatCards = (): UserCard[] => {
     if (!userStatsData) return [];
-    
+
     return [
       {
         id: 2,
@@ -279,7 +302,7 @@ const HomePage = () => {
       const date = parseISO(timestamp);
       const now = new Date();
       const diffInHours = Math.round(Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60));
-      
+
       if (diffInHours < 1) {
         return 'Just now';
       } else if (diffInHours < 24) {
@@ -295,7 +318,7 @@ const HomePage = () => {
 
   // Function to get the appropriate icon based on action type
   const getActivityIcon = (actionType: string) => {
-    switch(actionType.toLowerCase()) {
+    switch (actionType.toLowerCase()) {
       case 'created':
         return <BookOpenCheck className="h-6 w-6 text-amber-500" />;
       case 'edited':
@@ -341,8 +364,8 @@ const HomePage = () => {
     return (
       <div className="space-y-4">
         {recentActivityData.data.map((activity, index) => (
-          <motion.div 
-            key={`${activity.bookId}-${activity.actionType}-${index}`} 
+          <motion.div
+            key={`${activity.bookId}-${activity.actionType}-${index}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
@@ -362,8 +385,8 @@ const HomePage = () => {
                 </p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="text-sm border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
               onClick={() => navigate(`/book-modal?id=${activity.bookId}`)}
             >
@@ -381,10 +404,10 @@ const HomePage = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          
+
         </div>
-          {/* Enhanced Top Contributor Card */}
-          {userData?.role === 'admin' && mostActiveUser && parseInt(mostActiveUser.bookCount || '0', 10) > 0 && (
+        {/* Enhanced Top Contributor Card */}
+        {userData?.role === 'admin' && mostActiveUser && parseInt(mostActiveUser.bookCount || '0', 10) > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -393,46 +416,46 @@ const HomePage = () => {
           >
             <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-100 rounded-full opacity-50 blur-xl"></div>
             <div className="absolute bottom-0 left-20 w-32 h-32 bg-amber-200/30 rounded-full blur-lg"></div>
-            
+
             <div className="relative">
               <h2 className="text-xl font-semibold mb-6 text-gray-800 flex items-center">
-             
-               <Check className='rounded-full border-2 border-amber-600 bg-amber-100  w-5 h-5 text-amber-600 mr-2' />
+
+                <Check className='rounded-full border-2 border-amber-600 bg-amber-100  w-5 h-5 text-amber-600 mr-2' />
                 Top Contributor
               </h2>
-              
+
               <div className="flex flex-col md:flex-row items-center gap-6 p-4 bg-gradient-to-r from-amber-50 to-transparent rounded-xl">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-amber-300 to-amber-600 rounded-full blur-sm animate-pulse"></div>
                   <div className="h-24 w-24 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg relative">
-                    {mostActiveUser.user_name 
-                      ? mostActiveUser.user_name.charAt(0).toUpperCase() 
+                    {mostActiveUser.user_name
+                      ? mostActiveUser.user_name.charAt(0).toUpperCase()
                       : 'U'}
                   </div>
                   <div className="absolute -right-1 -bottom-1 bg-amber-100 p-1.5 rounded-full border-2 border-white">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-amber-600">
-                       <Star className='w-5 h-5 text-amber-600' />
+                      <Star className='w-5 h-5 text-amber-600' />
                     </svg>
                   </div>
                 </div>
-                
+
                 <div className="text-center md:text-left flex-1">
                   <h3 className="text-xl font-bold text-gray-900 mb-1">{mostActiveUser.user_name || 'Unnamed User'}</h3>
                   <p className="text-sm text-gray-600 mb-4">{mostActiveUser.user_email}</p>
-                  
+
                   <div className="flex items-center justify-center md:justify-start space-x-4">
                     <div className="flex items-center px-3 py-2 bg-amber-100 rounded-lg">
                       <BookOpen className="w-5 h-5 text-amber-600 mr-2" />
                       <span className="font-medium text-amber-800">{mostActiveUser.bookCount} Books</span>
                     </div>
-                    
+
                     <div className="flex items-center px-3 py-2 bg-purple-100 rounded-lg">
                       <Clock className="w-5 h-5 text-purple-600 mr-2" />
                       <span className="font-medium text-purple-800">Active {formatDate(mostActiveUser.user_createdAt)}</span>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-4 md:mt-0">
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 shadow-sm">
                     <div className="text-center">
@@ -442,12 +465,12 @@ const HomePage = () => {
                   </div>
                 </div>
               </div>
-              
-             
+
+
             </div>
           </motion.div>
         )}
- 
+
         {/* Welcome Card - Only for regular users */}
         {welcomeCard && (
           <motion.div
@@ -458,19 +481,19 @@ const HomePage = () => {
           >
             <div className="absolute right-0 top-0 w-96 h-96 bg-amber-100 rounded-bl-full opacity-30 -mr-20 -mt-20"></div>
             <div className="absolute -left-12 -bottom-12 w-48 h-48 bg-amber-200 rounded-full opacity-20"></div>
-            
+
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8 relative z-10">
               <div className="bg-gradient-to-br from-amber-400 to-amber-600 h-16 w-16 md:h-20 md:w-20 rounded-full flex items-center justify-center shadow-lg">
                 <span className="text-white text-xl md:text-2xl font-bold">
                   {welcomeCard.value.charAt(0).toUpperCase()}
                 </span>
               </div>
-              
+
               <div className="flex-1">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">{welcomeCard.metric}</h2>
                 <p className="text-base md:text-lg font-semibold text-amber-700">{welcomeCard.value}</p>
                 <p className="text-sm text-gray-600">{welcomeCard.subValue}</p>
-                
+
                 <div className="flex flex-wrap gap-2 mt-3">
                   <Badge variant="outline" className="bg-amber-50 border-amber-200 text-amber-700">
                     {welcomeCard.role}
@@ -484,6 +507,10 @@ const HomePage = () => {
                   <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
                     Joined: {formatDate(welcomeCard.joinDate)}
                   </Badge>
+                  <Badge variant="outline" className="bg-amber-100 border-amber-300 text-amber-800 flex items-center font-bold">
+                    <Coins className="w-3.5 h-3.5 mr-1.5" />
+                    Balance: ${welcomeCard.balance}
+                  </Badge>
                 </div>
 
                 {welcomeCard.credits && (
@@ -495,10 +522,10 @@ const HomePage = () => {
                           {welcomeCard.credits.gptCredits.used.toLocaleString()} / {welcomeCard.credits.gptCredits.total.toLocaleString()}
                         </span>
                         <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-amber-500 rounded-full" 
-                            style={{ 
-                              width: `${Math.min((welcomeCard.credits.gptCredits.used / welcomeCard.credits.gptCredits.total) * 100, 100)}%` 
+                          <div
+                            className="h-full bg-amber-500 rounded-full"
+                            style={{
+                              width: `${Math.min((welcomeCard.credits.gptCredits.used / welcomeCard.credits.gptCredits.total) * 100, 100)}%`
                             }}
                           />
                         </div>
@@ -508,15 +535,15 @@ const HomePage = () => {
                       <p className="text-xs text-gray-500">Image Credits</p>
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-sm font-medium text-amber-700">
-                        
+
                           {welcomeCard.credits.imageCredits.used.toLocaleString()} / {welcomeCard.credits.imageCredits.total.toLocaleString()}
                         </span>
                         <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-amber-500 rounded-full" 
-                            style={{ 
-                              
-                              width: `${Math.min((welcomeCard.credits.imageCredits.used / welcomeCard.credits.imageCredits.total) * 100, 100)}%` 
+                          <div
+                            className="h-full bg-amber-500 rounded-full"
+                            style={{
+
+                              width: `${Math.min((welcomeCard.credits.imageCredits.used / welcomeCard.credits.imageCredits.total) * 100, 100)}%`
                             }}
                           />
                         </div>
@@ -525,9 +552,9 @@ const HomePage = () => {
                   </div>
                 )}
               </div>
-              
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 className="hidden md:flex bg-white hover:bg-amber-50 border-amber-200 text-amber-700"
                 onClick={() => navigate('/settings')}
               >
@@ -546,52 +573,48 @@ const HomePage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + (index * 0.1) }}
               whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-              className={`bg-gradient-to-br ${
-                card.type === 'user' ? (
-                  card.color === 'green' ? 'from-white to-green-50 hover:from-green-50 hover:to-green-100' :
+              className={`bg-gradient-to-br ${card.type === 'user' ? (
+                card.color === 'green' ? 'from-white to-green-50 hover:from-green-50 hover:to-green-100' :
                   card.color === 'blue' ? 'from-white to-blue-50 hover:from-blue-50 hover:to-blue-100' :
-                  'from-white to-amber-50 hover:from-amber-50 hover:to-amber-100'
-                ) : card.bgcolor
-              } p-6 rounded-xl shadow-sm border border-gray-100 cursor-pointer overflow-hidden relative`}
+                    'from-white to-amber-50 hover:from-amber-50 hover:to-amber-100'
+              ) : card.bgcolor
+                } p-6 rounded-xl shadow-sm border border-gray-100 cursor-pointer overflow-hidden relative`}
               onClick={() => card.navigateTo && navigate(card.navigateTo)}
             >
-              <div className={`absolute -right-8 -top-8 w-24 h-24 rounded-full opacity-20 ${
-                card.type === 'user' ? (
-                  card.color === 'green' ? 'bg-green-200' :
+              <div className={`absolute -right-8 -top-8 w-24 h-24 rounded-full opacity-20 ${card.type === 'user' ? (
+                card.color === 'green' ? 'bg-green-200' :
                   card.color === 'blue' ? 'bg-blue-200' :
-                  'bg-amber-200'
-                ) : card.iconbg
-              }`}></div>
-              
+                    'bg-amber-200'
+              ) : card.iconbg
+                }`}></div>
+
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">{card.metric}</p>
                   <h3 className="text-3xl font-bold text-gray-900">{card.value}</h3>
                 </div>
-                <div className={`${
-                  card.type === 'user' ? (
-                    card.color === 'green' ? 'bg-green-100 text-green-600' :
+                <div className={`${card.type === 'user' ? (
+                  card.color === 'green' ? 'bg-green-100 text-green-600' :
                     card.color === 'blue' ? 'bg-blue-100 text-blue-600' :
-                    'bg-amber-100 text-amber-600'
-                  ) : `${card.iconbg} ${card.iconcolor}`
-                } p-3 rounded-lg shadow-sm z-10`}>
+                      'bg-amber-100 text-amber-600'
+                ) : `${card.iconbg} ${card.iconcolor}`
+                  } p-3 rounded-lg shadow-sm z-10`}>
                   {card.icon}
                 </div>
               </div>
-              
+
               <div className="mt-4 pt-4 border-t border-gray-100 flex items-center text-sm">
-                <BookOpen className={`w-4 h-4 mr-1 ${
-                  card.type === 'user' ? (
-                    card.color === 'green' ? 'text-green-500' :
+                <BookOpen className={`w-4 h-4 mr-1 ${card.type === 'user' ? (
+                  card.color === 'green' ? 'text-green-500' :
                     card.color === 'blue' ? 'text-blue-500' :
-                    'text-amber-500'
-                  ) : card.iconcolor
-                }`} />
+                      'text-amber-500'
+                ) : card.iconcolor
+                  }`} />
                 <span className="text-gray-600">
                   {card.type === 'user' ? (
                     card.color === 'green' ? 'Finished books' :
-                    card.color === 'blue' ? 'Work in progress' :
-                    'Your collection'
+                      card.color === 'blue' ? 'Work in progress' :
+                        'Your collection'
                   ) : 'Total count'}
                 </span>
               </div>
@@ -601,7 +624,7 @@ const HomePage = () => {
 
         {/* Chart Section with Professional Design */}
         {userData?.role === 'admin' && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -615,7 +638,7 @@ const HomePage = () => {
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">Your book creation activity over the past month</p>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <div className="flex items-center px-3 py-1.5 bg-amber-50 rounded-full">
                   <div className="w-3 h-3 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full mr-2"></div>
@@ -623,19 +646,19 @@ const HomePage = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
+                <BarChart
                   data={chartData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
                 >
                   {/* Background Grid */}
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                  
+
                   {/* X Axis with improved styling */}
-                  <XAxis 
-                    dataKey="name" 
+                  <XAxis
+                    dataKey="name"
                     tick={{ fill: '#6b7280', fontSize: 12 }}
                     tickLine={{ stroke: '#e5e7eb' }}
                     axisLine={{ stroke: '#e5e7eb' }}
@@ -644,18 +667,18 @@ const HomePage = () => {
                     textAnchor="end"
                     height={70}
                   />
-                  
+
                   {/* Y Axis with improved styling */}
-                  <YAxis 
+                  <YAxis
                     allowDecimals={false}
                     tick={{ fill: '#6b7280', fontSize: 12 }}
                     tickLine={{ stroke: '#e5e7eb' }}
                     axisLine={{ stroke: '#e5e7eb' }}
                     tickFormatter={(value) => value === 0 ? '0' : value}
                   />
-                  
+
                   {/* Enhanced Tooltip */}
-                  <Tooltip 
+                  <Tooltip
                     cursor={{ fill: 'rgba(245, 158, 11, 0.1)' }}
                     formatter={(value) => [`${value} books`, 'Created']}
                     labelFormatter={(date) => `Date: ${date}`}
@@ -670,7 +693,7 @@ const HomePage = () => {
                     itemStyle={{ color: '#92400e' }}
                     labelStyle={{ color: '#1f2937', fontWeight: 'bold', marginBottom: '5px' }}
                   />
-                  
+
                   {/* Bar with gradient and animation */}
                   <defs>
                     <linearGradient id="bookColorGradient" x1="0" y1="0" x2="0" y2="1">
@@ -678,35 +701,35 @@ const HomePage = () => {
                       <stop offset="100%" stopColor="#d97706" stopOpacity={0.8} />
                     </linearGradient>
                   </defs>
-                  
-                  <Bar 
-                    dataKey="books" 
-                    fill="url(#bookColorGradient)" 
-                    radius={[6, 6, 0, 0]} 
+
+                  <Bar
+                    dataKey="books"
+                    fill="url(#bookColorGradient)"
+                    radius={[6, 6, 0, 0]}
                     barSize={30}
                     animationDuration={1500}
                     animationEasing="ease-in-out"
                   >
                     {/* Add a label on top of bars for better visibility */}
-                    <LabelList 
-                      dataKey="books" 
-                      position="top" 
-                      fill="#92400e" 
-                      fontSize={11} 
+                    <LabelList
+                      dataKey="books"
+                      position="top"
+                      fill="#92400e"
+                      fontSize={11}
                       formatter={(value: number) => (value > 0 ? value : '')}
                     />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            
+
             <div className="mt-4 text-center text-xs text-gray-500">
               <p>Hover over bars to see detailed information</p>
             </div>
           </motion.div>
         )}
 
-      
+
 
         {/* Recent Activity with Enhanced Responsive Design */}
         {userData?.role === 'admin' && (
@@ -726,9 +749,9 @@ const HomePage = () => {
                   </h2>
                   <p className="text-sm text-gray-500 mt-1">Latest actions performed on the platform</p>
                 </div>
-                
-                <Button 
-                  variant="ghost" 
+
+                <Button
+                  variant="ghost"
                   size="sm"
                   className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                   onClick={() => refetchRecentActivity()}

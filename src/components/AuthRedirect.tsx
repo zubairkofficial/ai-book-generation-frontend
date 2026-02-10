@@ -5,14 +5,19 @@ import { useNavigate } from 'react-router-dom';
 
 const AuthRedirect = () => {
   const navigate = useNavigate();
-  const { token } = useSelector((state: RootState) => state.auth);
+  const { token, user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
-    if (token) {
-      navigate('/home'); // Redirect to home if the user is logged in
+    if (token && user) {
+      if (user.status === 'PENDING_PAYMENT') {
+        navigate('/auth/payment', { state: { userId: user.id } });
+      } else if (user.status === 'PENDING_APPROVAL' || user.status === 'REJECTED') {
+        navigate('/auth/approval-pending');
+      } else {
+        navigate('/home');
+      }
     }
-    navigate("/auth")
-  }, [token, navigate]);
+  }, [token, user, navigate]);
 
   return null;
 };

@@ -18,18 +18,23 @@ const baseQuery = fetchBaseQuery({
 
 // Enhanced base query with error handling
 const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
-  let result:any = await baseQuery(args, api, extraOptions);
+  let result: any = await baseQuery(args, api, extraOptions);
 
   // Check for 401 Unauthorized errors
+  // Check for 401 Unauthorized errors
   if (result.error?.status === 401) {
-    // Dispatch the logout action
-    toast.error(result.error.message);
+    const requestUrl = typeof args === 'string' ? args : args.url;
 
-    api.dispatch(logout());
-    // Show a toast message
-    
-    // Optionally, redirect the user to the login page
-    // You can use a redirect library like react-router-dom here
+    // Skip global 401 handling for auth endpoints where 401 is a valid business logic response (e.g. invalid credentials)
+    const isAuthEndpoint = requestUrl.includes('/auth/signin') ||
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/verify-otp');
+
+    if (!isAuthEndpoint) {
+      const errorMessage = (result.error.data as any)?.message || "Session expired. Please login again.";
+      toast.error(errorMessage);
+      api.dispatch(logout());
+    }
   }
 
   return result;
@@ -39,5 +44,6 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
+  tagTypes: ['Settings', 'SystemSettings', 'User', 'Users', 'Subscription'],
   endpoints: () => ({}),
 });

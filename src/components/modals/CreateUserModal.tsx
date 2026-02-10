@@ -33,8 +33,6 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose }) =>
     name: '',
     email: '',
     password: '',
-    imageToken: '',
-    modelToken: '',
   });
 
   const { addToast } = useToast();
@@ -65,11 +63,9 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose }) =>
         name: '',
         email: '',
         password: '',
-        imageToken: '',
-        modelToken: '',
       });
       onClose();
-    } catch (error:any) {
+    } catch (error: any) {
       addToast(
         error?.data?.message || 'Failed to create user',
         ToastType.ERROR,
@@ -142,53 +138,19 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose }) =>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Image Credits</Label>
-              <div className="relative">
-                <Image className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="imageToken"
-                  name="imageToken"
-                  type="number"
-                  value={formData.imageToken}
-                  onChange={handleInputChange}
-                  placeholder="Enter image credits"
-                  className="pl-9 focus:border-amber-500 focus:ring-amber-200"
-                  required
-                />
-              </div>
-              <p className="text-xs text-gray-500">Number of images user can generate</p>
-            </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Model Credits</Label>
-              <div className="relative">
-                <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="modelToken"
-                  name="modelToken"
-                  type="number"
-                  value={formData.modelToken}
-                  onChange={handleInputChange}
-                  placeholder="Enter model credits"
-                  className="pl-9 focus:border-amber-500 focus:ring-amber-200"
-                  required
-                />
-              </div>
-              <p className="text-xs text-gray-500">Number of tokens user can use</p>
-            </div>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-2 mt-6">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={onClose}
               className="border-gray-200 hover:bg-gray-50 transition-colors duration-200"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               type="submit"
               className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 transition-all duration-200 min-w-[100px]"
               disabled={isLoading}
